@@ -119,6 +119,29 @@ spec:
                 description: MinioURL is where the Minio instance that should be managed
                   is located.
                 type: string
+              tls:
+                description: TLS configuration for secure connections to MinIO.
+                properties:
+                  caData:
+                    description: |-
+                      CAData contains the CA certificate data in PEM format for verifying the server's certificate.
+                      This is useful for self-signed certificates or private CA certificates.
+                    type: string
+                  clientCertData:
+                    description: ClientCertData contains the client certificate data
+                      in PEM format for mutual TLS authentication.
+                    type: string
+                  clientKeyData:
+                    description: ClientKeyData contains the client private key data
+                      in PEM format for mutual TLS authentication.
+                    type: string
+                  insecureSkipVerify:
+                    description: |-
+                      InsecureSkipVerify controls whether the client verifies the server's certificate chain and host name.
+                      If InsecureSkipVerify is true, crypto/tls accepts any certificate presented by the server
+                      and any host name in that certificate. This should be used only for testing.
+                    type: boolean
+                type: object
             required:
             - credentials
             - minioURL

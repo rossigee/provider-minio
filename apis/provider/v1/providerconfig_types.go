@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/vshn/provider-minio/apis/common"
 )
 
 // A ProviderConfigSpec defines the desired state of a ProviderConfig.
@@ -17,6 +18,8 @@ type ProviderConfigSpec struct {
 	// +kubebuilder:validation:Required
 	// MinioURL is where the Minio instance that should be managed is located.
 	MinioURL string `json:"minioURL,omitempty"`
+	// TLS configuration for secure connections to MinIO.
+	TLS *common.TLSConfig `json:"tls,omitempty"`
 }
 
 // ProviderCredentials required to authenticate.
