@@ -75,7 +75,7 @@ func (in *ProviderConfigSpec) DeepCopyInto(out *ProviderConfigSpec) {
 	if in.TLS != nil {
 		in, out := &in.TLS, &out.TLS
 		*out = new(common.TLSConfig)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 }
 

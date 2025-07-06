@@ -1,0 +1,25 @@
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-tls-refs
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    # CA certificate from a Secret
+    caSecretRef:
+      name: minio-ca-secret
+      key: ca.crt
+    # Optional: Skip certificate verification (for testing only)
+    insecureSkipVerify: false
+    # Optional: Client certificate and key from secrets for mutual TLS
+    clientCertSecretRef:
+      name: minio-tls-secret
+      key: tls.crt
+    clientKeySecretRef:
+      name: minio-tls-secret
+      key: tls.key

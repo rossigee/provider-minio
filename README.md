@@ -12,6 +12,16 @@ Crossplane provider for managing resources on min.io.
 
 Documentation: https://vshn.github.io/provider-minio/provider-minio/
 
+## Features
+
+- Manage MinIO buckets, users, and policies through Kubernetes CRDs
+- Support for custom TLS configuration including:
+  - Custom CA certificates (inline, from Secrets, or ConfigMaps)
+  - Mutual TLS authentication
+  - Self-signed certificates
+- Secure credential management via Kubernetes Secrets
+- Full Crossplane integration with composition support
+
 ## Local Development
 
 ### Requirements
@@ -71,6 +81,15 @@ To test and troubleshoot the webhooks on the cluster, simply apply your changes 
 * `kubectl apply -f samples/_secret.yaml samples/minio.crossplane.io_providerconfig.yaml`
 * `EXPORT KUBECONFIG=.work/kind/kind-kubeconfig`
 * `go run . --log-level 1 operator`
+
+### TLS Configuration
+
+The provider supports custom TLS configuration for secure connections to MinIO. See [TLS_CONFIGURATION.md](docs/TLS_CONFIGURATION.md) for detailed documentation.
+
+Example configurations are available in the samples directory:
+- `samples/minio.crossplane.io_providerconfig_with_tls.yaml` - TLS with inline certificates
+- `samples/minio.crossplane.io_providerconfig_with_tls_refs.yaml` - TLS with Secret references
+- `samples/minio.crossplane.io_providerconfig_with_tls_configmap.yaml` - TLS with ConfigMap references
 
 ### Crossplane Provider Mechanics
 

@@ -1,0 +1,35 @@
+# Example Secret containing CA certificate
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-ca-secret
+  namespace: crossplane-system
+type: Opaque
+data:
+  # Base64 encoded CA certificate
+  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCi4uLgotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+---
+# Example ConfigMap containing CA certificate
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-ca-configmap
+  namespace: crossplane-system
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+---
+# Example Secret containing client TLS certificate and key
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-tls-secret
+  namespace: crossplane-system
+type: kubernetes.io/tls
+data:
+  # Base64 encoded client certificate
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCi4uLgotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  # Base64 encoded client private key
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCi4uLgotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg==

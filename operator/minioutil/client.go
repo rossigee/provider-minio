@@ -20,6 +20,9 @@ import (
 const (
 	MinioIDKey     = "AWS_ACCESS_KEY_ID"
 	MinioSecretKey = "AWS_SECRET_ACCESS_KEY"
+	// ProviderNamespace is the namespace where the provider is installed
+	// and where TLS secrets/configmaps should be located
+	ProviderNamespace = "crossplane-system"
 )
 
 // NewMinioClient returns a new minio client according to the given provider config.
@@ -43,7 +46,7 @@ func NewMinioClient(ctx context.Context, c client.Client, config *providerv1.Pro
 
 	// Apply custom TLS configuration if provided
 	if config.Spec.TLS != nil {
-		tlsConfig, err := buildTLSConfig(config.Spec.TLS)
+		tlsConfig, err := buildTLSConfig(ctx, c, config.Spec.TLS, ProviderNamespace)
 		if err != nil {
 			return nil, fmt.Errorf("failed to build TLS configuration: %w", err)
 		}
@@ -64,7 +67,7 @@ func isTLSEnabled(u *url.URL) bool {
 }
 
 // buildTLSConfig creates a tls.Config based on the provided common.TLSConfig
-func buildTLSConfig(tlsConfig *common.TLSConfig) (*tls.Config, error) {
+func buildTLSConfig(ctx context.Context, c client.Client, tlsConfig *common.TLSConfig, namespace string) (*tls.Config, error) {
 	if tlsConfig == nil {
 		return &tls.Config{}, nil
 	}
@@ -74,24 +77,76 @@ func buildTLSConfig(tlsConfig *common.TLSConfig) (*tls.Config, error) {
 	}
 
 	// Handle CA certificate
-	if tlsConfig.CAData != "" {
+	caData, err := getTLSData(ctx, c, namespace, tlsConfig.CAData, tlsConfig.CASecretRef, tlsConfig.CAConfigMapRef)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CA certificate data: %w", err)
+	}
+	if caData != "" {
 		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM([]byte(tlsConfig.CAData)) {
+		if !caCertPool.AppendCertsFromPEM([]byte(caData)) {
 			return nil, fmt.Errorf("failed to parse CA certificate data")
 		}
 		config.RootCAs = caCertPool
 	}
 
+	// Handle client certificate
+	clientCertData, err := getTLSData(ctx, c, namespace, tlsConfig.ClientCertData, tlsConfig.ClientCertSecretRef, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client certificate data: %w", err)
+	}
+
+	// Handle client key
+	clientKeyData, err := getTLSData(ctx, c, namespace, tlsConfig.ClientKeyData, tlsConfig.ClientKeySecretRef, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client key data: %w", err)
+	}
+
 	// Handle client certificate and key for mutual TLS
-	if tlsConfig.ClientCertData != "" && tlsConfig.ClientKeyData != "" {
-		cert, err := tls.X509KeyPair([]byte(tlsConfig.ClientCertData), []byte(tlsConfig.ClientKeyData))
+	if clientCertData != "" && clientKeyData != "" {
+		cert, err := tls.X509KeyPair([]byte(clientCertData), []byte(clientKeyData))
 		if err != nil {
 			return nil, fmt.Errorf("failed to load client certificate and key: %w", err)
 		}
 		config.Certificates = []tls.Certificate{cert}
-	} else if tlsConfig.ClientCertData != "" || tlsConfig.ClientKeyData != "" {
+	} else if clientCertData != "" || clientKeyData != "" {
 		return nil, fmt.Errorf("both client certificate and key must be provided for mutual TLS")
 	}
 
 	return config, nil
+}
+
+// getTLSData retrieves TLS data from inline data, secret reference, or configmap reference
+func getTLSData(ctx context.Context, c client.Client, namespace string, inlineData string, secretRef *corev1.SecretKeySelector, configMapRef *corev1.ConfigMapKeySelector) (string, error) {
+	// Priority: inline data > secret ref > configmap ref
+	if inlineData != "" {
+		return inlineData, nil
+	}
+
+	if secretRef != nil {
+		secret := &corev1.Secret{}
+		key := client.ObjectKey{Name: secretRef.Name, Namespace: namespace}
+		if err := c.Get(ctx, key, secret); err != nil {
+			return "", fmt.Errorf("failed to get secret %s: %w", secretRef.Name, err)
+		}
+		data, ok := secret.Data[secretRef.Key]
+		if !ok {
+			return "", fmt.Errorf("key %s not found in secret %s", secretRef.Key, secretRef.Name)
+		}
+		return string(data), nil
+	}
+
+	if configMapRef != nil {
+		configMap := &corev1.ConfigMap{}
+		key := client.ObjectKey{Name: configMapRef.Name, Namespace: namespace}
+		if err := c.Get(ctx, key, configMap); err != nil {
+			return "", fmt.Errorf("failed to get configmap %s: %w", configMapRef.Name, err)
+		}
+		data, ok := configMap.Data[configMapRef.Key]
+		if !ok {
+			return "", fmt.Errorf("key %s not found in configmap %s", configMapRef.Key, configMapRef.Name)
+		}
+		return data, nil
+	}
+
+	return "", nil
 }

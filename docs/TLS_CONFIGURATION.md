@@ -15,6 +15,7 @@ The MinIO provider now supports custom TLS configuration through the `tls` field
 
 ### Basic TLS Configuration with Custom CA
 
+#### Option 1: Inline CA Certificate
 ```yaml
 apiVersion: minio.crossplane.io/v1
 kind: ProviderConfig
@@ -35,13 +36,77 @@ spec:
       -----END CERTIFICATE-----
 ```
 
+#### Option 2: CA Certificate from Secret
+```yaml
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-ca-secret
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    caSecretRef:
+      name: minio-ca-cert
+      key: ca.crt
+```
+
+#### Option 3: CA Certificate from ConfigMap
+```yaml
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-ca-configmap
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    caConfigMapRef:
+      name: ca-certificates
+      key: minio-ca.crt
+```
+
 ### Mutual TLS Authentication
 
+#### Recommended: Using Secret References
 ```yaml
 apiVersion: minio.crossplane.io/v1
 kind: ProviderConfig
 metadata:
   name: provider-config-with-mtls
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    caSecretRef:
+      name: minio-ca-cert
+      key: ca.crt
+    clientCertSecretRef:
+      name: minio-client-cert
+      key: tls.crt
+    clientKeySecretRef:
+      name: minio-client-cert
+      key: tls.key
+```
+
+#### Alternative: Inline Configuration (Not Recommended for Private Keys)
+```yaml
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-mtls-inline
 spec:
   credentials:
     apiSecretRef:
@@ -58,7 +123,7 @@ spec:
       -----BEGIN CERTIFICATE-----
       # ... your client certificate content ...
       -----END CERTIFICATE-----
-    clientKeyData: |
+    clientKeyData: |  # DEPRECATED: Use clientKeySecretRef instead
       -----BEGIN PRIVATE KEY-----
       # ... your client private key content ...
       -----END PRIVATE KEY-----
@@ -92,18 +157,57 @@ The `tls` field is an optional object that configures TLS settings for the MinIO
 - **Type**: `string`
 - **Description**: CA certificate data in PEM format for verifying the server's certificate. This is useful for self-signed certificates or private CA certificates.
 - **Format**: PEM-encoded certificate
+- **Priority**: Used if provided; otherwise falls back to `caSecretRef` or `caConfigMapRef`
+
+#### `caSecretRef` (optional)
+- **Type**: `SecretKeySelector`
+- **Description**: Reference to a Secret containing the CA certificate data
+- **Fields**:
+  - `name`: Name of the Secret (must exist in the `crossplane-system` namespace)
+  - `key`: Key within the Secret containing the CA certificate (e.g., `ca.crt`)
+- **Priority**: Used if `caData` is not provided
+- **Note**: The Secret must be in the `crossplane-system` namespace where the provider is installed
+
+#### `caConfigMapRef` (optional)
+- **Type**: `ConfigMapKeySelector`
+- **Description**: Reference to a ConfigMap containing the CA certificate data
+- **Fields**:
+  - `name`: Name of the ConfigMap (must exist in the `crossplane-system` namespace)
+  - `key`: Key within the ConfigMap containing the CA certificate
+- **Priority**: Used if neither `caData` nor `caSecretRef` are provided
+- **Note**: The ConfigMap must be in the `crossplane-system` namespace where the provider is installed
 
 #### `clientCertData` (optional)
 - **Type**: `string`
 - **Description**: Client certificate data in PEM format for mutual TLS authentication.
 - **Format**: PEM-encoded certificate
-- **Note**: Must be used together with `clientKeyData`
+- **Note**: Must be used together with client key (either `clientKeyData` or `clientKeySecretRef`)
+- **Priority**: Used if provided; otherwise falls back to `clientCertSecretRef`
 
-#### `clientKeyData` (optional)
+#### `clientCertSecretRef` (optional)
+- **Type**: `SecretKeySelector`
+- **Description**: Reference to a Secret containing the client certificate data
+- **Fields**:
+  - `name`: Name of the Secret (must exist in the `crossplane-system` namespace)
+  - `key`: Key within the Secret containing the client certificate (e.g., `tls.crt`)
+- **Priority**: Used if `clientCertData` is not provided
+- **Note**: The Secret must be in the `crossplane-system` namespace where the provider is installed
+
+#### `clientKeyData` (optional) - DEPRECATED
 - **Type**: `string`
 - **Description**: Client private key data in PEM format for mutual TLS authentication.
 - **Format**: PEM-encoded private key
-- **Note**: Must be used together with `clientCertData`
+- **Note**: Must be used together with client certificate
+- **Warning**: DEPRECATED - Use `clientKeySecretRef` instead. Private keys should not be stored in CRDs.
+
+#### `clientKeySecretRef` (optional) - RECOMMENDED
+- **Type**: `SecretKeySelector`
+- **Description**: Reference to a Secret containing the client private key data
+- **Fields**:
+  - `name`: Name of the Secret (must exist in the `crossplane-system` namespace)
+  - `key`: Key within the Secret containing the client private key (e.g., `tls.key`)
+- **Priority**: Used if `clientKeyData` is not provided
+- **Note**: The Secret must be in the `crossplane-system` namespace where the provider is installed
 
 #### `insecureSkipVerify` (optional)
 - **Type**: `boolean`
@@ -165,10 +269,18 @@ spec:
 
 ## Security Considerations
 
-1. **Certificate Storage**: Store certificates as Kubernetes secrets and reference them in your ProviderConfig when possible.
-2. **Private Keys**: Never commit private keys to version control. Use secret management systems.
-3. **Certificate Rotation**: Plan for certificate rotation by updating the ProviderConfig when certificates expire.
-4. **insecureSkipVerify**: Only use this option in development or testing environments.
+1. **Certificate Storage**: Always use Secret references (`caSecretRef`, `clientCertSecretRef`, `clientKeySecretRef`) instead of inline data for production deployments.
+2. **Private Keys**:
+   - **NEVER** use `clientKeyData` in production - it's deprecated and insecure
+   - Always use `clientKeySecretRef` to reference private keys stored in Kubernetes Secrets
+   - Never commit private keys to version control
+3. **ConfigMap vs Secret**:
+   - Use ConfigMaps only for public CA certificates
+   - Always use Secrets for client certificates and private keys
+4. **Certificate Rotation**: Plan for certificate rotation by updating the referenced Secrets/ConfigMaps
+5. **insecureSkipVerify**: Only use this option in development or testing environments
+6. **RBAC**: Ensure the Crossplane provider has appropriate RBAC permissions to read the referenced Secrets and ConfigMaps
+7. **Namespace**: All referenced Secrets and ConfigMaps must be in the `crossplane-system` namespace where the provider is installed
 
 ## Migration from Previous Versions
 

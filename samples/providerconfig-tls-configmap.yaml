@@ -1,0 +1,32 @@
+# Example ProviderConfig using TLS with CA certificate from ConfigMap
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: minio-with-ca-configmap
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-credentials
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    # Reference CA certificate from a ConfigMap
+    # This is useful when the CA certificate is managed by cert-manager
+    # or when sharing CA certificates across multiple applications
+    caConfigMapRef:
+      name: ca-certificates
+      key: minio-ca.crt
+---
+# Example ConfigMap containing the CA certificate
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ca-certificates
+  namespace: crossplane-system
+data:
+  minio-ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIDxTCCAq2gAwIBAgIJAKXGz9P2v7s2MA0GCSqGSIb3DQEBCwUAMHkxCzAJBgNV
+    ... (your CA certificate content) ...
+    -----END CERTIFICATE-----

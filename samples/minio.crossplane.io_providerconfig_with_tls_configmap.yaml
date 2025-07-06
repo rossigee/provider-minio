@@ -1,0 +1,19 @@
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-tls-configmap
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    # CA certificate from a ConfigMap
+    caConfigMapRef:
+      name: minio-ca-configmap
+      key: ca.crt
+    # Optional: Skip certificate verification (for testing only)
+    insecureSkipVerify: false
+    # Note: Client certificates must be stored in Secrets, not ConfigMaps

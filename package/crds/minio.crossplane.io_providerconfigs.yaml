@@ -122,19 +122,123 @@ spec:
               tls:
                 description: TLS configuration for secure connections to MinIO.
                 properties:
+                  caConfigMapRef:
+                    description: |-
+                      CAConfigMapRef references a ConfigMap containing the CA certificate data.
+                      The ConfigMap must contain a key with the CA certificate data.
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      optional:
+                        description: Specify whether the ConfigMap or its key must
+                          be defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
                   caData:
                     description: |-
                       CAData contains the CA certificate data in PEM format for verifying the server's certificate.
                       This is useful for self-signed certificates or private CA certificates.
                     type: string
+                  caSecretRef:
+                    description: |-
+                      CASecretRef references a Secret containing the CA certificate data.
+                      The Secret must contain a key named 'ca.crt' or 'tls.crt' with the CA certificate data.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      optional:
+                        description: Specify whether the Secret or its key must be
+                          defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
                   clientCertData:
                     description: ClientCertData contains the client certificate data
                       in PEM format for mutual TLS authentication.
                     type: string
+                  clientCertSecretRef:
+                    description: |-
+                      ClientCertSecretRef references a Secret containing the client certificate data.
+                      The Secret must contain a key with the client certificate data.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      optional:
+                        description: Specify whether the Secret or its key must be
+                          defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
                   clientKeyData:
-                    description: ClientKeyData contains the client private key data
-                      in PEM format for mutual TLS authentication.
+                    description: |-
+                      ClientKeyData contains the client private key data in PEM format for mutual TLS authentication.
+                      DEPRECATED: Use ClientKeySecretRef instead. Private keys should not be stored in CRDs.
                     type: string
+                  clientKeySecretRef:
+                    description: |-
+                      ClientKeySecretRef references a Secret containing the client private key data.
+                      The Secret must contain a key with the client private key data.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      optional:
+                        description: Specify whether the Secret or its key must be
+                          defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
                   insecureSkipVerify:
                     description: |-
                       InsecureSkipVerify controls whether the client verifies the server's certificate chain and host name.
