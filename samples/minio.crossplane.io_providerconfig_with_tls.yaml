@@ -1,0 +1,36 @@
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-tls
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    # Custom CA certificate for self-signed or internal CA certificates
+    caData: |
+      -----BEGIN CERTIFICATE-----
+      MIIDxTCCAq2gAwIBAgIJAKXGz9P2v7s2MA0GCSqGSIb3DQEBCwUAMHkxCzAJBgNV
+      BAYTAlVTMQswCQYDVQQIDAJDQTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEQMA4G
+      A1UECgwHRXhhbXBsZTEQMA4GA1UECwwHRXhhbXBsZTEhMB8GA1UEAwwYZXhhbXBs
+      ZS5jb20gQ0EgQ2VydGlmaWNhdGUwHhcNMjMwMTAxMDAwMDAwWhcNMjQwMTAxMDAw
+      MDAwWjB5MQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExFjAUBgNVBAcMDVNhbiBG
+      cmFuY2lzY28xEDAOBgNVBAoMB0V4YW1wbGUxEDAOBgNVBAsMB0V4YW1wbGUxITAf
+      BgNVBAMMGGV4YW1wbGUuY29tIENBIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0B
+      AQEFAAOCAQ8AMIIBCgKCAQEA3B2aUkbZEhQ8wjOzb3M5OFv7Qj3FjBk8xCXqEQXl
+      ...
+      -----END CERTIFICATE-----
+    # Optional: Skip certificate verification (for testing only)
+    insecureSkipVerify: false
+    # Optional: Client certificate for mutual TLS authentication
+    # clientCertData: |
+    #   -----BEGIN CERTIFICATE-----
+    #   ...
+    #   -----END CERTIFICATE-----
+    # clientKeyData: |
+    #   -----BEGIN PRIVATE KEY-----
+    #   ...
+    #   -----END PRIVATE KEY-----
