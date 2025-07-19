@@ -9,6 +9,7 @@ import (
 	"github.com/vshn/provider-minio/operator"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -56,6 +57,7 @@ func (o *operatorCommand) execute(ctx *cli.Context) error {
 		LeaderElectionResourceLock: resourcelock.LeasesResourceLock,
 		LeaseDuration:              func() *time.Duration { d := 60 * time.Second; return &d }(),
 		RenewDeadline:              func() *time.Duration { d := 50 * time.Second; return &d }(),
+		HealthProbeBindAddress:     ":8081",
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    9443,
 			CertDir: o.WebhookCertDir,
@@ -68,6 +70,16 @@ func (o *operatorCommand) execute(ctx *cli.Context) error {
 
 	err = apis.AddToScheme(mgr.GetScheme())
 	if err != nil {
+		return err
+	}
+
+	// Add health checks
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		log.Error(err, "unable to set up health check")
+		return err
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		log.Error(err, "unable to set up ready check")
 		return err
 	}
 
