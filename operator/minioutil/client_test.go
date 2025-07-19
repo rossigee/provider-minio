@@ -456,4 +456,3 @@ func TestTLSConfigurationApplied(t *testing.T) {
 		})
 	}
 }
-

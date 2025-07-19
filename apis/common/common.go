@@ -32,4 +32,3 @@ type TLSConfig struct {
 	// and any host name in that certificate. This should be used only for testing.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 }
-
