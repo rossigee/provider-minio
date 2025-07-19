@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provider-minio-controller
+  namespace: crossplane-system
+  annotations:
+    kubernetes.io/description: "MinIO provider controller for Crossplane with health endpoints"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: provider-minio-controller
+  template:
+    metadata:
+      labels:
+        app: provider-minio-controller
+    spec:
+      serviceAccountName: provider-minio
+      containers:
+      - name: provider-minio-controller
+        image: harbor.golder.lan/library/provider-minio:v0.1.0-health
+        args:
+        - operator
+        - --enable-leader-election
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        - containerPort: 9443
+          name: webhook
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: health
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
