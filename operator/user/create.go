@@ -7,7 +7,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/minio/madmin-go/v3"
+	"github.com/minio/madmin-go/v4"
 	"github.com/sethvargo/go-password/password"
 	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
