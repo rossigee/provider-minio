@@ -1,4 +1,4 @@
-package user
+package serviceaccount
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	errNotUser = fmt.Errorf("managed resource is not a user")
+	errNotServiceAccount = fmt.Errorf("managed resource is not a service account")
 )
 
 type connector struct {
@@ -26,7 +26,7 @@ type connector struct {
 	usage    resource.Tracker
 }
 
-type userClient struct {
+type serviceAccountClient struct {
 	ma          *madmin.AdminClient
 	kube        client.Client
 	recorder    event.Recorder
@@ -43,12 +43,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	user, ok := mg.(*miniov1.User)
+	serviceAccount, ok := mg.(*miniov1.ServiceAccount)
 	if !ok {
-		return nil, errNotUser
+		return nil, errNotServiceAccount
 	}
 
-	config, err := c.getProviderConfig(ctx, user)
+	config, err := c.getProviderConfig(ctx, serviceAccount)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	uc := &userClient{
+	sac := &serviceAccountClient{
 		ma:          ma,
 		kube:        c.kube,
 		recorder:    c.recorder,
@@ -71,11 +71,11 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		tlsSettings: tls,
 	}
 
-	return uc, nil
+	return sac, nil
 }
 
-func (c *connector) getProviderConfig(ctx context.Context, user *miniov1.User) (*providerv1.ProviderConfig, error) {
-	configName := user.GetProviderConfigReference().Name
+func (c *connector) getProviderConfig(ctx context.Context, serviceAccount *miniov1.ServiceAccount) (*providerv1.ProviderConfig, error) {
+	configName := serviceAccount.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
 	return config, err
