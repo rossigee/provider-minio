@@ -20,4 +20,3 @@ func (in *TLSConfig) DeepCopy() *TLSConfig {
 	in.DeepCopyInto(out)
 	return out
 }
-
