@@ -1,0 +1,12 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-minio
+spec:
+  package: harbor.golder.lan/library/provider-minio:v0.2.0-serviceaccounts
+  revisionActivationPolicy: Automatic
+  revisionHistoryLimit: 3
+  runtimeConfigRef:
+    apiVersion: pkg.crossplane.io/v1beta1
+    kind: DeploymentRuntimeConfig
+    name: default
