@@ -1,0 +1,12 @@
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-minio-node-affinity
+spec:
+  deploymentTemplate:
+    spec:
+      template:
+        spec:
+          nodeSelector:
+            # Schedule on nodes in the control plane subnet (10.177.x.x)
+            kubernetes.io/hostname: golder-staging-workernode-1
