@@ -1,0 +1,18 @@
+---
+apiVersion: minio.crossplane.io/v1
+kind: ServiceAccount
+metadata:
+  name: test-serviceaccount
+spec:
+  forProvider:
+    parentUser: sa-parent-user
+    serviceAccountName: test-sa
+    policies:
+      - readwrite
+      - diagnostics
+    description: "Updated E2E test service account"
+  providerConfigRef:
+    name: provider-config
+  writeConnectionSecretToRef:
+    name: test-serviceaccount-creds
+    namespace: default

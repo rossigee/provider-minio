@@ -42,7 +42,7 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 		managed.WithExternalConnecter(c),
 		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
 		managed.WithRecorder(recorder),
-		managed.WithPollInterval(1*time.Minute),
+		managed.WithPollInterval(5*time.Minute),
 		managed.WithConnectionPublishers(cps...),
 		managed.WithCreationGracePeriod(creationGracePeriod))
 }

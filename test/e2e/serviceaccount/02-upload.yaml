@@ -1,0 +1,43 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-serviceaccount-upload
+spec:
+  template:
+    spec:
+      containers:
+      - name: minio-client
+        image: minio/mc:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Setting up MinIO client with service account credentials..."
+          mc alias set testminio http://minio:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+          
+          echo "Testing bucket operations with service account..."
+          mc mb testminio/sa-test-bucket || echo "Bucket may already exist"
+          
+          echo "Testing object upload..."
+          echo "Hello from ServiceAccount" > /tmp/test-file.txt
+          mc cp /tmp/test-file.txt testminio/sa-test-bucket/
+          
+          echo "Verifying object exists..."
+          mc ls testminio/sa-test-bucket/test-file.txt
+          
+          echo "ServiceAccount credentials work correctly!"
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: test-serviceaccount-creds
+              key: accessKey
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: test-serviceaccount-creds
+              key: secretKey
+      restartPolicy: Never
+  backoffLimit: 3

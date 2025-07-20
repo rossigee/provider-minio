@@ -11,6 +11,7 @@ import (
 	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
 	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 // SetupController adds a controller that reconciles managed resources.
@@ -31,6 +32,9 @@ func SetupControllerWithConnecter(mgr ctrl.Manager, name string, recorder event.
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&miniov1.ServiceAccount{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 1, // Limit to 1 concurrent reconcile to reduce API pressure
+		}).
 		Complete(r)
 }
 
@@ -42,7 +46,7 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 		managed.WithExternalConnecter(c),
 		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
 		managed.WithRecorder(recorder),
-		managed.WithPollInterval(1*time.Minute),
+		managed.WithPollInterval(5*time.Minute),
 		managed.WithConnectionPublishers(cps...),
 		managed.WithCreationGracePeriod(creationGracePeriod))
 }

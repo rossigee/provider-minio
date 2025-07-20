@@ -1,0 +1,37 @@
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+---
+apiVersion: minio.crossplane.io/v1
+kind: ServiceAccount
+metadata:
+  name: test-serviceaccount
+spec:
+  forProvider:
+    parentUser: sa-parent-user
+    serviceAccountName: test-sa
+    policies:
+      - readwrite
+      - diagnostics
+    description: "Updated E2E test service account"
+  providerConfigRef:
+    name: provider-config
+  writeConnectionSecretToRef:
+    name: test-serviceaccount-creds
+    namespace: default
+status:
+  atProvider:
+    serviceAccountName: test-sa
+    parentUser: sa-parent-user
+  conditions:
+    - status: 'True'
+    - status: 'True'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-serviceaccount-creds
+  namespace: default
+type: connection.crossplane.io/v1alpha1
+data:
+  accessKey: dGVzdC1zYQ==

@@ -43,8 +43,8 @@ func (o *operatorCommand) execute(ctx *cli.Context) error {
 	}
 
 	// configure client-side throttling
-	cfg.QPS = 100
-	cfg.Burst = 150 // more Openshift friendly
+	cfg.QPS = 50   // Reduced from 100 to be more conservative
+	cfg.Burst = 75 // Reduced from 150 to be more conservative
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		// controller-runtime uses both ConfigMaps and Leases for leader election by default.
