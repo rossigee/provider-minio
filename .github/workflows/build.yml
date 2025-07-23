@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - master
-      - feat/add-serviceaccount-support
 
 env:
   GO_VERSION: '1.24.5'
