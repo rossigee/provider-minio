@@ -1,6 +1,6 @@
 module github.com/vshn/provider-minio
 
-go 1.24.2
+go 1.24.5
 
 require (
 	github.com/crossplane/crossplane-runtime v1.20.0
