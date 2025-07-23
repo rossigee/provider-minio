@@ -3,90 +3,135 @@ name: Release
 on:
   push:
     tags:
-      - "*"
+      - 'v*'
 
 env:
-  APP_NAME: provider-minio
-  PUSH_UPBOUND: "True"
-  PUSH_PACKAGE: "True"
-  PUSH_IMAGE: "False"
-  SUFFIX: "/controller"
+  GO_VERSION: '1.24'
+  REGISTRY: ghcr.io
 
 jobs:
-  dist:
-    runs-on: ubuntu-latest
-    steps:
+  build-and-push:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
 
-      - uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
+          submodules: true
           fetch-depth: 0
 
-      - name: Determine Go version from go.mod
-        run: echo "GO_VERSION=$(grep "go 1." go.mod | cut -d " " -f 2)" >> $GITHUB_ENV
-
-      - uses: actions/setup-go@v5
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Login to GHCR
+      - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push docker image
-        if: env.PUSH_IMAGE == 'true'
-        run: make docker-push -e IMG_TAG=${GITHUB_REF##*/} -e APP_NAME=${{ env.APP_NAME }}
-
-      - name: Build and push function package
-        if: env.PUSH_PACKAGE == 'true'
-        run: make package-push -e IMG_TAG=${GITHUB_REF##*/} -e APP_NAME=${{ env.APP_NAME }}
-
       - name: Login to Upbound
-        if: env.PUSH_UPBOUND == 'true'
         uses: docker/login-action@v3
         with:
           registry: xpkg.upbound.io
           username: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
           password: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
 
-      - name: Build branch and push package to upbound
-        if: env.PUSH_UPBOUND == 'true' && env.PUSH_PACKAGE == 'true'
-        run: make package-push -e IMG_TAG=${GITHUB_REF##*/} -e APP_NAME=${{ env.APP_NAME }} -e IMG_REPO=xpkg.upbound.io
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+
+      - name: Cache Go Dependencies
+        uses: actions/cache@v4
+        with:
+          path: .work/pkg
+          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-pkg-
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: .work/go
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Vendor Dependencies
+        run: make vendor vendor.check
+
+      - name: Build and Push Docker Images
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: make docker.publish
+
+      - name: Build and Push Package to GitHub
+        env:
+          VERSION: ${{ github.ref_name }}
+          XPKG_REG_ORGS: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+        run: make xpkg.publish
+
+      - name: Build and Push Package to Upbound
+        env:
+          VERSION: ${{ github.ref_name }}
+          XPKG_REG_ORGS: xpkg.upbound.io
+        run: make xpkg.publish
+
+  create-release:
+    runs-on: ubuntu-22.04
+    needs: build-and-push
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go Dependencies
+        uses: actions/cache@v4
+        with:
+          path: .work/pkg
+          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-pkg-
+
+      - name: Build Package for Release
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: make xpkg.build
 
       - name: Build changelog from PRs with labels
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v5
         with:
           configuration: ".github/changelog-configuration.json"
-          # PreReleases still get a changelog, but the next full release gets a diff since the last full release,
-          # combining possible changelogs of all previous PreReleases in between. PreReleases show a partial changelog
-          # since last PreRelease.
           ignorePreReleases: "${{ !contains(github.ref, '-rc') }}"
           outputFile: .github/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish releases
-        uses: goreleaser/goreleaser-action@v6
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          args: release --release-notes .github/release-notes.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONTAINER_REGISTRY: ghcr.io
-          IMAGE_NAME: ${{ github.repository }}${{ env.SUFFIX }}
+          body_path: .github/release-notes.md
+          files: |
+            _output/xpkg/*.xpkg
+          generate_release_notes: false
+          draft: false
+          prerelease: false
 
