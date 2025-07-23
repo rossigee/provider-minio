@@ -8,6 +8,7 @@
 /package/*.xpkg
 /kubeconfig
 __debug*
+_output/
 
 # Docs
 /.cache/
