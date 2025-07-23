@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
 	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -132,4 +132,3 @@ type mockUsageTracker struct {
 func (m *mockUsageTracker) Track(ctx context.Context, mg resource.Managed) error {
 	return nil
 }
-
