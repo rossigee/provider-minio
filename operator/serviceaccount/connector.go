@@ -8,7 +8,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	"github.com/minio/madmin-go/v4"
 	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
 	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
 	"github.com/vshn/provider-minio/operator/minioutil"
@@ -27,7 +26,7 @@ type connector struct {
 }
 
 type serviceAccountClient struct {
-	ma          *madmin.AdminClient
+	ma          MinioAdminClient
 	kube        client.Client
 	recorder    event.Recorder
 	url         *url.URL
