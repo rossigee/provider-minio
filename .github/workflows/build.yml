@@ -8,7 +8,7 @@ on:
       - feat/add-serviceaccount-support
 
 env:
-  GO_VERSION: '1.24'
+  GO_VERSION: '1.24.5'
 
 jobs:
   build:
