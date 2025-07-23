@@ -5,26 +5,47 @@ on:
   push:
     branches:
       - master
+      - feat/add-serviceaccount-support
+
+env:
+  GO_VERSION: '1.24'
 
 jobs:
-  go-build:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-      - name: Determine Go version from go.mod
-        run: echo "GO_VERSION=$(go mod edit -json | jq -r .Go)" >> $GITHUB_ENV
-
-      - uses: actions/setup-go@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - uses: actions/cache@v3
+      - name: Cache Go Dependencies
+        uses: actions/cache@v4
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          path: .work/pkg
+          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-pkg-
 
-      - name: Run build
-        run: make build -e IMG_TAG=${GITHUB_REF##*/}
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: .work/go
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Vendor Dependencies
+        run: make vendor vendor.check
+
+      - name: Build Artifacts
+        run: make build
+
+      - name: Build Docker Image
+        run: make docker-build
+
+      - name: Build Package
+        run: make xpkg.build
