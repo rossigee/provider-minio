@@ -1,0 +1,89 @@
+repos:
+  # Basic file and security checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      # Prevent large files and binaries (most important)
+      - id: check-added-large-files
+        args: ['--maxkb=1024']  # 1MB limit for any file
+
+      # File format checks
+      - id: check-yaml
+        exclude: ^build/
+      - id: check-json
+      - id: end-of-file-fixer
+        exclude: ^(\.secrets\.baseline|\.gitmodules)$
+      - id: trailing-whitespace
+        exclude: ^(\.secrets\.baseline)$
+
+      # Git and security
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: detect-aws-credentials
+
+  # Project-specific protections
+  - repo: local
+    hooks:
+      # Block build artifacts and binaries (CRITICAL)
+      - id: block-build-artifacts
+        name: Block build artifacts and binaries
+        entry: |+
+          Build artifacts and binaries are not allowed in git.
+          Found files that should be in .gitignore or not committed:
+        language: fail
+        files: |
+          (?x)^(
+            .*\.xpkg$|
+            .*_output/.*|
+            .*cluster/images/.*/provider-.*$|
+            .*/provider-minio$|
+            .*\.exe$|
+            .*\.dll$|
+            .*\.so$|
+            .*\.dylib$|
+            .*\.a$|
+            .*\.o$|
+            .*\.bin$
+          )
+
+      # Block sensitive files
+      - id: block-secrets
+        name: Block potential secrets and credentials
+        entry: |+
+          Potential secrets/credentials detected.
+          These file types should not be committed:
+        language: fail
+        files: |
+          (?x)^(
+            .*\.key$|
+            .*\.pem$|
+            .*\.p12$|
+            .*\.jks$|
+            .*\.keystore$|
+            .*/secrets?/.*\.ya?ml$|
+            .*/\.env.*
+          )
+
+      # Verify gitignore has essential entries
+      - id: verify-gitignore
+        name: Verify .gitignore contains essential entries
+        entry: bash
+        args:
+          - -c
+          - |
+            if ! grep -q "^_output/" .gitignore; then
+              echo "ERROR: .gitignore must contain '_output/' entry"
+              exit 1
+            fi
+            if ! grep -q "\.xpkg" .gitignore; then
+              echo "WARNING: Consider adding '*.xpkg' to .gitignore"
+            fi
+        language: system
+        pass_filenames: false
+        always_run: true
+
+# Minimal CI configuration
+ci:
+  autofix_commit_msg: '[pre-commit.ci] auto fixes from pre-commit hooks'
+  autofix_prs: true
+  autoupdate_schedule: monthly
