@@ -9,7 +9,6 @@ on:
   push:
     branches:
       - master
-      - feat/add-serviceaccount-support
     paths-ignore:
       - docs/**
 
