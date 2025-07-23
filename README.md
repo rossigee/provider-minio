@@ -14,6 +14,16 @@ Documentation: https://vshn.github.io/provider-minio/provider-minio/
 
 ## Local Development
 
+### Build System
+
+This provider uses the standard [Crossplane makelib](https://github.com/crossplane/build) build system for consistent, reproducible builds. The build system provides:
+
+- Standardized make targets across all Crossplane providers
+- Multi-architecture container image building
+- xpkg package generation for provider distribution
+- Automated testing and linting workflows
+- Consistent versioning and release processes
+
 ### Requirements
 
 * `docker`
@@ -27,19 +37,26 @@ Some other requirements (e.g. `kind`) will be compiled on-the-fly and put in the
 
 ### Common make targets
 
-* `make build` to build the binary and docker image
-* `make generate` to (re)generate additional code artifacts
-* `make test` run test suite
-* `make local-install` to install the operator in local cluster
-* `make install-samples` to run the provider in local cluster and apply sample manifests
-* `make run-operator` to run the code in operator mode against your current kubecontext
+This provider uses the standard Crossplane makelib build system. Common targets include:
 
-See all targets with `make help`
+* `make build` - Build source code and artifacts for host platform
+* `make build.all` - Build source code and artifacts for all platforms  
+* `make generate` - Run code generation
+* `make test` - Run unit tests
+* `make e2e` - Run end-to-end integration tests
+* `make lint` - Run lint and code analysis tools
+* `make xpkg.build` - Build xpkg package for distribution
+* `make publish` - Build and publish final releasable artifacts
+* `make clean` - Remove all files created during the build
+* `make reviewable` - Validate that a PR is ready for review
+
+See all available targets with `make help`
 
 ### QuickStart Demonstration
 
 1. Make sure you have a kind cluster running and the config exported
-2. `make local-install`
+2. `make build` to build the provider
+3. Apply the provider CRDs and install in your cluster
 
 ### Kubernetes Webhook Troubleshooting
 The provider comes with mutating and validation admission webhook server.
@@ -67,10 +84,10 @@ To test and troubleshoot the webhooks on the cluster, simply apply your changes 
 
 ### Run operator in debugger
 
-* `make crossplane-setup minio-setup install-crds` to install crossplane and minio in the kind cluster
-* `kubectl apply -f samples/_secret.yaml samples/minio.crossplane.io_providerconfig.yaml`
-* `EXPORT KUBECONFIG=.work/kind/kind-kubeconfig`
-* `go run . --log-level 1 operator`
+* `make build` to build the provider binary
+* Install Crossplane and required CRDs in your cluster
+* `kubectl apply -f examples/provider-config.yaml` (or similar provider config)
+* `go run . --debug` to run the provider with debug logging
 
 ### Crossplane Provider Mechanics
 
