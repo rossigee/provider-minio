@@ -4,7 +4,13 @@
 
 # Build
 /provider-minio
+cluster/images/provider-minio/provider-minio
 *.out
+*.exe
+*.bin
+*.so
+*.dylib
+*.dll
 /package/*.xpkg
 /kubeconfig
 __debug*
