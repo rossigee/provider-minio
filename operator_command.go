@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/urfave/cli/v2"
-	"github.com/vshn/provider-minio/apis"
-	"github.com/vshn/provider-minio/operator"
+	"github.com/rossigee/provider-minio/apis"
+	"github.com/rossigee/provider-minio/operator"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"

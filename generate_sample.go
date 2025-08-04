@@ -16,10 +16,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vshn/provider-minio/apis"
-	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
-	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
-	"github.com/vshn/provider-minio/operator/minioutil"
+	"github.com/rossigee/provider-minio/apis"
+	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	"github.com/rossigee/provider-minio/operator/minioutil"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -11,8 +11,8 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/vshn/provider-minio/apis/common"
-	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
+	"github.com/rossigee/provider-minio/apis/common"
+	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

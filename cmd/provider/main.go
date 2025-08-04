@@ -16,8 +16,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
-	"github.com/vshn/provider-minio/apis"
-	"github.com/vshn/provider-minio/operator"
+	"github.com/rossigee/provider-minio/apis"
+	"github.com/rossigee/provider-minio/operator"
 )
 
 func main() {

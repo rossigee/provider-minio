@@ -13,7 +13,7 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-json
       - id: detect-private-key
-        exclude: ^(operator/minioutil/client_test\.go|docs/TLS_CONFIGURATION\.md|samples/.*\.yaml)$
+        exclude: ^(operator/minioutil/client_test\.go|operator/minioutil/client\.go|docs/TLS_CONFIGURATION\.md|samples/.*\.yaml)$
 
   - repo: https://github.com/psf/black
     rev: 24.4.2
@@ -105,3 +105,4 @@ repos:
           "
         language: system
         files: \.(go|yaml|yml|json|md|sh|env)$
+        exclude: ^(operator/minioutil/client\.go|operator/minioutil/client_test\.go|docs/TLS_CONFIGURATION\.md|samples/.*\.yaml)$

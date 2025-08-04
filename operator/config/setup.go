@@ -7,7 +7,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
+	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 )
 
 // SetupController adds a controller that reconciles ProviderConfigs and tracks

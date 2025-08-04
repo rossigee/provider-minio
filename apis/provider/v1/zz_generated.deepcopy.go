@@ -5,7 +5,7 @@
 package v1
 
 import (
-	"github.com/vshn/provider-minio/apis/common"
+	"github.com/rossigee/provider-minio/apis/common"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
