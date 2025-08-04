@@ -29,8 +29,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Initialize Build System
-        run: git submodule update --init --recursive
-
       - name: Run tests (placeholder for E2E)
         run: make test
