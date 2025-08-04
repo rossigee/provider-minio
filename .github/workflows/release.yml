@@ -41,11 +41,14 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_no_v=${VERSION#v}" >> $GITHUB_OUTPUT
 
-      - name: Build and Publish
+      - name: Build
         run: |
-          # Set version for build system
-          export VERSION=${{ steps.version.outputs.version_no_v }}
-          make reviewable
+          make build
+        env:
+          VERSION: ${{ steps.version.outputs.version_no_v }}
+
+      - name: Publish
+        run: |
           make publish
         env:
           VERSION: ${{ steps.version.outputs.version_no_v }}
