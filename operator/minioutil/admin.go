@@ -2,6 +2,8 @@ package minioutil
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/minio/madmin-go/v3"
@@ -11,32 +13,38 @@ import (
 )
 
 // NewMinioAdmin returns a new minio admin client that can manage users and IAM.
-// It can be used to assign a policy to a usser.
+// It can be used to assign a policy to a user.
 func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.ProviderConfig) (*madmin.AdminClient, error) {
-
-	secret, tls, parsed, err := ExtractDataFromProviderConfig(ctx, c, config)
-	if err != nil {
-		return nil, err
-	}
-
-	return madmin.New(parsed.Host, string(secret.Data[MinioIDKey]), string(secret.Data[MinioSecretKey]), tls)
-}
-
-// this is the helper function that is used in the NewMinioClient function
-func ExtractDataFromProviderConfig(ctx context.Context, c client.Client, config *providerv1.ProviderConfig) (*corev1.Secret, bool, *url.URL, error) {
 	secret := &corev1.Secret{}
 	key := client.ObjectKey{Name: config.Spec.Credentials.APISecretRef.Name, Namespace: config.Spec.Credentials.APISecretRef.Namespace}
 	err := c.Get(ctx, key, secret)
 	if err != nil {
-		return nil, false, nil, err
+		return nil, err
 	}
 
 	parsed, err := url.Parse(config.Spec.MinioURL)
 	if err != nil {
-		return nil, false, nil, err
+		return nil, err
 	}
 
-	tls := isTLSEnabled(parsed)
+	adminClient, err := madmin.New(parsed.Host, string(secret.Data[MinioIDKey]), string(secret.Data[MinioSecretKey]), IsTLSEnabled(parsed))
+	if err != nil {
+		return nil, err
+	}
 
-	return secret, tls, parsed, nil
+	// Apply custom TLS configuration if provided
+	if config.Spec.TLS != nil {
+		tlsConfig, err := buildTLSConfig(ctx, c, config.Spec.TLS, config.Spec.Credentials.APISecretRef.Namespace)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build TLS configuration: %w", err)
+		}
+
+		// Create a custom transport with the TLS config
+		transport := &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+		adminClient.SetCustomTransport(transport)
+	}
+
+	return adminClient, nil
 }

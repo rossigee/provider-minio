@@ -58,7 +58,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	_, tls, parsed, err := minioutil.ExtractDataFromProviderConfig(ctx, c.kube, config)
+	parsed, err := url.Parse(config.Spec.MinioURL)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		kube:        c.kube,
 		recorder:    c.recorder,
 		url:         parsed,
-		tlsSettings: tls,
+		tlsSettings: minioutil.IsTLSEnabled(parsed),
 	}
 
 	return uc, nil
