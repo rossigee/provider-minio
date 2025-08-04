@@ -31,7 +31,3 @@ jobs:
 
       - name: Run tests (placeholder for E2E)
         run: make test
-
-      - name: Cleanup
-        run: make clean
-        if: always()
