@@ -220,21 +220,22 @@ jobs:
 
       - name: Build and Push to Primary Registry
         run: |
-          # Build and push to GitHub Container Registry (primary)
+          # Build packages and push to GitHub Container Registry (primary)
           echo "Repository: ${{ github.repository }}"
           echo "Repository owner: ${{ github.repository_owner }}"
+          make build
           make publish REGISTRY_ORGS="ghcr.io/${{ github.repository_owner }}" XPKG_REG_ORGS="ghcr.io/${{ github.repository_owner }}"
 
       - name: Build and Push to Harbor (Optional)
         if: env.ENABLE_HARBOR_PUBLISH == 'true'
         run: |
-          # Push to Harbor Registry
+          # Push to Harbor Registry (artifacts already built)
           make publish REGISTRY_ORGS="harbor.golder.lan/library"
 
       - name: Build and Push to Upbound Registry (Optional)
         if: env.ENABLE_UPBOUND_PUBLISH == 'true'
         run: |
-          # Push to Upbound Registry (only if token is available)
+          # Push to Upbound Registry (artifacts already built, only if token is available)
           if [ -n "$UPBOUND_TOKEN" ]; then
             make publish REGISTRY_ORGS="xpkg.upbound.io/crossplane-contrib"
           else
