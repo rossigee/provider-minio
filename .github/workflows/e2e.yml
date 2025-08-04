@@ -4,14 +4,16 @@ on:
   push:
     paths-ignore:
       - docs/**
-  # schedule:
-  #   - cron: 37 10 * * 1-5 # At 10:37 on every day-of-week from Monday through Friday
+    # schedule:
+    #   - cron: 37 10 * * 1-5 # At 10:37 on every day-of-week from Monday through Friday
 
 jobs:
   test-e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        with:
+          submodules: true
 
       - name: Determine Go version from go.mod
         run: echo "GO_VERSION=$(go mod edit -json | jq -r .Go)" >> $GITHUB_ENV
