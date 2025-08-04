@@ -1,10 +1,12 @@
 # TLS Configuration for provider-minio
 
-This document describes how to configure custom TLS settings for the MinIO provider to support secure connections with custom Certificate Authorities (CAs), self-signed certificates, and mutual TLS authentication.
+This document describes how to configure custom TLS settings for the MinIO provider to support secure connections
+with custom Certificate Authorities (CAs), self-signed certificates, and mutual TLS authentication.
 
 ## Overview
 
-The MinIO provider now supports custom TLS configuration through the `tls` field in the `ProviderConfig` specification. This allows you to:
+The MinIO provider now supports custom TLS configuration through the `tls` field in the `ProviderConfig`
+specification. This allows you to:
 
 - Connect to MinIO instances using custom or internal Certificate Authorities
 - Use self-signed certificates in testing environments
@@ -89,23 +91,28 @@ spec:
 The `tls` field is an optional object that configures TLS settings for the MinIO connection.
 
 #### `caData` (optional)
+
 - **Type**: `string`
-- **Description**: CA certificate data in PEM format for verifying the server's certificate. This is useful for self-signed certificates or private CA certificates.
+- **Description**: CA certificate data in PEM format for verifying the server's certificate.
+  This is useful for self-signed certificates or private CA certificates.
 - **Format**: PEM-encoded certificate
 
 #### `clientCertData` (optional)
+
 - **Type**: `string`
 - **Description**: Client certificate data in PEM format for mutual TLS authentication.
 - **Format**: PEM-encoded certificate
 - **Note**: Must be used together with `clientKeyData`
 
 #### `clientKeyData` (optional)
+
 - **Type**: `string`
 - **Description**: Client private key data in PEM format for mutual TLS authentication.
 - **Format**: PEM-encoded private key
 - **Note**: Must be used together with `clientCertData`
 
 #### `insecureSkipVerify` (optional)
+
 - **Type**: `boolean`
 - **Description**: Controls whether the client verifies the server's certificate chain and host name.
 - **Default**: `false`
@@ -165,7 +172,8 @@ spec:
 
 ## Security Considerations
 
-1. **Certificate Storage**: Store certificates as Kubernetes secrets and reference them in your ProviderConfig when possible.
+1. **Certificate Storage**: Store certificates as Kubernetes secrets and reference them in your ProviderConfig
+   when possible.
 2. **Private Keys**: Never commit private keys to version control. Use secret management systems.
 3. **Certificate Rotation**: Plan for certificate rotation by updating the ProviderConfig when certificates expire.
 4. **insecureSkipVerify**: Only use this option in development or testing environments.

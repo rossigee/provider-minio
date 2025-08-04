@@ -214,4 +214,3 @@ jobs:
           branch: "${{ env.APP_NAME }}/${{ github.event.pull_request.number }}/${{ steps.extract_branch.outputs.branch }}"
           message: "Update tag"
           repository: ${{ env.COMPONENT_REPO }}
-

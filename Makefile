@@ -1,134 +1,116 @@
-# Set Shell to bash, otherwise some targets fail with dash/zsh etc.
-SHELL := /bin/bash
+# Project Setup
+PROJECT_NAME := provider-minio
+PROJECT_REPO := github.com/vshn/$(PROJECT_NAME)
 
-# Disable built-in rules
-MAKEFLAGS += --no-builtin-rules
-MAKEFLAGS += --no-builtin-variables
-.SUFFIXES:
-.SECONDARY:
-.DEFAULT_GOAL := help
+PLATFORMS ?= linux_amd64 linux_arm64
+-include build/makelib/common.mk
 
-# General variables
-include Makefile.vars.mk
+# Setup Output
+-include build/makelib/output.mk
 
-# Other makefiles
-include kind/kind.mk
-include test/local.mk
--include ci.mk
+# Setup Go
+# Override golangci-lint version for modern Go support
+GOLANGCILINT_VERSION ?= 2.3.1
+NPROCS ?= 1
+GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
+GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
+GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
+GO_SUBDIRS += operator apis
+GO111MODULE = on
+-include build/makelib/golang.mk
 
-# Following includes do not print warnings or error if files aren't found
-# Optional Documentation module.
--include docs/antora-preview.mk docs/antora-build.mk
+# Setup Kubernetes tools
+UP_VERSION = v0.28.0
+UP_CHANNEL = stable
+UPTEST_VERSION = v0.11.1
+-include build/makelib/k8s_tools.mk
 
-golangci_bin = $(go_bin)/golangci-lint
+# Setup Images
+IMAGES = provider-minio
+-include build/makelib/imagelight.mk
 
-.PHONY: help
-help: ## Show this help
-	@grep -E -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+# Setup XPKG - Standardized registry configuration
+# Primary registry: GitHub Container Registry under rossigee
+XPKG_REG_ORGS ?= ghcr.io/rossigee
+XPKG_REG_ORGS_NO_PROMOTE ?= ghcr.io/rossigee
 
-.PHONY: build
-build: build-bin docker-build ## All-in-one build
+# Optional registries (can be enabled via environment variables)
+# To enable Harbor: export ENABLE_HARBOR_PUBLISH=true make publish XPKG_REG_ORGS=harbor.golder.lan/library
+# To enable Upbound: export ENABLE_UPBOUND_PUBLISH=true make publish XPKG_REG_ORGS=xpkg.upbound.io/crossplane-contrib
+XPKGS = provider-minio
+-include build/makelib/xpkg.mk
 
-.PHONY: build-bin
-build-bin: export CGO_ENABLED = 0
-build-bin: fmt vet ## Build binary
-	@go build -o $(BIN_FILENAME) .
+# NOTE: we force image building to happen prior to xpkg build so that we ensure
+# image is present in daemon.
+xpkg.build.provider-minio: do.build.images
 
-.PHONY: test
-test: test-go ## All-in-one test
+# Setup Package Metadata
+CROSSPLANE_VERSION = 1.19.0
+-include build/makelib/local.xpkg.mk
+-include build/makelib/controlplane.mk
 
-.PHONY: test-go
-test-go: ## Run unit tests against code
-	go test -race -covermode atomic ./...
+# Targets
 
-.PHONY: fmt
-fmt: ## Run 'go fmt' against code
-	go fmt ./...
+# run `make submodules` after cloning the repository for the first time.
+submodules:
+	@git submodule sync
+	@git submodule update --init --recursive
 
-.PHONY: vet
-vet: ## Run 'go vet' against code
-	go vet ./...
+# NOTE: the build submodule currently overrides XDG_CACHE_HOME in order to
+# force the Helm 3 to use the .work/helm directory. This causes Go on Linux
+# machines to use that directory as the build cache as well. We should adjust
+# this behavior in the build submodule because it is also causing Linux users
+# to duplicate their build cache, but for now we just make it easier to identify
+# its location in CI so that we cache between builds.
+go.cachedir:
+	@go env GOCACHE
 
-.PHONY: lint
-lint: generate fmt golangci-lint git-diff ## All-in-one linting
+# NOTE: we must ensure up is installed in tool cache prior to build as including the k8s_tools
+# machinery prior to the xpkg machinery sets UP to point to tool cache.
+build.init: $(UP)
 
-.PHONY: golangci-lint
-golangci-lint: $(golangci_bin) ## Run golangci linters
-	$(golangci_bin) run --timeout 5m --out-format colored-line-number ./...
+# This is for running out-of-cluster locally, and is for convenience. Running
+# this make target will print out the command which was used. For more control,
+# try running the binary directly with different arguments.
+run: go.build
+	@$(INFO) Running Crossplane locally out-of-cluster . . .
+	@# To see other arguments that can be provided, run the command with --help instead
+	$(GO_OUT_DIR)/provider --debug
 
-.PHONY: git-diff
-git-diff:
-	@echo 'Check for uncommitted changes ...'
-	git diff --exit-code
+# NOTE: we ensure up is installed prior to running platform-specific packaging steps in xpkg.build.
+xpkg.build: $(UP)
 
-.PHONY: generate
-generate: ## Generate additional code and artifacts
-	@go generate ./...
-
-.PHONY: clean
-clean: kind-clean ## Cleans local build artifacts
-	docker rmi $(IMG) || true
-	rm -rf docs/node_modules $(docs_out_dir) dist .cache $(WORK_DIR)
-
-$(golangci_bin): | $(go_bin)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(go_bin)"
-
-.PHONY: install-crd
-install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
-install-crd: generate ## Install CRDs into cluster
+# Install CRDs into a cluster
+install-crds: generate
 	kubectl apply -f package/crds
 
-.PHONY: install-samples
-install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
-install-samples: ## Install samples into cluster
+# Uninstall CRDs from a cluster
+uninstall-crds:
+	kubectl delete -f package/crds
+
+# Install samples into cluster
+install-samples:
 	kubectl apply -f ./samples/_secret.yaml
 	yq ./samples/minio*.yaml | kubectl apply -f -
 
-.PHONY: delete-samples
-delete-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
+# Delete samples from cluster
 delete-samples:
 	-yq ./samples/*.yaml | kubectl delete --ignore-not-found --wait=false -f -
 
-.PHONY: run-operator
-run-operator: ## Run in Operator mode against your current kube context
-	go run . --log-level 1 operator
+# Generate webhook certificates for out-of-cluster debugging
+webhook-cert:
+	mkdir -p .work/webhook
+	openssl req -x509 -newkey rsa:4096 -nodes -keyout .work/webhook/tls.key -out .work/webhook/tls.crt -days 3650 -subj "/CN=host.docker.internal" -addext "subjectAltName = DNS:host.docker.internal"
 
-# Generate webhook certificates.
-# This is only relevant when debugging.
-# Component-appcat installs a proper certificate for this.
-.PHONY: webhook-cert
-webhook_key = .work/webhook/tls.key
-webhook_cert = .work/webhook/tls.crt
-webhook-cert: $(webhook_cert) ## Generate webhook certificates for out-of-cluster debugging in an IDE
-
-$(webhook_key):
-	mkdir .work/webhook
-	ipsan="" && \
-	if [[ $(webhook_service_name) =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$$ ]]; then \
-		ipsan=", IP:$(webhook_service_name)"; \
-	fi; \
-	openssl req -x509 -newkey rsa:4096 -nodes -keyout $@ --noout -days 3650 -subj "/CN=$(webhook_service_name)" -addext "subjectAltName = DNS:$(webhook_service_name)$$ipsan"
-
-$(webhook_cert): $(webhook_key)
-	ipsan="" && \
-	if [[ $(webhook_service_name) =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$$ ]]; then \
-		ipsan=", IP:$(webhook_service_name)"; \
-	fi; \
-	openssl req -x509 -key $(webhook_key) -nodes -out $@ -days 3650 -subj "/CN=$(webhook_service_name)" -addext "subjectAltName = DNS:$(webhook_service_name)$$ipsan"
-
-
-.PHONY: webhook-debug
-webhook_service_name = host.docker.internal
-
-webhook-debug: $(webhook_cert) ## Creates certificates, patches the webhook registrations and applies everything to the given kube cluster
-webhook-debug:
+# Setup webhook for debugging
+webhook-debug: webhook-cert
 	kubectl apply -f package/webhook
 	cabundle=$$(cat .work/webhook/tls.crt | base64) && \
-	HOSTIP=$(webhook_service_name) && \
-	kubectl annotate validatingwebhookconfigurations.admissionregistration.k8s.io validating-webhook-configuration cert-manager.io/inject-ca-from- && \
+	HOSTIP=host.docker.internal && \
 	kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io validating-webhook-configuration -oyaml | \
 	yq e "del(.webhooks[0].clientConfig.service) | .webhooks[0].clientConfig.caBundle |= \"$$cabundle\" | .webhooks[0].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-bucket\"" - | \
 	yq e "del(.webhooks[1].clientConfig.service) | .webhooks[1].clientConfig.caBundle |= \"$$cabundle\" | .webhooks[1].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-policy\"" - | \
 	yq e "del(.webhooks[2].clientConfig.service) | .webhooks[2].clientConfig.caBundle |= \"$$cabundle\" | .webhooks[2].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-user\"" - | \
-	kubectl apply -f - && \
-	kubectl annotate validatingwebhookconfigurations.admissionregistration.k8s.io validating-webhook-configuration kubectl.kubernetes.io/last-applied-configuration-
+	kubectl apply -f -
+
+.PHONY: submodules run install-crds uninstall-crds install-samples delete-samples webhook-cert webhook-debug

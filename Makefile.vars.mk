@@ -9,6 +9,7 @@ WORK_DIR = $(PWD)/.work
 ## BUILD:go
 BIN_FILENAME ?= $(PROJECT_NAME)
 go_bin ?= $(WORK_DIR)/bin
+GOLANGCILINT_VERSION ?= 2.3.0
 $(go_bin):
 	@mkdir -p $@
 
