@@ -88,10 +88,8 @@ jobs:
 
       - name: Install Crossplane CLI
         run: |
-          CLI_PATH=".cache/tools/linux_x86_64/crossplane-cli-v1.20.0"
-          mkdir -p "$(dirname "$CLI_PATH")"
-          curl -fsSL "https://releases.crossplane.io/stable/v1.20.0/bin/linux_amd64/crank" -o "$CLI_PATH"
-          chmod +x "$CLI_PATH"
+          CROSSPLANE_CLI_PATH=$(make build.vars | grep CROSSPLANE_CLI= | cut -d= -f2)
+          make "$CROSSPLANE_CLI_PATH"
 
       # Lint
       - name: Lint
@@ -202,10 +200,8 @@ jobs:
 
       - name: Install Crossplane CLI
         run: |
-          CLI_PATH=".cache/tools/linux_x86_64/crossplane-cli-v1.20.0"
-          mkdir -p "$(dirname "$CLI_PATH")"
-          curl -fsSL "https://releases.crossplane.io/stable/v1.20.0/bin/linux_amd64/crank" -o "$CLI_PATH"
-          chmod +x "$CLI_PATH"
+          CROSSPLANE_CLI_PATH=$(make build.vars | grep CROSSPLANE_CLI= | cut -d= -f2)
+          make "$CROSSPLANE_CLI_PATH"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
