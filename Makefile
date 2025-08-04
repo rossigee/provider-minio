@@ -1,6 +1,6 @@
 # Project Setup
 PROJECT_NAME := provider-minio
-PROJECT_REPO := github.com/vshn/$(PROJECT_NAME)
+PROJECT_REPO := github.com/rossigee/$(PROJECT_NAME)
 
 PLATFORMS ?= linux_amd64 linux_arm64
 -include build/makelib/common.mk
