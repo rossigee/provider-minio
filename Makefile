@@ -49,6 +49,9 @@ CROSSPLANE_VERSION = 1.19.0
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk
 
+# Setup Documentation
+-include docs/antora-build.mk
+
 # Targets
 
 # run `make submodules` after cloning the repository for the first time.
