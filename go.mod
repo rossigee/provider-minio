@@ -1,10 +1,9 @@
 module github.com/vshn/provider-minio
 
-go 1.23
-
-toolchain go1.24.0
+go 1.24.5
 
 require (
+	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/crossplane/crossplane-runtime v1.18.0
 	github.com/crossplane/crossplane-tools v0.0.0-20240522174801-1ad3d4c87f21
 	github.com/go-logr/logr v1.4.2
@@ -26,7 +25,6 @@ require (
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
-	github.com/alecthomas/kingpin/v2 v2.4.0 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect

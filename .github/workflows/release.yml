@@ -3,90 +3,84 @@ name: Release
 on:
   push:
     tags:
-      - "*"
+      - 'v*'
 
 env:
-  APP_NAME: provider-minio
-  PUSH_UPBOUND: "True"
-  PUSH_PACKAGE: "True"
-  PUSH_IMAGE: "False"
-  SUFFIX: "/controller"
+  GO_VERSION: '1.24.5'
 
 jobs:
-  dist:
-    runs-on: ubuntu-latest
-    steps:
+  build-and-release:
+    runs-on: ubuntu-24.04
 
-      - uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: true
 
-      - name: Determine Go version from go.mod
-        run: echo "GO_VERSION=$(grep "go 1." go.mod | cut -d " " -f 2)" >> $GITHUB_ENV
-
-      - uses: actions/setup-go@v5
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Login to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
 
-      - name: Push docker image
-        if: env.PUSH_IMAGE == 'true'
-        run: make docker-push -e IMG_TAG=${GITHUB_REF##*/} -e APP_NAME=${{ env.APP_NAME }}
+      - name: Get Version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_no_v=${VERSION#v}" >> $GITHUB_OUTPUT
 
-      - name: Build and push function package
-        if: env.PUSH_PACKAGE == 'true'
-        run: make package-push -e IMG_TAG=${GITHUB_REF##*/} -e APP_NAME=${{ env.APP_NAME }}
+      - name: Build and Package
+        run: |
+          make generate
+          make build-bin
+          make docker-build
+          make xpkg-build
 
-      - name: Login to Upbound
-        if: env.PUSH_UPBOUND == 'true'
-        uses: docker/login-action@v3
+      - name: Build and Push Docker Images
+        run: |
+          # Build and push to GitHub Container Registry
+          docker tag ghcr.io/rossigee/provider-minio:latest ghcr.io/rossigee/provider-minio:${{ steps.version.outputs.version_no_v }}
+          docker push ghcr.io/rossigee/provider-minio:${{ steps.version.outputs.version_no_v }}
+          docker push ghcr.io/rossigee/provider-minio:latest
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # Simple changelog generation
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "## Changes since $PREVIOUS_TAG" > changelog.txt
+            git log --oneline $PREVIOUS_TAG..HEAD >> changelog.txt
+          else
+            echo "## Initial Release" > changelog.txt
+            echo "First release of provider-minio for Crossplane" >> changelog.txt
+            echo "" >> changelog.txt
+            echo "### Features" >> changelog.txt
+            echo "- MinIO object storage management" >> changelog.txt
+            echo "- Bucket creation and configuration" >> changelog.txt
+            echo "- User and access key management" >> changelog.txt
+            echo "- Policy management and assignment" >> changelog.txt
+            echo "- GitOps-ready S3-compatible storage management" >> changelog.txt
+          fi
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
         with:
-          registry: xpkg.upbound.io
-          username: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
-          password: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
-
-      - name: Build branch and push package to upbound
-        if: env.PUSH_UPBOUND == 'true' && env.PUSH_PACKAGE == 'true'
-        run: make package-push -e IMG_TAG=${GITHUB_REF##*/} -e APP_NAME=${{ env.APP_NAME }} -e IMG_REPO=xpkg.upbound.io
-
-      - name: Build changelog from PRs with labels
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v5
-        with:
-          configuration: ".github/changelog-configuration.json"
-          # PreReleases still get a changelog, but the next full release gets a diff since the last full release,
-          # combining possible changelogs of all previous PreReleases in between. PreReleases show a partial changelog
-          # since last PreRelease.
-          ignorePreReleases: "${{ !contains(github.ref, '-rc') }}"
-          outputFile: .github/release-notes.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish releases
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          args: release --release-notes .github/release-notes.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONTAINER_REGISTRY: ghcr.io
-          IMAGE_NAME: ${{ github.repository }}${{ env.SUFFIX }}
-
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: changelog.txt
+          files: _output/provider-minio.xpkg
+          draft: false
+          prerelease: false
