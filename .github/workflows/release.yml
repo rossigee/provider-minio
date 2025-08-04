@@ -41,19 +41,14 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_no_v=${VERSION#v}" >> $GITHUB_OUTPUT
 
-      - name: Build and Package
+      - name: Build and Publish
         run: |
-          make generate
-          make build-bin
-          make docker-build
-          make xpkg-build
-
-      - name: Build and Push Docker Images
-        run: |
-          # Build and push to GitHub Container Registry
-          docker tag ghcr.io/rossigee/provider-minio:latest ghcr.io/rossigee/provider-minio:${{ steps.version.outputs.version_no_v }}
-          docker push ghcr.io/rossigee/provider-minio:${{ steps.version.outputs.version_no_v }}
-          docker push ghcr.io/rossigee/provider-minio:latest
+          # Set version for build system
+          export VERSION=${{ steps.version.outputs.version_no_v }}
+          make reviewable
+          make publish
+        env:
+          VERSION: ${{ steps.version.outputs.version_no_v }}
 
       - name: Generate Changelog
         id: changelog
@@ -81,6 +76,6 @@ jobs:
         with:
           name: Release ${{ steps.version.outputs.version }}
           body_path: changelog.txt
-          files: _output/provider-minio.xpkg
+          files: _output/xpkg/*.xpkg
           draft: false
           prerelease: false
