@@ -8,7 +8,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/minio-go/v7"
-	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
+	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 

@@ -1,10 +1,10 @@
 package operator
 
 import (
-	"github.com/vshn/provider-minio/operator/bucket"
-	"github.com/vshn/provider-minio/operator/config"
-	"github.com/vshn/provider-minio/operator/policy"
-	"github.com/vshn/provider-minio/operator/user"
+	"github.com/rossigee/provider-minio/operator/bucket"
+	"github.com/rossigee/provider-minio/operator/config"
+	"github.com/rossigee/provider-minio/operator/policy"
+	"github.com/rossigee/provider-minio/operator/user"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

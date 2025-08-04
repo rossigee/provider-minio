@@ -1,4 +1,4 @@
-module github.com/vshn/provider-minio
+module github.com/rossigee/provider-minio
 
 go 1.24.5
 

@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/vshn/provider-minio/apis/common"
+	"github.com/rossigee/provider-minio/apis/common"
 )
 
 // A ProviderConfigSpec defines the desired state of a ProviderConfig.

@@ -2,10 +2,10 @@
 package apis
 
 import (
-	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
+	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
+	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 )
 
 // AddToSchemes may be used to add all resources defined in the project to a Scheme

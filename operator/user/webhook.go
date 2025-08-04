@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
-	providerv1 "github.com/vshn/provider-minio/apis/provider/v1"
-	"github.com/vshn/provider-minio/operator/minioutil"
+	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	"github.com/rossigee/provider-minio/operator/minioutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"

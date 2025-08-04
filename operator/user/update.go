@@ -9,7 +9,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 
-	miniov1 "github.com/vshn/provider-minio/apis/minio/v1"
+	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	k8svi "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
