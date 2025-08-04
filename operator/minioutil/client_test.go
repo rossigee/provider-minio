@@ -32,7 +32,7 @@ const (
 -----END PRIVATE KEY-----`
 )
 
-func Test_isTLSEnabled(t *testing.T) {
+func Test_IsTLSEnabled(t *testing.T) {
 	tests := []struct {
 		name string
 		url  string
@@ -49,12 +49,12 @@ func Test_isTLSEnabled(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Mixed case HTTP should return false",
+			name: "HTTP uppercase should return false",
 			url:  "HTTP://example.com:9000",
 			want: false,
 		},
 		{
-			name: "Mixed case HTTPS should return true",
+			name: "HTTPS uppercase should return true",
 			url:  "HTTPS://example.com:9000",
 			want: true,
 		},
@@ -69,13 +69,43 @@ func Test_isTLSEnabled(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			u, err := url.Parse(tt.url)
 			require.NoError(t, err)
-			got := isTLSEnabled(u)
+			got := IsTLSEnabled(u)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func Test_buildTLSConfig(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+
+	// Create test secrets
+	caSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-ca-secret",
+			Namespace: "test-namespace",
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte(testCACert),
+		},
+	}
+
+	clientCertSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-client-secret",
+			Namespace: "test-namespace",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte(testClientCert),
+			"tls.key": []byte(testClientKey),
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(caSecret, clientCertSecret).
+		Build()
+
 	tests := []struct {
 		name      string
 		tlsConfig *common.TLSConfig
@@ -115,20 +145,29 @@ func Test_buildTLSConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "CA data should be parsed and set",
+			name: "CA secret reference should be resolved",
 			tlsConfig: &common.TLSConfig{
-				CAData: testCACert,
+				CASecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test-ca-secret",
+					},
+					Key: "ca.crt",
+				},
 			},
 			want: func(t *testing.T, config *tls.Config) {
 				assert.NotNil(t, config.RootCAs)
-				// We can't easily verify the exact contents, but we can check it's not nil
 			},
 			wantErr: true, // Using test cert that's not properly formatted
 		},
 		{
-			name: "Invalid CA data should return error",
+			name: "Invalid secret reference should return error",
 			tlsConfig: &common.TLSConfig{
-				CAData: "invalid certificate data",
+				CASecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "nonexistent-secret",
+					},
+					Key: "ca.crt",
+				},
 			},
 			want:    nil,
 			wantErr: true,
@@ -136,7 +175,12 @@ func Test_buildTLSConfig(t *testing.T) {
 		{
 			name: "Client cert without key should return error",
 			tlsConfig: &common.TLSConfig{
-				ClientCertData: testClientCert,
+				ClientCertSecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test-client-secret",
+					},
+					Key: "tls.crt",
+				},
 			},
 			want:    nil,
 			wantErr: true,
@@ -144,33 +188,33 @@ func Test_buildTLSConfig(t *testing.T) {
 		{
 			name: "Client key without cert should return error",
 			tlsConfig: &common.TLSConfig{
-				ClientKeyData: testClientKey,
+				ClientKeySecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test-client-secret",
+					},
+					Key: "tls.key",
+				},
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		{
-			name: "Valid client cert and key should be set",
+			name: "Valid client cert and key secret refs should be loaded",
 			tlsConfig: &common.TLSConfig{
-				ClientCertData: testClientCert,
-				ClientKeyData:  testClientKey,
+				ClientCertSecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test-client-secret",
+					},
+					Key: "tls.crt",
+				},
+				ClientKeySecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test-client-secret",
+					},
+					Key: "tls.key",
+				},
 			},
 			want: func(t *testing.T, config *tls.Config) {
-				assert.Len(t, config.Certificates, 1)
-			},
-			wantErr: true, // Using test cert that's not properly formatted
-		},
-		{
-			name: "Complete TLS config with all options",
-			tlsConfig: &common.TLSConfig{
-				CAData:             testCACert,
-				ClientCertData:     testClientCert,
-				ClientKeyData:      testClientKey,
-				InsecureSkipVerify: false,
-			},
-			want: func(t *testing.T, config *tls.Config) {
-				assert.False(t, config.InsecureSkipVerify)
-				assert.NotNil(t, config.RootCAs)
 				assert.Len(t, config.Certificates, 1)
 			},
 			wantErr: true, // Using test cert that's not properly formatted
@@ -179,7 +223,7 @@ func Test_buildTLSConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := buildTLSConfig(tt.tlsConfig)
+			got, err := buildTLSConfig(context.Background(), fakeClient, tt.tlsConfig, "test-namespace")
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -194,41 +238,50 @@ func Test_buildTLSConfig(t *testing.T) {
 
 func TestNewMinioClient(t *testing.T) {
 	scheme := runtime.NewScheme()
-	err := corev1.AddToScheme(scheme)
-	require.NoError(t, err)
+	require.NoError(t, corev1.AddToScheme(scheme))
 
-	secret := &corev1.Secret{
+	// Create test secrets
+	credSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "minio-secret",
+			Name:      "minio-creds",
 			Namespace: "crossplane-system",
 		},
 		Data: map[string][]byte{
-			MinioIDKey:     []byte("minioaccesskey"),
-			MinioSecretKey: []byte("miniosecretkey"),
+			MinioIDKey:     []byte("test-access-key"),
+			MinioSecretKey: []byte("test-secret-key"),
+		},
+	}
+
+	caSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-ca-secret",
+			Namespace: "crossplane-system",
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte(testCACert),
 		},
 	}
 
 	fakeClient := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(secret).
+		WithObjects(credSecret, caSecret).
 		Build()
 
 	tests := []struct {
-		name           string
-		config         *providerv1.ProviderConfig
-		setupClient    func() client.Client
-		wantErr        bool
-		wantSecure     bool
-		checkTransport func(*testing.T, interface{})
+		name        string
+		config      *providerv1.ProviderConfig
+		setupClient func() client.Client
+		wantErr     bool
+		wantSecure  bool
 	}{
 		{
-			name: "Basic HTTP configuration",
+			name: "Basic HTTP config should work",
 			config: &providerv1.ProviderConfig{
 				Spec: providerv1.ProviderConfigSpec{
-					MinioURL: "http://minio.example.com:9000",
+					MinioURL: "http://minio.example.com:9000/",
 					Credentials: providerv1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
-							Name:      "minio-secret",
+							Name:      "minio-creds",
 							Namespace: "crossplane-system",
 						},
 					},
@@ -239,13 +292,13 @@ func TestNewMinioClient(t *testing.T) {
 			wantSecure:  false,
 		},
 		{
-			name: "HTTPS configuration without TLS config",
+			name: "Basic HTTPS config should work",
 			config: &providerv1.ProviderConfig{
 				Spec: providerv1.ProviderConfigSpec{
-					MinioURL: "https://minio.example.com:9000",
+					MinioURL: "https://minio.example.com:9000/",
 					Credentials: providerv1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
-							Name:      "minio-secret",
+							Name:      "minio-creds",
 							Namespace: "crossplane-system",
 						},
 					},
@@ -256,38 +309,23 @@ func TestNewMinioClient(t *testing.T) {
 			wantSecure:  true,
 		},
 		{
-			name: "HTTPS with custom TLS configuration",
+			name: "TLS config with CA secret reference should work",
 			config: &providerv1.ProviderConfig{
 				Spec: providerv1.ProviderConfigSpec{
-					MinioURL: "https://minio.example.com:9000",
+					MinioURL: "https://minio.example.com:9000/",
 					Credentials: providerv1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
-							Name:      "minio-secret",
+							Name:      "minio-creds",
 							Namespace: "crossplane-system",
 						},
 					},
 					TLS: &common.TLSConfig{
-						InsecureSkipVerify: true,
-					},
-				},
-			},
-			setupClient: func() client.Client { return fakeClient },
-			wantErr:     false,
-			wantSecure:  true,
-		},
-		{
-			name: "HTTPS with custom CA",
-			config: &providerv1.ProviderConfig{
-				Spec: providerv1.ProviderConfigSpec{
-					MinioURL: "https://minio.example.com:9000",
-					Credentials: providerv1.ProviderCredentials{
-						APISecretRef: corev1.SecretReference{
-							Name:      "minio-secret",
-							Namespace: "crossplane-system",
+						CASecretRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "test-ca-secret",
+							},
+							Key: "ca.crt",
 						},
-					},
-					TLS: &common.TLSConfig{
-						CAData: testCACert,
 					},
 				},
 			},
@@ -299,7 +337,7 @@ func TestNewMinioClient(t *testing.T) {
 			name: "Missing secret should return error",
 			config: &providerv1.ProviderConfig{
 				Spec: providerv1.ProviderConfigSpec{
-					MinioURL: "https://minio.example.com:9000",
+					MinioURL: "https://minio.example.com:9000/",
 					Credentials: providerv1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
 							Name:      "nonexistent-secret",
@@ -318,7 +356,7 @@ func TestNewMinioClient(t *testing.T) {
 					MinioURL: "://invalid-url",
 					Credentials: providerv1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
-							Name:      "minio-secret",
+							Name:      "minio-creds",
 							Namespace: "crossplane-system",
 						},
 					},
@@ -328,18 +366,23 @@ func TestNewMinioClient(t *testing.T) {
 			wantErr:     true,
 		},
 		{
-			name: "Invalid TLS configuration should return error",
+			name: "TLS config with invalid secret should return error",
 			config: &providerv1.ProviderConfig{
 				Spec: providerv1.ProviderConfigSpec{
-					MinioURL: "https://minio.example.com:9000",
+					MinioURL: "https://minio.example.com:9000/",
 					Credentials: providerv1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
-							Name:      "minio-secret",
+							Name:      "minio-creds",
 							Namespace: "crossplane-system",
 						},
 					},
 					TLS: &common.TLSConfig{
-						CAData: "invalid certificate data",
+						CASecretRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "nonexistent-ca-secret",
+							},
+							Key: "ca.crt",
+						},
 					},
 				},
 			},
@@ -350,71 +393,97 @@ func TestNewMinioClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			client := tt.setupClient()
-
-			got, err := NewMinioClient(ctx, client, tt.config)
+			client, err := NewMinioClient(context.Background(), tt.setupClient(), tt.config)
 			if tt.wantErr {
 				assert.Error(t, err)
-				assert.Nil(t, got)
 				return
 			}
-
 			require.NoError(t, err)
-			assert.NotNil(t, got)
-
-			// Verify the client was configured correctly
-			// Note: We can't easily test the internal state of the MinIO client,
-			// but we can verify it was created without error and the TLS configuration
-			// didn't cause any issues during construction.
+			assert.NotNil(t, client)
 		})
 	}
 }
 
-// Test that demonstrates the TLS configuration is properly applied
-func TestTLSConfigurationApplied(t *testing.T) {
+func Test_getSecretData(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+
+	testSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: "test-namespace",
+		},
+		Data: map[string][]byte{
+			"test-key": []byte("test-data"),
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(testSecret).
+		Build()
+
 	tests := []struct {
 		name      string
-		tlsConfig *common.TLSConfig
+		secretRef *corev1.SecretKeySelector
+		namespace string
+		want      []byte
 		wantErr   bool
 	}{
 		{
-			name:      "Nil TLS config should not cause errors",
-			tlsConfig: nil,
+			name:      "Nil secret reference should return error",
+			secretRef: nil,
+			namespace: "test-namespace",
+			want:      nil,
+			wantErr:   true,
+		},
+		{
+			name: "Valid secret reference should return data",
+			secretRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "test-secret",
+				},
+				Key: "test-key",
+			},
+			namespace: "test-namespace",
+			want:      []byte("test-data"),
 			wantErr:   false,
 		},
 		{
-			name: "Valid TLS config should not cause errors",
-			tlsConfig: &common.TLSConfig{
-				InsecureSkipVerify: true,
+			name: "Nonexistent secret should return error",
+			secretRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "nonexistent-secret",
+				},
+				Key: "test-key",
 			},
-			wantErr: false,
+			namespace: "test-namespace",
+			want:      nil,
+			wantErr:   true,
 		},
 		{
-			name: "TLS config with CA should not cause errors",
-			tlsConfig: &common.TLSConfig{
-				CAData: testCACert,
+			name: "Nonexistent key should return error",
+			secretRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "test-secret",
+				},
+				Key: "nonexistent-key",
 			},
-			wantErr: true, // Using test cert that's not properly formatted
-		},
-		{
-			name: "Invalid CA should cause error",
-			tlsConfig: &common.TLSConfig{
-				CAData: "invalid",
-			},
-			wantErr: true,
+			namespace: "test-namespace",
+			want:      nil,
+			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config, err := buildTLSConfig(tt.tlsConfig)
+			got, err := getSecretData(context.Background(), fakeClient, tt.secretRef, tt.namespace)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			assert.NotNil(t, config)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

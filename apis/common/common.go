@@ -15,20 +15,30 @@ limitations under the License.
 // +kubebuilder:object:generate=true
 package common
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 // TLSConfig represents the TLS configuration for MinIO connections.
 type TLSConfig struct {
-	// CAData contains the CA certificate data in PEM format for verifying the server's certificate.
-	// This is useful for self-signed certificates or private CA certificates.
-	CAData string `json:"caData,omitempty"`
+	// CASecretRef references a Kubernetes Secret or ConfigMap containing the CA certificate.
+	// The referenced secret should contain the CA certificate in PEM format.
+	// +optional
+	CASecretRef *corev1.SecretKeySelector `json:"caSecretRef,omitempty"`
 
-	// ClientCertData contains the client certificate data in PEM format for mutual TLS authentication.
-	ClientCertData string `json:"clientCertData,omitempty"`
+	// ClientCertSecretRef references a Kubernetes Secret containing the client certificate.
+	// The referenced secret should contain the client certificate in PEM format.
+	// +optional
+	ClientCertSecretRef *corev1.SecretKeySelector `json:"clientCertSecretRef,omitempty"`
 
-	// ClientKeyData contains the client private key data in PEM format for mutual TLS authentication.
-	ClientKeyData string `json:"clientKeyData,omitempty"`
+	// ClientKeySecretRef references a Kubernetes Secret containing the client private key.
+	// The referenced secret should contain the client private key in PEM format.
+	// +optional
+	ClientKeySecretRef *corev1.SecretKeySelector `json:"clientKeySecretRef,omitempty"`
 
 	// InsecureSkipVerify controls whether the client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, crypto/tls accepts any certificate presented by the server
 	// and any host name in that certificate. This should be used only for testing.
+	// +optional
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 }
