@@ -16,7 +16,6 @@ permissions:
   packages: write
   id-token: write
   actions: read
-  pull-requests: read
 
 env:
   GO_VERSION: '1.24.5'
@@ -42,19 +41,7 @@ jobs:
           paths_ignore: '["**.md", "**.png", "**.jpg"]'
           do_not_skip: '["workflow_dispatch", "schedule", "push"]'
 
-  # PR-specific: Check labels
-  check-labels:
-    if: github.event_name == 'pull_request' && github.event.pull_request.number != 0
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check required labels
-        uses: docker://agilepathway/pull-request-label-checker:v1.6.51
-        with:
-          one_of: major,minor,patch,documentation,dependency
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-
-  # Main CI pipeline
-  ci-pipeline:
+  lint:
     runs-on: ubuntu-24.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
@@ -70,32 +57,89 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Cache Go modules
-        uses: actions/cache@v4
+      - name: Vendor Dependencies
+        run: go mod vendor
+
+      - name: Lint
+        run: make lint
+
+  check-diff:
+    runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Vendor Dependencies
         run: go mod vendor
 
-      # Lint
-      - name: Lint
-        run: make lint
-
-      # Code generation check
       - name: Check Diff
         run: |
           make reviewable
           git diff --exit-code
 
-      # Unit Tests
-      - name: Run Unit Tests
-        run: make test
+  unit-tests:
+    runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
 
-      # Security Scan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vendor Dependencies
+        run: go mod vendor
+
+      - name: Run Unit Tests
+        run: |
+          make test
+
+      - name: Upload Coverage Reports
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.out
+          verbose: true
+
+  security-scan:
+    runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vendor Dependencies
+        run: go mod vendor
+
       - name: Run Go Vulnerability Check
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -122,50 +166,10 @@ jobs:
           sarif_file: gosec-results.sarif
           category: gosec
 
-      - name: Upload Coverage Reports
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.out
-          verbose: true
-
-  # Branch builds for PRs
-  build-branch:
-    runs-on: ubuntu-24.04
-    needs: [ci-pipeline]
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Extract branch name
-        shell: bash
-        run: echo "branch=$(echo ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}} | sed 's/\//_/g' )" >> $GITHUB_OUTPUT
-        id: extract_branch
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push branch package
-        run: make package-push-branchtag -e IMG_TAG="${{ steps.extract_branch.outputs.branch }}"
-
-  # Production publishing (only on push to master)
   publish-artifacts:
     runs-on: ubuntu-24.04
-    needs: [ci-pipeline]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: [lint, check-diff, unit-tests, security-scan]
+    if: github.ref == 'refs/heads/master'
     permissions:
       contents: read
       packages: write
