@@ -60,6 +60,9 @@ jobs:
       - name: Vendor Dependencies
         run: go mod vendor
 
+      - name: Initialize Build System
+        run: git submodule update --init --recursive
+
       - name: Lint
         run: make lint
 
@@ -81,6 +84,9 @@ jobs:
 
       - name: Vendor Dependencies
         run: go mod vendor
+
+      - name: Initialize Build System
+        run: git submodule update --init --recursive
 
       - name: Check Diff
         run: |
