@@ -27,6 +27,8 @@ UPTEST_VERSION = v0.11.1
 
 # Setup Images
 IMAGES = provider-minio
+# Force registry override (can be overridden by make command arguments)
+REGISTRY_ORGS = ghcr.io/rossigee
 -include build/makelib/imagelight.mk
 
 # Setup XPKG - Standardized registry configuration
