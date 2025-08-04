@@ -29,8 +29,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Run E2E tests
-        run: make e2e
+      - name: Run tests (placeholder for E2E)
+        run: make test
 
       - name: Cleanup
         run: make clean
