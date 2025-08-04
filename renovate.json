@@ -40,6 +40,12 @@
       "schedule": [
         "on the first day of the month"
       ]
+    },
+    {
+      "matchPackageNames": [
+        "github.com/crossplane/crossplane-tools"
+      ],
+      "enabled": false
     }
   ]
 }
