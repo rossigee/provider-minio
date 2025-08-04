@@ -52,9 +52,9 @@ jobs:
 
       - name: Install Crossplane CLI
         run: |
-          CLI_PATH=".cache/tools/$(uname -s)_$(uname -m | sed 's/x86_64/amd64/')/crossplane-cli-v1.20.0"
+          CLI_PATH=".cache/tools/linux_x86_64/crossplane-cli-v1.20.0"
           mkdir -p "$(dirname "$CLI_PATH")"
-          curl -fsSL "https://releases.crossplane.io/stable/v1.20.0/bin/$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/')/crank" -o "$CLI_PATH"
+          curl -fsSL "https://releases.crossplane.io/stable/v1.20.0/bin/linux_amd64/crank" -o "$CLI_PATH"
           chmod +x "$CLI_PATH"
 
       - name: Build
