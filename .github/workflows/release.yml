@@ -49,6 +49,13 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_no_v=${VERSION#v}" >> $GITHUB_OUTPUT
 
+      - name: Install Crossplane CLI
+        run: |
+          CLI_PATH=".cache/tools/$(uname -s)_$(uname -m | sed 's/x86_64/amd64/')/crossplane-cli-v1.20.0"
+          mkdir -p "$(dirname "$CLI_PATH")"
+          curl -fsSL "https://releases.crossplane.io/stable/v1.20.0/bin/$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/')/crank" -o "$CLI_PATH"
+          chmod +x "$CLI_PATH"
+
       - name: Build
         run: |
           make build
