@@ -1,13 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
-	"math/big"
-	"net"
 	"os"
 	"path/filepath"
 	"time"
@@ -27,84 +20,6 @@ import (
 	"github.com/rossigee/provider-minio/apis"
 	"github.com/rossigee/provider-minio/operator"
 )
-
-// generateSelfSignedCerts creates self-signed TLS certificates for the webhook server
-func generateSelfSignedCerts(certDir string) error {
-	certPath := filepath.Join(certDir, "tls.crt")
-	keyPath := filepath.Join(certDir, "tls.key")
-
-	// Check if certificates already exist
-	if _, err := os.Stat(certPath); err == nil {
-		if _, err := os.Stat(keyPath); err == nil {
-			return nil // Certificates already exist
-		}
-	}
-
-	// Create certificate directory
-	if err := os.MkdirAll(certDir, 0755); err != nil {
-		return err
-	}
-
-	// Generate private key
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return err
-	}
-
-	// Create certificate template
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization:  []string{"Crossplane"},
-			Country:       []string{"US"},
-			Province:      []string{""},
-			Locality:      []string{""},
-			StreetAddress: []string{""},
-			PostalCode:    []string{""},
-		},
-		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
-		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1)},
-		DNSNames:    []string{"localhost", "provider-minio.crossplane-system.svc", "provider-minio.crossplane-system.svc.cluster.local"},
-	}
-
-	// Generate certificate
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
-	if err != nil {
-		return err
-	}
-
-	// Write certificate
-	certOut, err := os.Create(certPath)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = certOut.Close() }()
-
-	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
-		return err
-	}
-
-	// Write private key
-	keyOut, err := os.Create(keyPath)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = keyOut.Close() }()
-
-	privateKeyDER, err := x509.MarshalPKCS8PrivateKey(privateKey)
-	if err != nil {
-		return err
-	}
-
-	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKeyDER}); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func main() {
 	var (
@@ -131,10 +46,8 @@ func main() {
 	cfg, err := ctrl.GetConfig()
 	kingpin.FatalIfError(err, "Cannot get API server rest config")
 
-	// Generate self-signed certificates for webhook server
-	certDir := "/tmp/k8s-webhook-server/serving-certs"
-	kingpin.FatalIfError(generateSelfSignedCerts(certDir), "Cannot generate webhook certificates")
-	log.Info("Webhook certificates generated", "certDir", certDir)
+	// Use cert-manager issued certificate for webhook server
+	log.Info("Using cert-manager issued certificate for webhook server")
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		LeaderElection:   *leaderElect,
@@ -145,7 +58,10 @@ func main() {
 		LeaderElectionResourceLock: resourcelock.LeasesResourceLock,
 		LeaseDuration:              func() *time.Duration { d := 60 * time.Second; return &d }(),
 		RenewDeadline:              func() *time.Duration { d := 50 * time.Second; return &d }(),
-		WebhookServer:              &webhook.DefaultServer{Options: webhook.Options{Port: 9443}},
+		WebhookServer: &webhook.DefaultServer{Options: webhook.Options{
+			Port:    9443,
+			CertDir: "/tmp/k8s-webhook-server/serving-certs",
+		}},
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
 
