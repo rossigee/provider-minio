@@ -66,6 +66,8 @@ jobs:
           make publish
         env:
           VERSION: ${{ steps.version.outputs.version_no_v }}
+          REGISTRY_ORGS: ghcr.io/${{ github.repository_owner }}
+          XPKG_REG_ORGS: ghcr.io/${{ github.repository_owner }}
 
       - name: Generate Changelog
         id: changelog
