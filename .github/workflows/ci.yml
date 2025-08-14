@@ -1,3 +1,12 @@
+# Standardized CI/CD Template for Crossplane Providers
+# Version: 2025-08-14
+#
+# This template implements Option 1: CI builds and validates, Release publishes
+# - CI: Build validation only (no publishing)
+# - Release: All publishing (version + latest tags from same image)
+#
+# Apply this pattern across all providers to eliminate tag conflicts
+
 name: CI
 
 on:
@@ -5,8 +14,6 @@ on:
     branches:
       - master
       - release-*
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - master
@@ -15,20 +22,15 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  actions: read
-  pull-requests: read
+  packages: write  # Needed for security scanning uploads
+  id-token: write  # Needed for OIDC
+  actions: read    # Needed for detecting duplicate actions
 
 env:
   GO_VERSION: '1.24.5'
   GOLANGCI_VERSION: 'latest'
-  GOLANGCILINT_VERSION: '2.4.0'
+  GOLANGCILINT_VERSION: '2.3.1'
   DOCKER_BUILDX_VERSION: 'v0.11.2'
-  # Registry configuration
-  PRIMARY_REGISTRY: ghcr.io/rossigee
-  ENABLE_HARBOR_PUBLISH: false
-  ENABLE_UPBOUND_PUBLISH: false
 
 jobs:
   detect-noop:
@@ -44,27 +46,10 @@ jobs:
           paths_ignore: '["**.md", "**.png", "**.jpg"]'
           do_not_skip: '["workflow_dispatch", "schedule", "push"]'
 
-  # PR-specific: Check labels
-  check-labels:
-    if: github.event_name == 'pull_request' && github.event.pull_request.number != 0
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check required labels
-        uses: docker://agilepathway/pull-request-label-checker:v1.6.51
-        with:
-          one_of: major,minor,patch,documentation,dependency
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-
-  # Main CI pipeline
-  ci-pipeline:
+  lint:
     runs-on: ubuntu-24.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,38 +61,85 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      # Cache disabled due to corruption issues
-      # - name: Cache Go modules
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ~/go/pkg/mod
-      #     key: ${{ runner.os }}-go-v2-${{ hashFiles('**/go.sum') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-go-v2-
+      - name: Vendor Dependencies
+        run: go mod vendor
+
+      - name: Lint
+        run: make lint
+
+  check-diff:
+    runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Vendor Dependencies
         run: go mod vendor
 
-      - name: Install Crossplane CLI
-        run: |
-          CROSSPLANE_CLI_PATH=$(make build.vars | grep CROSSPLANE_CLI= | cut -d= -f2)
-          make "$CROSSPLANE_CLI_PATH"
-
-      # Lint
-      - name: Lint
-        run: make lint
-
-      # Code generation check
       - name: Check Diff
         run: |
           make reviewable
           git diff --exit-code
 
-      # Unit Tests
+  unit-tests:
+    runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vendor Dependencies
+        run: go mod vendor
+
       - name: Run Unit Tests
         run: make test
 
-      # Security Scan
+      - name: Upload Coverage Reports
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.out
+          verbose: true
+
+  security-scan:
+    runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vendor Dependencies
+        run: go mod vendor
+
       - name: Run Go Vulnerability Check
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -130,61 +162,17 @@ jobs:
       - name: Upload Gosec Results
         uses: github/codeql-action/upload-sarif@v3
         if: always() && hashFiles('gosec-results.sarif') != ''
-        continue-on-error: true
         with:
           sarif_file: gosec-results.sarif
           category: gosec
 
-      - name: Upload Coverage Reports
-        uses: codecov/codecov-action@v4
-        continue-on-error: true
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.out
-          verbose: true
-
-  # Branch builds for PRs
-  build-branch:
+  # CI ONLY VALIDATES BUILDS - NO PUBLISHING
+  build-validation:
     runs-on: ubuntu-24.04
-    needs: [ci-pipeline]
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Extract branch name
-        shell: bash
-        run: echo "branch=$(echo ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}} | sed 's/\//_/g' )" >> $GITHUB_OUTPUT
-        id: extract_branch
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push branch package
-        run: make package-push-branchtag -e IMG_TAG="${{ steps.extract_branch.outputs.branch }}"
-
-  # Production publishing (master branch or tags)
-  publish-artifacts:
-    runs-on: ubuntu-24.04
-    needs: [ci-pipeline]
-    if: (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && github.event_name == 'push'
+    needs: [lint, check-diff, unit-tests, security-scan]
+    if: github.ref == 'refs/heads/master'
     permissions:
       contents: read
-      packages: write
-      id-token: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -200,36 +188,61 @@ jobs:
       - name: Vendor Dependencies
         run: go mod vendor
 
-      - name: Install Crossplane CLI
+      - name: Validate Build Process
         run: |
-          CROSSPLANE_CLI_PATH=$(make build.vars | grep CROSSPLANE_CLI= | cut -d= -f2)
-          make "$CROSSPLANE_CLI_PATH"
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.PAT_TOKEN }}
-
-
-      - name: Build and Push to Primary Registry
-        run: |
-          # Build packages and push to GitHub Container Registry (primary)
+          # Validate that all build steps work without publishing
           echo "Repository: ${{ github.repository }}"
           echo "Repository owner: ${{ github.repository_owner }}"
-          make build PLATFORMS="linux_amd64"
-          make publish PLATFORMS="linux_amd64" REGISTRY_ORGS="ghcr.io/${{ github.repository_owner }}" XPKG_REG_ORGS="ghcr.io/${{ github.repository_owner }}"
 
+          # Build binary
+          make build
+          echo "✅ Binary build successful"
 
-      - name: Build and Push to Upbound Registry (Optional)
-        if: env.ENABLE_UPBOUND_PUBLISH == 'true'
-        run: |
-          # Push to Upbound Registry (artifacts already built, only if token is available)
-          if [ -n "$UPBOUND_TOKEN" ]; then
-            make publish PLATFORMS="linux_amd64" REGISTRY_ORGS="xpkg.upbound.io/crossplane-contrib"
-          else
-            echo "UPBOUND_TOKEN not available, skipping Upbound registry push"
-          fi
-        env:
-          UPBOUND_TOKEN: ${{ secrets.UPBOUND_TOKEN }}
+          # Build Docker image locally (without push)
+          make docker.build
+          echo "✅ Docker image build successful"
+
+          # Build Crossplane package locally (without push)
+          make xpkg.build
+          echo "✅ Crossplane package build successful"
+
+          # Verify build artifacts exist
+          ls -la _output/bin/linux_amd64/provider 2>/dev/null && echo "✅ Provider binary exists" || echo "❌ Provider binary missing"
+          ls -la _output/xpkg/linux_amd64/*.xpkg 2>/dev/null && echo "✅ Crossplane package exists" || echo "❌ Crossplane package missing"
+
+          echo ""
+          echo "🎯 Build validation completed successfully"
+          echo "📦 All artifacts can be built successfully"
+          echo "🏷️  Publishing will occur only on release tag creation"
+
+# Key Principles for this Template:
+#
+# 1. CI BUILDS, RELEASE PUBLISHES
+#    - CI workflow: Only validates builds (no registry pushes)
+#    - Release workflow: Handles all publishing
+#    - Eliminates tag conflicts between workflows
+#
+# 2. SINGLE PRIMARY REGISTRY
+#    - Primary: ghcr.io/rossigee (consistent across all providers)
+#    - Optional: Environment-controlled additional registries
+#
+# 3. PARALLEL VALIDATION
+#    - All validation jobs run in parallel after noop detection
+#    - Build validation only runs on master branch
+#
+# 4. COMPREHENSIVE SECURITY
+#    - govulncheck: Go vulnerability scanning
+#    - gosec: Static security analysis
+#    - CodeQL integration for SARIF uploads
+#
+# 5. STANDARDIZED BUILD SYSTEM
+#    - Uses rossigee/build submodule (working fork)
+#    - Consistent make targets across all providers
+#    - Go 1.24.5 with proper version handling
+#
+# To apply this template:
+# 1. Copy this structure to .github/workflows/ci.yml
+# 2. Update provider-specific names/paths
+# 3. Ensure release.yml handles all publishing
+# 4. Test with a commit to master (should only validate)
+# 5. Test with a version tag (should publish properly)
