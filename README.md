@@ -8,7 +8,7 @@
 [build]: https://github.com/rossigee/provider-minio/actions/workflows/ci.yml
 [releases]: https://github.com/rossigee/provider-minio/releases
 
-**✅ BUILD STATUS: WORKING** - Successfully builds and passes all tests (v0.8.0)
+**✅ BUILD STATUS: WORKING** - Successfully builds and passes all tests (v0.8.1)
 
 Crossplane provider for managing MinIO object storage resources including buckets, users, and policies.
 
@@ -22,7 +22,7 @@ Crossplane provider for managing MinIO object storage resources including bucket
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.8.0`
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.8.1`
 - **Harbor**: Available via environment configuration
 - **Upbound**: Available via environment configuration
 

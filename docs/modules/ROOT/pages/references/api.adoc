@@ -1,0 +1,143 @@
+= API Reference
+
+This page documents the Custom Resource Definitions (CRDs) provided by provider-minio.
+
+== Core Resources
+
+=== Bucket
+
+Manages MinIO S3-compatible buckets.
+
+[source,yaml]
+----
+apiVersion: minio.crossplane.io/v1
+kind: Bucket
+metadata:
+  name: example-bucket
+spec:
+  forProvider:
+    bucketName: my-bucket  # Optional: defaults to metadata.name
+    region: us-east-1      # Optional: defaults to provider config
+  providerConfigRef:
+    name: default
+----
+
+**Key Features:**
+- Automatic bucket creation and deletion
+- Region specification support
+- Bucket policy management integration
+- Webhook validation for immutable fields
+
+=== User
+
+Manages MinIO users and their access credentials.
+
+[source,yaml]
+----
+apiVersion: minio.crossplane.io/v1
+kind: User
+metadata:
+  name: example-user
+spec:
+  forProvider:
+    username: myuser        # Optional: defaults to metadata.name
+    policies:              # Optional: attach policies
+      - policy-name-1
+      - policy-name-2
+  writeConnectionSecretsToRef:
+    name: user-credentials
+    namespace: default
+  providerConfigRef:
+    name: default
+----
+
+**Key Features:**
+- Automatic access key generation
+- Password generation and secret management
+- Policy attachment
+- Webhook validation for immutable fields
+
+=== Policy
+
+Manages MinIO access policies using standard S3 policy documents.
+
+[source,yaml]
+----
+apiVersion: minio.crossplane.io/v1
+kind: Policy
+metadata:
+  name: example-policy
+spec:
+  forProvider:
+    name: my-policy         # Optional: defaults to metadata.name
+    policy: |              # JSON policy document
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["s3:GetObject"],
+            "Resource": ["arn:aws:s3:::my-bucket/*"]
+          }
+        ]
+      }
+  providerConfigRef:
+    name: default
+----
+
+**Key Features:**
+- Standard S3 IAM policy format
+- JSON policy validation
+- Integration with User resources
+
+=== ProviderConfig
+
+Configures connection settings for the MinIO provider.
+
+[source,yaml]
+----
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: Secret
+    apiSecretRef:
+      name: minio-credentials
+      namespace: crossplane-system
+  minioURL: https://minio.example.com:9000/
+  tls:                     # Optional: Custom TLS configuration
+    caSecretRef:
+      name: ca-certificate
+      key: ca.crt
+----
+
+**Key Features:**
+- Multiple credential sources
+- Custom TLS configuration support
+- Connection validation
+- Secret reference management
+
+== Field References
+
+=== Common Fields
+
+All resources support these standard Crossplane fields:
+
+- `metadata.name`: Resource identifier
+- `spec.providerConfigRef`: Reference to ProviderConfig
+- `spec.writeConnectionSecretsToRef`: Output secret configuration
+- `spec.deletionPolicy`: Orphan or Delete (default)
+
+=== Status Fields
+
+All managed resources report status information:
+
+- `status.conditions`: Crossplane condition reporting
+- `status.atProvider`: Provider-specific status information
+- `status.observedGeneration`: Last processed spec generation
+
+== Examples
+
+See the xref:examples[] directory for complete working examples of all resource types.
