@@ -8,7 +8,7 @@
 [build]: https://github.com/rossigee/provider-minio/actions/workflows/ci.yml
 [releases]: https://github.com/rossigee/provider-minio/releases
 
-**✅ BUILD STATUS: WORKING** - Successfully builds and passes all tests (v0.5.0)
+**✅ BUILD STATUS: WORKING** - Successfully builds and passes all tests (v0.8.0)
 
 Crossplane provider for managing MinIO object storage resources including buckets, users, and policies.
 
@@ -22,7 +22,7 @@ Crossplane provider for managing MinIO object storage resources including bucket
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.5.0`
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.8.0`
 - **Harbor**: Available via environment configuration
 - **Upbound**: Available via environment configuration
 
@@ -115,17 +115,20 @@ To test and troubleshoot the webhooks on the cluster, simply apply your changes 
 
 ### Crossplane Provider Mechanics
 
-For detailed information on how Crossplane Provider works from a development perspective check [provider mechanics documentation page](https://kb.vshn.ch/app-catalog/explanations/crossplane_provider_mechanics.html).
+For detailed information on how Crossplane Provider works from a development perspective check
+[provider mechanics documentation page](https://kb.vshn.ch/app-catalog/explanations/crossplane_provider_mechanics.html).
 
 ### e2e testing with kuttl
 
 Some scenarios are tested with the Kubernetes E2E testing tool [Kuttl](https://kuttl.dev/docs).
-Kuttl is basically comparing the installed manifests (usually files named `##-install*.yaml`) with observed objects and compares the desired output (files named `##-assert*.yaml`).
+Kuttl is basically comparing the installed manifests (usually files named `##-install*.yaml`) with observed
+objects and compares the desired output (files named `##-assert*.yaml`).
 
 To execute tests, run `make test-e2e` from the root dir.
 
 If a test fails, kuttl leaves the resources in the kind-cluster intact, so you can inspect the resources and events if necessary.
-Please note that Kubernetes Events from cluster-scoped resources appear in the `default` namespace only, but `kubectl describe ...` should show you the events.
+Please note that Kubernetes Events from cluster-scoped resources appear in the `default` namespace only,
+but `kubectl describe ...` should show you the events.
 
 ### Cleaning up e2e tests
 

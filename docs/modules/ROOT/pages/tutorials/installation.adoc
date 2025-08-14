@@ -44,7 +44,7 @@ metadata:
     name: provider-minio
   name: provider-minio
 spec:
-  package: ghcr.io/rossigee/provider-minio:latest
+  package: ghcr.io/rossigee/provider-minio:v0.8.0
 EOF
 ----
 
