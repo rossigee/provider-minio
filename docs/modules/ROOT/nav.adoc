@@ -1,5 +1,5 @@
 * xref:index.adoc[Introduction]
-* https://github.com/vshn/provider-minio/releases[Changelog,window=_blank] 🔗
+* https://github.com/rossigee/provider-minio/releases[Changelog,window=_blank] 🔗
 
 .Tutorials
 * xref:tutorials/installation.adoc[Installation]
@@ -10,7 +10,7 @@
 * xref:how-tos/create-releases.adoc[Create Releases]
 
 .Technical reference
-//* xref:references/example.adoc[Example Reference]
+* xref:references/api.adoc[API Reference]
 
 .Explanation
 //* xref:explanations/example.adoc[Example Explanation]

@@ -3,7 +3,7 @@
 [discrete]
 == Introduction
 
-Providre-minio is a Crossplane provider for minio.
+Provider-minio is a Crossplane provider for MinIO object storage management.
 
 [discrete]
 == Documentation
