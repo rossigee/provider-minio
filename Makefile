@@ -23,6 +23,7 @@ GO111MODULE = on
 UP_VERSION = v0.28.0
 UP_CHANNEL = stable
 UPTEST_VERSION = v0.11.1
+CROSSPLANE_CLI_VERSION = v2.0.2
 -include build/makelib/k8s_tools.mk
 
 # Setup Images
