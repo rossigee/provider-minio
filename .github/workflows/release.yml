@@ -58,9 +58,9 @@ jobs:
         run: |
           # Create the tools directory and install crossplane CLI
           mkdir -p .cache/tools/linux_x86_64
-          curl -fsSLo .cache/tools/linux_x86_64/crossplane-cli-v1.20.0 \
-            https://releases.crossplane.io/stable/v1.20.0/bin/linux_amd64/crank?source=build
-          chmod +x .cache/tools/linux_x86_64/crossplane-cli-v1.20.0
+          curl -fsSLo .cache/tools/linux_x86_64/crossplane-cli-v2.0.2 \
+            https://releases.crossplane.io/stable/v2.0.2/bin/linux_amd64/crank?source=build
+          chmod +x .cache/tools/linux_x86_64/crossplane-cli-v2.0.2
 
       - name: Build
         run: make build
