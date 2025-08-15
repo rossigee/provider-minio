@@ -4,7 +4,7 @@ metadata:
   name: provider-minio
   annotations:
     meta.crossplane.io/maintainer: VSHN <info@vshn.ch>
-    meta.crossplane.io/source: github.com/vshn/provider-minio
+    meta.crossplane.io/source: github.com/rossigee/provider-minio
     meta.crossplane.io/license: Apache-2
     meta.crossplane.io/description: |
       VSHN's Crossplane provider to manage minio services in Kubernetes.
@@ -14,9 +14,9 @@ metadata:
       Available resources and their fields can be found in the
       [CRD Docs](https://marketplace.upbound.io/providers/vshn/provider-minio/latest/crds).
       If you encounter an issue please create an issue in the
-      [vshn/provider-minio](https://github.com/vshn/provider-minio/issues) repo.
+      [rossigee/provider-minio](https://github.com/rossigee/provider-minio/issues) repo.
 spec:
   controller:
     permissionRequests: []
   crossplane:
-    version: ">=v1.9.0"
+    version: ">=v2.0.0"

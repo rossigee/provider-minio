@@ -47,7 +47,7 @@ XPKGS = provider-minio
 xpkg.build.provider-minio: do.build.images
 
 # Setup Package Metadata
-CROSSPLANE_VERSION = 1.19.0
+CROSSPLANE_VERSION = 2.0.2
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk
 

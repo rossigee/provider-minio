@@ -9,10 +9,10 @@ INTEGRATION_TEST_DEBUG_OUTPUT ?= false
 
 .PHONY: local-install
 local-install: export KUBECONFIG = $(KIND_KUBECONFIG)
-# for ControllerConfig:
+# for DeploymentRuntimeConfig:
 local-install: export INTERNAL_PACKAGE_IMG = registry.registry-system.svc.cluster.local:5000/$(ORG)/$(APP_NAME):$(IMG_TAG)
 local-install: kind-load-image crossplane-setup registry-setup minio-setup mirror-setup package-push-local ## Install Operator in local cluster
-	yq e '.spec.metadata.annotations."local.dev/installed"="$(shell date)"' test/controllerconfig-minio.yaml | kubectl apply -f -
+	yq e '.metadata.annotations."local.dev/installed"="$(shell date)"' test/deploymentruntimeconfig-minio.yaml | kubectl apply -f -
 	yq e '.spec.package="${INTERNAL_PACKAGE_IMG}"' test/provider-minio.yaml | kubectl apply -f -
 	kubectl wait --for condition=Healthy provider.pkg.crossplane.io/provider-minio --timeout 60s
 	kubectl -n crossplane-system wait --for condition=Ready $$(kubectl -n crossplane-system get pods -o name -l pkg.crossplane.io/provider=provider-minio) --timeout 60s
