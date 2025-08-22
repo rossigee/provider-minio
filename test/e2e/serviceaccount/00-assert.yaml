@@ -1,0 +1,28 @@
+---
+apiVersion: minio.crossplane.io/v1
+kind: ServiceAccount
+metadata:
+  name: test-serviceaccount
+spec:
+  providerConfigRef:
+    name: minio-provider-config
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+    reason: Available
+  - type: Synced
+    status: "True"
+    reason: ReconcileSuccess
+  atProvider:
+    accountStatus: enabled
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-serviceaccount-secret
+  namespace: default
+type: Opaque
+data:
+  AWS_ACCESS_KEY_ID: ""  # Will be populated by controller
+  AWS_SECRET_ACCESS_KEY: ""  # Will be populated by controller
