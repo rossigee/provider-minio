@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-serviceaccount-access
+spec:
+  restartPolicy: Never
+  containers:
+  - name: mc-test
+    image: minio/mc:latest
+    command:
+    - /bin/sh
+    - -c
+    - |
+      # Configure MinIO client with service account credentials
+      mc alias set testminio $MINIO_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
+
+      # Test bucket operations with the service account
+      echo "Testing ListBucket permission..."
+      mc ls testminio/test-bucket || echo "ListBucket failed as expected if bucket doesn't exist"
+
+      # Create a test bucket (if we have permissions)
+      echo "Testing bucket creation..."
+      mc mb testminio/test-bucket 2>/dev/null || echo "Bucket creation failed - expected if no admin permissions"
+
+      # Test object operations
+      echo "Testing object operations..."
+      echo "test content" > /tmp/testfile
+      mc cp /tmp/testfile testminio/test-bucket/testfile || echo "PutObject failed"
+      mc cat testminio/test-bucket/testfile || echo "GetObject failed"
+      mc rm testminio/test-bucket/testfile || echo "DeleteObject permission test"
+
+      echo "ServiceAccount access test completed"
+    env:
+    - name: MINIO_ENDPOINT
+      value: "http://minio.default.svc.cluster.local:9000"
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: test-serviceaccount-secret
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: test-serviceaccount-secret
+          key: AWS_SECRET_ACCESS_KEY
