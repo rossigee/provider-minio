@@ -6,6 +6,7 @@
 /provider-minio
 *.out
 /package/*.xpkg
+*.xpkg
 /kubeconfig
 __debug*
 _output/
