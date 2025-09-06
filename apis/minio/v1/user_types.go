@@ -74,7 +74,7 @@ type UserList struct {
 // GetUserName returns the spec.forProvider.userName if given, otherwise defaults to metadata.name.
 func (in *User) GetUserName() string {
 	if in.Spec.ForProvider.UserName == "" {
-		return in.Name
+		return in.ObjectMeta.Name
 	}
 	return in.Spec.ForProvider.UserName
 }
