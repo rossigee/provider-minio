@@ -110,7 +110,7 @@ var (
 // GetBucketName returns the spec.forProvider.bucketName if given, otherwise defaults to metadata.name.
 func (in *Bucket) GetBucketName() string {
 	if in.Spec.ForProvider.BucketName == "" {
-		return in.Name
+		return in.ObjectMeta.Name
 	}
 	return in.Spec.ForProvider.BucketName
 }
