@@ -1,0 +1,14 @@
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: example-bucket-v2
+  namespace: default
+spec:
+  forProvider:
+    bucketName: example-bucket-from-v2
+    region: us-east-1
+    versioning: true
+    public: false
+  providerConfigRef:
+    name: default
+  deletionPolicy: Delete
