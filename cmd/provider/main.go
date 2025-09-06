@@ -60,7 +60,7 @@ func main() {
 		RenewDeadline:              func() *time.Duration { d := 50 * time.Second; return &d }(),
 		WebhookServer: &webhook.DefaultServer{Options: webhook.Options{
 			Port:    9443,
-			CertDir: "/tmp/k8s-webhook-server/serving-certs",
+			CertDir: os.Getenv("WEBHOOK_TLS_CERT_DIR"),
 		}},
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
