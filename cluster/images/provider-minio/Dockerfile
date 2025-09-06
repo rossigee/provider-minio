@@ -15,4 +15,4 @@ ARG TARGETARCH
 COPY --chmod=0755 bin/${TARGETOS}_${TARGETARCH}/provider /usr/local/bin/provider
 
 USER 65532:65532
-CMD ["/usr/local/bin/provider", "--leader-elect"]
+ENTRYPOINT ["/usr/local/bin/provider"]
