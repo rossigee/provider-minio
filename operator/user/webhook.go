@@ -37,7 +37,7 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 	// Handle both v1 and v1beta1 API versions
 	if userv1, ok := obj.(*miniov1.User); ok {
 		v.log.V(1).Info("Validate create v1")
-		
+
 		providerConfigRef := userv1.Spec.ProviderConfigReference
 		if providerConfigRef == nil || providerConfigRef.Name == "" {
 			return nil, field.Invalid(field.NewPath("spec", "providerConfigRef", "name"), "null", "Provider config is required")
@@ -47,13 +47,13 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		if err != nil {
 			return nil, field.Invalid(field.NewPath("spec", "forProvider", "policies"), userv1.Spec.ForProvider.Policies, err.Error())
 		}
-		
+
 		return nil, nil
 	}
-	
+
 	if userv1beta1, ok := obj.(*miniov1beta1.User); ok {
 		v.log.V(1).Info("Validate create v1beta1")
-		
+
 		providerConfigRef := userv1beta1.Spec.ProviderConfigReference
 		if providerConfigRef == nil || providerConfigRef.Name == "" {
 			return nil, field.Invalid(field.NewPath("spec", "providerConfigRef", "name"), "null", "Provider config is required")
@@ -63,10 +63,10 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		if err != nil {
 			return nil, field.Invalid(field.NewPath("spec", "forProvider", "policies"), userv1beta1.Spec.ForProvider.Policies, err.Error())
 		}
-		
+
 		return nil, nil
 	}
-	
+
 	return nil, errNotUser
 }
 
@@ -97,7 +97,7 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 
 		return nil, nil
 	}
-	
+
 	if oldUserv1beta1, ok := oldObj.(*miniov1beta1.User); ok {
 		newUserv1beta1 := newObj.(*miniov1beta1.User)
 		v.log.V(1).Info("Validate update v1beta1")
@@ -122,7 +122,7 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 
 		return nil, nil
 	}
-	
+
 	return nil, errNotUser
 }
 

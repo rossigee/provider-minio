@@ -26,12 +26,12 @@ func (v *Validator) ValidateCreate(_ context.Context, obj runtime.Object) (admis
 		v.log.V(1).Info("Validate create v1")
 		return nil, v.validatePolicy(policyv1)
 	}
-	
+
 	if policyv1beta1, ok := obj.(*miniov1beta1.Policy); ok {
 		v.log.V(1).Info("Validate create v1beta1")
 		return nil, v.validatePolicyV1Beta1(policyv1beta1)
 	}
-	
+
 	return nil, errNotPolicy
 }
 
@@ -42,12 +42,12 @@ func (v *Validator) ValidateUpdate(_ context.Context, _, newObj runtime.Object) 
 		v.log.V(1).Info("Validate update v1")
 		return nil, v.validatePolicy(newPolicyv1)
 	}
-	
+
 	if newPolicyv1beta1, ok := newObj.(*miniov1beta1.Policy); ok {
 		v.log.V(1).Info("Validate update v1beta1")
 		return nil, v.validatePolicyV1Beta1(newPolicyv1beta1)
 	}
-	
+
 	return nil, errNotPolicy
 }
 
