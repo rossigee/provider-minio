@@ -10,6 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,12 +44,15 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	user, ok := mg.(*miniov1.User)
-	if !ok {
+	var config *providerv1.ProviderConfig
+
+	if userv1, ok := mg.(*miniov1.User); ok {
+		config, err = c.getProviderConfigV1(ctx, userv1)
+	} else if userv1beta1, ok := mg.(*miniov1beta1.User); ok {
+		config, err = c.getProviderConfigV1Beta1(ctx, userv1beta1)
+	} else {
 		return nil, errNotUser
 	}
-
-	config, err := c.getProviderConfig(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +78,14 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	return uc, nil
 }
 
-func (c *connector) getProviderConfig(ctx context.Context, user *miniov1.User) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfigV1(ctx context.Context, user *miniov1.User) (*providerv1.ProviderConfig, error) {
+	configName := user.GetProviderConfigReference().Name
+	config := &providerv1.ProviderConfig{}
+	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
+	return config, err
+}
+
+func (c *connector) getProviderConfigV1Beta1(ctx context.Context, user *miniov1beta1.User) (*providerv1.ProviderConfig, error) {
 	configName := user.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
