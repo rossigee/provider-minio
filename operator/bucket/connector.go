@@ -3,13 +3,13 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"net/url"
 
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	minio "github.com/minio/minio-go/v7"
 	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,14 +46,23 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	bucket, ok := mg.(*miniov1.Bucket)
-	if !ok {
-		return nil, errNotBucket
-	}
+	var config *providerv1.ProviderConfig
 
-	config, err := c.getProviderConfig(ctx, bucket)
-	if err != nil {
-		return nil, err
+	// Handle both v1 and v1beta1 API versions
+	if bucketv1, ok := mg.(*miniov1.Bucket); ok {
+		log.V(1).Info("Connecting v1 bucket", "name", bucketv1.Name)
+		config, err = c.getProviderConfigV1(ctx, bucketv1)
+		if err != nil {
+			return nil, err
+		}
+	} else if bucketv1beta1, ok := mg.(*miniov1beta1.Bucket); ok {
+		log.V(1).Info("Connecting v1beta1 bucket", "name", bucketv1beta1.Name)
+		config, err = c.getProviderConfigV1Beta1(ctx, bucketv1beta1)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errNotBucket
 	}
 
 	mc, err := minioutil.NewMinioClient(ctx, c.kube, config)
@@ -66,17 +75,17 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		recorder: c.recorder,
 	}
 
-	parsed, err := url.Parse(config.Spec.MinioURL)
-	if err != nil {
-		return nil, err
-	}
-	bucket.Status.Endpoint = parsed.Host
-	bucket.Status.EndpointURL = parsed.String()
-
 	return bc, nil
 }
 
-func (c *connector) getProviderConfig(ctx context.Context, bucket *miniov1.Bucket) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfigV1(ctx context.Context, bucket *miniov1.Bucket) (*providerv1.ProviderConfig, error) {
+	configName := bucket.GetProviderConfigReference().Name
+	config := &providerv1.ProviderConfig{}
+	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
+	return config, err
+}
+
+func (c *connector) getProviderConfigV1Beta1(ctx context.Context, bucket *miniov1beta1.Bucket) (*providerv1.ProviderConfig, error) {
 	configName := bucket.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
