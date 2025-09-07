@@ -11,6 +11,7 @@ import (
 	minio "github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
 	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
@@ -31,12 +32,18 @@ func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (manage
 	log := controllerruntime.LoggerFrom(ctx)
 	log.V(1).Info("observing resource")
 
-	bucket, ok := mg.(*miniov1.Bucket)
-	if !ok {
+	var bucketName string
+
+	// Handle both v1 and v1beta1 API versions
+	if bucketv1, ok := mg.(*miniov1.Bucket); ok {
+		log.V(1).Info("Observing v1 bucket", "name", bucketv1.Name)
+		bucketName = bucketv1.GetBucketName()
+	} else if bucketv1beta1, ok := mg.(*miniov1beta1.Bucket); ok {
+		log.V(1).Info("Observing v1beta1 bucket", "name", bucketv1beta1.Name)
+		bucketName = bucketv1beta1.GetBucketName()
+	} else {
 		return managed.ExternalObservation{}, errNotBucket
 	}
-
-	bucketName := bucket.GetBucketName()
 	exists, err := bucketExistsFn(ctx, d.mc, bucketName)
 
 	if err != nil {
@@ -51,6 +58,17 @@ func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (manage
 		}
 		return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether bucket exists")
 	}
+	// Handle the rest of the logic for both API versions
+	if bucketv1, ok := mg.(*miniov1.Bucket); ok {
+		return d.observeBucketV1(ctx, bucketv1, bucketName, exists)
+	} else if bucketv1beta1, ok := mg.(*miniov1beta1.Bucket); ok {
+		return d.observeBucketV1Beta1(ctx, bucketv1beta1, bucketName, exists)
+	}
+
+	return managed.ExternalObservation{}, errNotBucket
+}
+
+func (d *bucketClient) observeBucketV1(ctx context.Context, bucket *miniov1.Bucket, bucketName string, exists bool) (managed.ExternalObservation, error) {
 	if _, hasAnnotation := bucket.GetAnnotations()[lockAnnotation]; hasAnnotation && exists {
 		bucket.Status.AtProvider.BucketName = bucketName
 		bucket.SetConditions(xpv1.Available())
@@ -61,7 +79,28 @@ func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (manage
 			if err != nil {
 				return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether a bucket policy exists")
 			}
+			isLatest = u
+		}
 
+		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: isLatest}, nil
+	} else if exists {
+		return managed.ExternalObservation{}, fmt.Errorf("bucket already exists, try changing bucket name: %s", bucketName)
+	}
+
+	return managed.ExternalObservation{}, nil
+}
+
+func (d *bucketClient) observeBucketV1Beta1(ctx context.Context, bucket *miniov1beta1.Bucket, bucketName string, exists bool) (managed.ExternalObservation, error) {
+	if _, hasAnnotation := bucket.GetAnnotations()[lockAnnotation]; hasAnnotation && exists {
+		bucket.Status.AtProvider.BucketName = bucketName
+		bucket.SetConditions(xpv1.Available())
+
+		isLatest := true
+		if bucket.Spec.ForProvider.Policy != nil {
+			u, err := bucketPolicyLatestFn(ctx, d.mc, bucketName, *bucket.Spec.ForProvider.Policy)
+			if err != nil {
+				return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether a bucket policy exists")
+			}
 			isLatest = u
 		}
 
