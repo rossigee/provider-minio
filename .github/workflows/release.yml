@@ -62,36 +62,12 @@ jobs:
             https://releases.crossplane.io/stable/v2.0.2/bin/linux_amd64/crank?source=build
           chmod +x .cache/tools/linux_x86_64/crossplane-cli-v2.0.2
 
-      # Build for all platforms using make system (respects PLATFORMS in Makefile)
-      - name: Build Multi-Platform Binaries
-        run: make build.all
+      # Build binaries only (like other providers)
+      - name: Build Binaries
+        run: make build
         env:
           VERSION: ${{ steps.version.outputs.version }}
 
-      - name: Verify Build Artifacts
-        run: |
-          # Verify provider binaries exist for all platforms
-          ls -la _output/bin/
-
-          # Check amd64 binary
-          if [ ! -f _output/bin/linux_amd64/provider ]; then
-            echo "ERROR: linux_amd64 provider binary not found!"
-            exit 1
-          fi
-          ls -la _output/bin/linux_amd64/provider
-          file _output/bin/linux_amd64/provider
-          echo "✅ linux_amd64 provider binary verified"
-
-          # Check arm64 binary
-          if [ ! -f _output/bin/linux_arm64/provider ]; then
-            echo "ERROR: linux_arm64 provider binary not found!"
-            exit 1
-          fi
-          ls -la _output/bin/linux_arm64/provider
-          file _output/bin/linux_arm64/provider
-          echo "✅ linux_arm64 provider binary verified"
-
-          echo "✅ All platform binaries verification successful"
 
       # Build and publish multi-arch Docker images AND Crossplane packages
       - name: Build and Publish All Artifacts
