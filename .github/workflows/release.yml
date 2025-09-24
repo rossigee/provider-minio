@@ -93,29 +93,17 @@ jobs:
 
           echo "✅ All platform binaries verification successful"
 
-      # CRITICAL: Build and push multi-arch Docker images
-      - name: Build and Push Multi-Arch Docker Images
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: cluster/images/provider-minio/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/rossigee/provider-minio:${{ steps.version.outputs.version }}
-            ghcr.io/rossigee/provider-minio:latest
-          build-args: |
-            VERSION=${{ steps.version.outputs.version }}
-
-      - name: Publish Crossplane Packages
+      # Build and publish multi-arch Docker images AND Crossplane packages
+      - name: Build and Publish All Artifacts
         run: |
-          # Publish versioned package
+          # Publish versioned artifacts (both Docker images and Crossplane packages)
           make publish
-          # Publish latest package
+          # Publish latest artifacts
           make publish VERSION=latest
         env:
           VERSION: ${{ steps.version.outputs.version }}
           REGISTRY_ORGS: ghcr.io/rossigee
+          PLATFORMS: linux_amd64,linux_arm64
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
