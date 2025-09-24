@@ -8,6 +8,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/sethvargo/go-password/password"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -23,7 +24,7 @@ func (u *userClient) Create(ctx context.Context, mg resource.Managed) (managed.E
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("creating resource")
 
-	user, ok := mg.(*miniov1.User)
+	user, ok := mg.(*miniov1beta1.User)
 	if !ok {
 		return managed.ExternalCreation{}, errNotUser
 	}
@@ -76,7 +77,7 @@ func (u *userClient) userExists(ctx context.Context, name string) (bool, error) 
 	return exists, nil
 }
 
-func (u *userClient) emitCreationEvent(user *miniov1.User) {
+func (u *userClient) emitCreationEvent(user *miniov1beta1.User) {
 	u.recorder.Event(user, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Created",

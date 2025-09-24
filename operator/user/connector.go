@@ -43,15 +43,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	var config *providerv1.ProviderConfig
-
-	if userv1, ok := mg.(*miniov1.User); ok {
-		config, err = c.getProviderConfigV1(ctx, userv1)
-	} else if userv1beta1, ok := mg.(*miniov1beta1.User); ok {
-		config, err = c.getProviderConfigV1Beta1(ctx, userv1beta1)
-	} else {
+	userv1beta1, ok := mg.(*miniov1beta1.User)
+	if !ok {
 		return nil, errNotUser
 	}
+
+	config, err := c.getProviderConfig(ctx, userv1beta1)
 	if err != nil {
 		return nil, err
 	}
@@ -77,14 +74,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	return uc, nil
 }
 
-func (c *connector) getProviderConfigV1(ctx context.Context, user *miniov1.User) (*providerv1.ProviderConfig, error) {
-	configName := user.GetProviderConfigReference().Name
-	config := &providerv1.ProviderConfig{}
-	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
-	return config, err
-}
-
-func (c *connector) getProviderConfigV1Beta1(ctx context.Context, user *miniov1beta1.User) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfig(ctx context.Context, user *miniov1beta1.User) (*providerv1.ProviderConfig, error) {
 	configName := user.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)

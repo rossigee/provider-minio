@@ -7,6 +7,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	k8svi "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,7 +22,7 @@ const (
 func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	serviceAccount, ok := mg.(*miniov1.ServiceAccount)
+	serviceAccount, ok := mg.(*miniov1beta1.ServiceAccount)
 	if !ok {
 		return managed.ExternalObservation{}, errNotServiceAccount
 	}
@@ -61,7 +62,7 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 
 	// Check if the service account needs to be updated
 	if !s.isUpToDate(serviceAccount, info) {
-		serviceAccount.SetConditions(miniov1.Updating())
+		serviceAccount.SetConditions(miniov1beta1.Updating())
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 	}
 
@@ -69,7 +70,7 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 	if info.AccountStatus == "enabled" {
 		serviceAccount.SetConditions(xpv1.Available())
 	} else {
-		serviceAccount.SetConditions(miniov1.Disabled())
+		serviceAccount.SetConditions(miniov1beta1.Disabled())
 	}
 
 	// Validate connection credentials if the service account is not being deleted
@@ -92,7 +93,7 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 }
 
 // isUpToDate checks if the service account configuration matches what's in MinIO
-func (s *serviceAccountClient) isUpToDate(serviceAccount *miniov1.ServiceAccount, info madmin.InfoServiceAccountResp) bool {
+func (s *serviceAccountClient) isUpToDate(serviceAccount *miniov1beta1.ServiceAccount, info madmin.InfoServiceAccountResp) bool {
 	// Check if policy needs updating
 	if serviceAccount.Spec.ForProvider.Policy != "" && serviceAccount.Spec.ForProvider.Policy != info.Policy {
 		return false
