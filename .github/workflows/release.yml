@@ -62,17 +62,10 @@ jobs:
             https://releases.crossplane.io/stable/v2.0.2/bin/linux_amd64/crank?source=build
           chmod +x .cache/tools/linux_x86_64/crossplane-cli-v2.0.2
 
-      # Build binaries only (like other providers)
-      - name: Build Binaries
-        run: make build
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-
-
-      # Build and publish multi-arch Docker images AND Crossplane packages
-      - name: Build and Publish All Artifacts
+      # Build and publish everything in one step (like mailgun provider)
+      - name: Publish All Artifacts
         run: |
-          # Publish versioned artifacts (both Docker images and Crossplane packages)
+          # Publish versioned artifacts (Docker images and Crossplane packages)
           make publish
           # Publish latest artifacts
           make publish VERSION=latest
