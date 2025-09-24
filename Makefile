@@ -10,8 +10,8 @@ PLATFORMS ?= linux_amd64 linux_arm64
 
 # Setup Go
 GO_REQUIRED_VERSION ?= 1.24
-# Use build system default golangci-lint version for Go 1.25 compatibility
-# GOLANGCILINT_VERSION handled by build/makelib/golang.mk
+# Override golangci-lint version for Go 1.25 compatibility
+GOLANGCILINT_VERSION ?= 2.5.0
 NPROCS ?= 1
 GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
