@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr/testr"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	"github.com/stretchr/testify/assert"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

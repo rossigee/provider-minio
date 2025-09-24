@@ -7,7 +7,6 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/go-logr/logr"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -10,7 +10,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	"github.com/sethvargo/go-password/password"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

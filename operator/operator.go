@@ -12,10 +12,10 @@ import (
 // SetupControllers creates all controllers and adds them to the supplied manager.
 func SetupControllers(mgr ctrl.Manager) error {
 	for _, setup := range []func(ctrl.Manager) error{
-		bucket.SetupController,
-		user.SetupController,
-		policy.SetupController,
-		serviceaccount.SetupController,
+		// bucket.SetupController,          // Disabled: only using v1beta1
+		// user.SetupController,            // Disabled: only using v1beta1
+		// policy.SetupController,          // Disabled: only using v1beta1
+		// serviceaccount.SetupController,  // Disabled: only using v1beta1
 		config.SetupController,
 		// v1beta1 controllers for namespaced resources
 		bucket.SetupV1Beta1Controller,
@@ -33,10 +33,10 @@ func SetupControllers(mgr ctrl.Manager) error {
 // SetupWebhooks creates all webhooks and adds them to the supplied manager.
 func SetupWebhooks(mgr ctrl.Manager) error {
 	for _, setup := range []func(ctrl.Manager) error{
-		bucket.SetupWebhook,
-		user.SetupWebhook,
-		policy.SetupWebhook,
-		serviceaccount.SetupWebhook,
+		// bucket.SetupWebhook,          // Disabled: only using v1beta1
+		// user.SetupWebhook,            // Disabled: only using v1beta1
+		// policy.SetupWebhook,          // Disabled: only using v1beta1
+		// serviceaccount.SetupWebhook,  // Disabled: only using v1beta1
 		// v1beta1 webhooks for namespaced resources
 		bucket.SetupV1Beta1Webhook,
 		user.SetupV1Beta1Webhook,
