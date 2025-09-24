@@ -17,7 +17,7 @@ import (
 	"strings"
 
 	"github.com/rossigee/provider-minio/apis"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 
@@ -46,18 +46,18 @@ func generateBucketSample() {
 	serialize(spec, true)
 }
 
-func newBucketSample() *miniov1.Bucket {
-	return &miniov1.Bucket{
+func newBucketSample() *miniov1beta1.Bucket {
+	return &miniov1beta1.Bucket{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: miniov1.BucketGroupVersionKind.GroupVersion().String(),
-			Kind:       miniov1.BucketKind,
+			APIVersion: miniov1beta1.BucketGroupVersionKind.GroupVersion().String(),
+			Kind:       miniov1beta1.BucketKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "bucket-local-dev"},
-		Spec: miniov1.BucketSpec{
+		Spec: miniov1beta1.BucketSpec{
 			ResourceSpec: xpv1.ResourceSpec{
 				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
 			},
-			ForProvider: miniov1.BucketParameters{
+			ForProvider: miniov1beta1.BucketParameters{
 				Region: "us-east-1",
 			},
 		},
@@ -117,16 +117,16 @@ func generateUserSample() {
 	serialize(spec, true)
 }
 
-func newUserSample() *miniov1.User {
-	return &miniov1.User{
+func newUserSample() *miniov1beta1.User {
+	return &miniov1beta1.User{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: miniov1.UserGroupVersionKind.GroupVersion().String(),
-			Kind:       miniov1.UserKind,
+			APIVersion: miniov1beta1.UserGroupVersionKind.GroupVersion().String(),
+			Kind:       miniov1beta1.UserKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "devuser",
 		},
-		Spec: miniov1.UserSpec{
+		Spec: miniov1beta1.UserSpec{
 			ResourceSpec: xpv1.ResourceSpec{
 				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
 				WriteConnectionSecretToReference: &xpv1.SecretReference{
@@ -143,20 +143,20 @@ func generatePolicySample() {
 	serialize(spec, true)
 }
 
-func newPolicySample() *miniov1.Policy {
-	return &miniov1.Policy{
+func newPolicySample() *miniov1beta1.Policy {
+	return &miniov1beta1.Policy{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: miniov1.PolicyGroupVersionKind.GroupVersion().String(),
-			Kind:       miniov1.PolicyKind,
+			APIVersion: miniov1beta1.PolicyGroupVersionKind.GroupVersion().String(),
+			Kind:       miniov1beta1.PolicyKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "mypolicy",
 		},
-		Spec: miniov1.PolicySpec{
+		Spec: miniov1beta1.PolicySpec{
 			ResourceSpec: xpv1.ResourceSpec{
 				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
 			},
-			ForProvider: miniov1.PolicyParameters{
+			ForProvider: miniov1beta1.PolicyParameters{
 				AllowBucket: "bucket-local-dev",
 			},
 		},
