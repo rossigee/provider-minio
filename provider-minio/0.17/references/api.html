@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Getting Started :: Crossplane Provider Minio</title>
-    <meta property="og:title" itemprop="name" content="Getting Started">
-    <meta name="twitter:title" content="Getting Started">
-    <link rel="canonical" href="https://vshn.github.io/provider-minio/provider-minio/tutorials/getting-started.html">
-    <meta property="og:url" content="https://vshn.github.io/provider-minio/provider-minio/tutorials/getting-started.html">
+    <title>API Reference :: Crossplane Provider Minio</title>
+    <meta property="og:title" itemprop="name" content="API Reference">
+    <meta name="twitter:title" content="API Reference">
+    <link rel="canonical" href="https://vshn.github.io/provider-minio/provider-minio/references/api.html">
+    <meta property="og:url" content="https://vshn.github.io/provider-minio/provider-minio/references/api.html">
     <meta name="generator" content="Antora 3.1.2">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
@@ -38,7 +38,7 @@
         <div class="vshn_logo"></div>
         <a href="https://vshn.github.io/provider-minio">Crossplane Provider Minio
            –
-          v0.16</a>
+          v0.17</a>
       </div>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
@@ -75,7 +75,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="provider-minio" data-version="0.16">
+<div class="nav-container" data-component="provider-minio" data-version="0.17">
   <aside class="nav">
     <div class="panels">
 <div class="nav-panel-menu is-active" data-panel="menu">
@@ -97,10 +97,10 @@
     <span class="nav-text">Tutorials</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="installation.html">Installation</a>
+    <a class="nav-link" href="../tutorials/installation.html">Installation</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="getting-started.html">Getting Started</a>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tutorials/getting-started.html">Getting Started</a>
   </li>
 </ul>
   </li>
@@ -117,8 +117,8 @@
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Technical reference</span>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../references/api.html">API Reference</a>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="api.html">API Reference</a>
   </li>
 </ul>
   </li>
@@ -128,7 +128,7 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">Crossplane Provider Minio</span>
-    <span class="version">0.16</span>
+    <span class="version">0.17</span>
   </div>
   <ul class="components">
     <li class="component is-current">
@@ -137,11 +137,11 @@
         <li class="version is-latest">
           <a href="../../index.html">master</a>
         </li>
-        <li class="version">
-          <a href="../../0.17/index.html">0.17</a>
-        </li>
         <li class="version is-current">
-          <a href="../index.html">0.16</a>
+          <a href="../index.html">0.17</a>
+        </li>
+        <li class="version">
+          <a href="../../0.16/index.html">0.16</a>
         </li>
         <li class="version">
           <a href="../../0.10/index.html">0.10</a>
@@ -171,141 +171,221 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../index.html">Crossplane Provider Minio</a></li>
-    <li>Tutorials</li>
-    <li><a href="getting-started.html">Getting Started</a></li>
+    <li>Technical reference</li>
+    <li><a href="api.html">API Reference</a></li>
   </ul>
 </nav>
 <div class="page-versions">
-  <button class="version-menu-toggle" title="Show other versions of page">0.16</button>
+  <button class="version-menu-toggle" title="Show other versions of page">0.17</button>
   <div class="version-menu">
-    <a class="version" href="../../tutorials/getting-started.html">master</a>
-    <a class="version" href="../../0.17/tutorials/getting-started.html">0.17</a>
-    <a class="version is-current" href="getting-started.html">0.16</a>
-    <a class="version" href="../../0.10/tutorials/getting-started.html">0.10</a>
-    <a class="version" href="../../0.9/tutorials/getting-started.html">0.9</a>
-    <a class="version" href="../../0.8/tutorials/getting-started.html">0.8</a>
-    <a class="version" href="../../0.7/tutorials/getting-started.html">0.7</a>
-    <a class="version" href="../../0.6/tutorials/getting-started.html">0.6</a>
+    <a class="version" href="../../references/api.html">master</a>
+    <a class="version is-current" href="api.html">0.17</a>
+    <a class="version" href="../../0.16/references/api.html">0.16</a>
+    <a class="version" href="../../0.10/references/api.html">0.10</a>
+    <a class="version" href="../../0.9/references/api.html">0.9</a>
+    <a class="version" href="../../0.8/references/api.html">0.8</a>
+    <a class="version is-missing" href="../../0.7/index.html">0.7</a>
+    <a class="version is-missing" href="../../0.6/index.html">0.6</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/rossigee/provider-minio/edit/docs/v0.16/docs/modules/ROOT/pages/tutorials/getting-started.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/rossigee/provider-minio/edit/docs/v0.17/docs/modules/ROOT/pages/references/api.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Getting Started</h1>
+<h1 class="page">API Reference</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This page describes how to create a new S3 bucket after you have installed the operator.</p>
+<p>This page documents the Custom Resource Definitions (CRDs) provided by provider-minio.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<h2 id="_core_resources"><a class="anchor" href="#_core_resources"></a>Core Resources</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_bucket"><a class="anchor" href="#_bucket"></a>Bucket</h3>
+<div class="paragraph">
+<p>Manages MinIO S3-compatible buckets.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: minio.crossplane.io/v1
+kind: Bucket
+metadata:
+  name: example-bucket
+spec:
+  forProvider:
+    bucketName: my-bucket  # Optional: defaults to metadata.name
+    region: us-east-1      # Optional: defaults to provider config
+  providerConfigRef:
+    name: default</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Key Features:</strong>
+- Automatic bucket creation and deletion
+- Region specification support
+- Bucket policy management integration
+- Webhook validation for immutable fields</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_user"><a class="anchor" href="#_user"></a>User</h3>
+<div class="paragraph">
+<p>Manages MinIO users and their access credentials.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: minio.crossplane.io/v1
+kind: User
+metadata:
+  name: example-user
+spec:
+  forProvider:
+    username: myuser        # Optional: defaults to metadata.name
+    policies:              # Optional: attach policies
+      - policy-name-1
+      - policy-name-2
+  writeConnectionSecretsToRef:
+    name: user-credentials
+    namespace: default
+  providerConfigRef:
+    name: default</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Key Features:</strong>
+- Automatic access key generation
+- Password generation and secret management
+- Policy attachment
+- Webhook validation for immutable fields</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_policy"><a class="anchor" href="#_policy"></a>Policy</h3>
+<div class="paragraph">
+<p>Manages MinIO access policies using standard S3 policy documents.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: minio.crossplane.io/v1
+kind: Policy
+metadata:
+  name: example-policy
+spec:
+  forProvider:
+    name: my-policy         # Optional: defaults to metadata.name
+    policy: |              # JSON policy document
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["s3:GetObject"],
+            "Resource": ["arn:aws:s3:::my-bucket/*"]
+          }
+        ]
+      }
+  providerConfigRef:
+    name: default</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Key Features:</strong>
+- Standard S3 IAM policy format
+- JSON policy validation
+- Integration with User resources</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_providerconfig"><a class="anchor" href="#_providerconfig"></a>ProviderConfig</h3>
+<div class="paragraph">
+<p>Configures connection settings for the MinIO provider.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: Secret
+    apiSecretRef:
+      name: minio-credentials
+      namespace: crossplane-system
+  minioURL: https://minio.example.com:9000/
+  tls:                     # Optional: Custom TLS configuration
+    caSecretRef:
+      name: ca-certificate
+      key: ca.crt</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Key Features:</strong>
+- Multiple credential sources
+- Custom TLS configuration support
+- Connection validation
+- Secret reference management</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_field_references"><a class="anchor" href="#_field_references"></a>Field References</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_common_fields"><a class="anchor" href="#_common_fields"></a>Common Fields</h3>
+<div class="paragraph">
+<p>All resources support these standard Crossplane fields:</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>kubectl</code></p>
+<p><code>metadata.name</code>: Resource identifier</p>
 </li>
 <li>
-<p>Already running Kubernetes cluster</p>
+<p><code>spec.providerConfigRef</code>: Reference to ProviderConfig</p>
 </li>
 <li>
-<p>Installed minio</p>
+<p><code>spec.writeConnectionSecretsToRef</code>: Output secret configuration</p>
 </li>
 <li>
-<p>Installed Operator</p>
+<p><code>spec.deletionPolicy</code>: Orphan or Delete (default)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_status_fields"><a class="anchor" href="#_status_fields"></a>Status Fields</h3>
+<div class="paragraph">
+<p>All managed resources report status information:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>status.conditions</code>: Crossplane condition reporting</p>
+</li>
+<li>
+<p><code>status.atProvider</code>: Provider-specific status information</p>
+</li>
+<li>
+<p><code>status.observedGeneration</code>: Last processed spec generation</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
+</div>
 <div class="sect1">
-<h2 id="_steps"><a class="anchor" href="#_steps"></a>Steps</h2>
+<h2 id="_examples"><a class="anchor" href="#_examples"></a>Examples</h2>
 <div class="sectionbody">
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Create a file with the spec</p>
-<div class="listingblock">
-<div class="title">config.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
-kind: Secret
-metadata:
-  name: minio-secret
-  namespace: crossplane-system
-stringData:
-  AWS_ACCESS_KEY_ID: minioadmin <i class="conum" data-value="1"></i><b>(1)</b>
-  AWS_SECRET_ACCESS_KEY: minioadmin <i class="conum" data-value="1"></i><b>(1)</b>
----
-apiVersion: minio.crossplane.io/v1
-kind: ProviderConfig
-metadata:
-  name: provider-config
-spec:
-  credentials:
-    apiSecretRef:
-      name: minio-secret
-      namespace: crossplane-system
-    source: InjectedIdentity
-  minioURL: http://minio-server.minio.svc:9000/ <i class="conum" data-value="2"></i><b>(2)</b>
-status: {}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Please adjust the credendials according to your minio installation</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Please adjust the URL according to your minio installation</td>
-</tr>
-</table>
-</div>
-</li>
-<li>
-<p>Apply the spec in the cluster</p>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f config.yaml</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Create a bucket</p>
-<div class="listingblock">
-<div class="title">bucket.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: minio.crossplane.io/v1
-kind: Bucket
-metadata:
-  name: mybucket
-spec:
-  forProvider: {}
-  providerConfigRef:
-    name: provider-config
-status:
-  atProvider: {}</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Wait until the operator has provisioned the user</p>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f bucket.yaml
-kubectl wait --for condition=Ready bucket/mybucket</code></pre>
-</div>
-</div>
-</li>
-</ol>
+<div class="paragraph">
+<p>See the <a href="#examples">[examples]</a> directory for complete working examples of all resource types.</p>
 </div>
 </div>
 </div>
