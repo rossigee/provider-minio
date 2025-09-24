@@ -1,6 +1,7 @@
 package serviceaccount
 
 import (
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"testing"
 	"time"
 

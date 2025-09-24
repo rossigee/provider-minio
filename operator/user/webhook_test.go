@@ -1,6 +1,7 @@
 package user
 
 import (
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"context"
 	"encoding/json"
 	"testing"

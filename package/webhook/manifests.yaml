@@ -1,0 +1,106 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-minio-m-crossplane-io-v1beta1-bucket
+  failurePolicy: Fail
+  name: buckets.minio.m.crossplane.io
+  rules:
+  - apiGroups:
+    - minio.m.crossplane.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - buckets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-minio-m-crossplane-io-v1beta1-notificationconfiguration
+  failurePolicy: Fail
+  name: notificationconfigurations.minio.m.crossplane.io
+  rules:
+  - apiGroups:
+    - minio.m.crossplane.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - notificationconfigurations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-minio-m-crossplane-io-v1beta1-policy
+  failurePolicy: Fail
+  name: policies.minio.m.crossplane.io
+  rules:
+  - apiGroups:
+    - minio.m.crossplane.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-minio-m-crossplane-io-v1beta1-serviceaccount
+  failurePolicy: Fail
+  name: serviceaccounts.minio.m.crossplane.io
+  rules:
+  - apiGroups:
+    - minio.m.crossplane.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - serviceaccounts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-minio-m-crossplane-io-v1beta1-user
+  failurePolicy: Fail
+  name: users.minio.m.crossplane.io
+  rules:
+  - apiGroups:
+    - minio.m.crossplane.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None

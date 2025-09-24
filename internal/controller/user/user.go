@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -10,10 +9,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
@@ -129,11 +126,15 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	// User exists, update status
 	cr.Status.AtProvider.UserName = userName
 	cr.Status.AtProvider.Status = string(userInfo.Status)
-	cr.Status.AtProvider.Policies = strings.Join(userInfo.PolicyName, ",")
+	cr.Status.AtProvider.Policies = userInfo.PolicyName
 
 	// Check if policies match desired state
 	desiredPolicies := cr.Spec.ForProvider.Policies
-	currentPolicies := userInfo.PolicyName
+	// PolicyName is a single string, convert to slice for comparison
+	var currentPolicies []string
+	if userInfo.PolicyName != "" {
+		currentPolicies = []string{userInfo.PolicyName}
+	}
 
 	policiesMatch := len(desiredPolicies) == len(currentPolicies)
 	if policiesMatch {
@@ -211,18 +212,24 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalUpdate{}, nil
 }
 
-func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
-		return errors.New(errNotUser)
+		return managed.ExternalDelete{}, errors.New(errNotUser)
 	}
 
 	userName := cr.GetUserName()
 
 	err := c.client.RemoveUser(ctx, userName)
 	if err != nil && !strings.Contains(err.Error(), "does not exist") {
-		return errors.Wrap(err, errDeleteUser)
+		return managed.ExternalDelete{}, errors.Wrap(err, errDeleteUser)
 	}
 
+	return managed.ExternalDelete{}, nil
+}
+
+// Disconnect is called when the controller is shutting down and should close connections.
+func (c *external) Disconnect(ctx context.Context) error {
+	// MinIO admin client doesn't have persistent connections to close
 	return nil
 }
