@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/minio/madmin-go/v3"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 )
 
 func Test_userClient_equalPolicies(t *testing.T) {

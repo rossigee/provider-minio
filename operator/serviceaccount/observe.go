@@ -7,7 +7,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	k8svi "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"

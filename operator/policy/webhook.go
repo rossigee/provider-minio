@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"

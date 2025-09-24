@@ -11,7 +11,6 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
