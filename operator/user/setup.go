@@ -15,7 +15,7 @@ import (
 
 // SetupController adds a controller that reconciles managed resources.
 func SetupController(mgr ctrl.Manager) error {
-	name := strings.ToLower(miniov1.UserGroupKind)
+	name := strings.ToLower(miniov1beta1.UserGroupKind)
 	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name))
 
 	return SetupControllerWithConnecter(mgr, name, recorder, &connector{
@@ -30,56 +30,11 @@ func SetupControllerWithConnecter(mgr ctrl.Manager, name string, recorder event.
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&miniov1.User{}).
-		Complete(r)
-}
-
-func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnecter, creationGracePeriod time.Duration) *managed.Reconciler {
-	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
-
-	return managed.NewReconciler(mgr,
-		resource.ManagedKind(miniov1.UserGroupVersionKind),
-		managed.WithExternalConnecter(c),
-		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
-		managed.WithRecorder(recorder),
-		managed.WithPollInterval(1*time.Minute),
-		managed.WithConnectionPublishers(cps...),
-		managed.WithCreationGracePeriod(creationGracePeriod))
-}
-
-// SetupWebhook adds a webhook for managed resources.
-func SetupWebhook(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&miniov1.User{}).
-		WithValidator(&Validator{
-			log:  mgr.GetLogger().WithName("webhook").WithName(strings.ToLower(miniov1.UserKind)),
-			kube: mgr.GetClient(),
-		}).
-		Complete()
-}
-
-// SetupV1Beta1Controller adds a controller that reconciles v1beta1 managed resources.
-func SetupV1Beta1Controller(mgr ctrl.Manager) error {
-	name := strings.ToLower(miniov1beta1.UserGroupKind)
-	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name))
-
-	return SetupV1Beta1ControllerWithConnecter(mgr, name, recorder, &connector{
-		kube:     mgr.GetClient(),
-		recorder: recorder,
-		usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1.ProviderConfigUsage{}),
-	}, 0*time.Second)
-}
-
-func SetupV1Beta1ControllerWithConnecter(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnecter, creationGracePeriod time.Duration) error {
-	r := createV1Beta1Reconciler(mgr, name, recorder, c, creationGracePeriod)
-
-	return ctrl.NewControllerManagedBy(mgr).
-		Named(name).
 		For(&miniov1beta1.User{}).
 		Complete(r)
 }
 
-func createV1Beta1Reconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnecter, creationGracePeriod time.Duration) *managed.Reconciler {
+func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnecter, creationGracePeriod time.Duration) *managed.Reconciler {
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
 
 	return managed.NewReconciler(mgr,
@@ -92,8 +47,8 @@ func createV1Beta1Reconciler(mgr ctrl.Manager, name string, recorder event.Recor
 		managed.WithCreationGracePeriod(creationGracePeriod))
 }
 
-// SetupV1Beta1Webhook adds a webhook for v1beta1 managed resources.
-func SetupV1Beta1Webhook(mgr ctrl.Manager) error {
+// SetupWebhook adds a webhook for managed resources.
+func SetupWebhook(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&miniov1beta1.User{}).
 		WithValidator(&Validator{
@@ -101,4 +56,14 @@ func SetupV1Beta1Webhook(mgr ctrl.Manager) error {
 			kube: mgr.GetClient(),
 		}).
 		Complete()
+}
+
+// SetupV1Beta1Controller adds a controller that reconciles v1beta1 managed resources.
+func SetupV1Beta1Controller(mgr ctrl.Manager) error {
+	return SetupController(mgr)
+}
+
+// SetupV1Beta1Webhook adds a webhook for v1beta1 managed resources.
+func SetupV1Beta1Webhook(mgr ctrl.Manager) error {
+	return SetupWebhook(mgr)
 }

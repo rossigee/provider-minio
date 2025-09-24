@@ -18,7 +18,7 @@ import (
 var _ managed.ExternalConnecter = &connector{}
 var _ managed.ExternalClient = &bucketClient{}
 
-const lockAnnotation = miniov1.Group + "/lock"
+const lockAnnotation = miniov1beta1.Group + "/lock"
 
 var (
 	errNotBucket = fmt.Errorf("managed resource is not a bucket")
@@ -47,21 +47,15 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 
 	var config *providerv1.ProviderConfig
 
-	// Handle both v1 and v1beta1 API versions
-	if bucketv1, ok := mg.(*miniov1.Bucket); ok {
-		log.V(1).Info("Connecting v1 bucket", "name", bucketv1.Name)
-		config, err = c.getProviderConfigV1(ctx, bucketv1)
-		if err != nil {
-			return nil, err
-		}
-	} else if bucketv1beta1, ok := mg.(*miniov1beta1.Bucket); ok {
-		log.V(1).Info("Connecting v1beta1 bucket", "name", bucketv1beta1.Name)
-		config, err = c.getProviderConfigV1Beta1(ctx, bucketv1beta1)
-		if err != nil {
-			return nil, err
-		}
-	} else {
+	bucket, ok := mg.(*miniov1beta1.Bucket)
+	if !ok {
 		return nil, errNotBucket
+	}
+
+	log.V(1).Info("Connecting bucket", "name", bucket.Name)
+	config, err = c.getProviderConfig(ctx, bucket)
+	if err != nil {
+		return nil, err
 	}
 
 	mc, err := minioutil.NewMinioClient(ctx, c.kube, config)
@@ -77,14 +71,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	return bc, nil
 }
 
-func (c *connector) getProviderConfigV1(ctx context.Context, bucket *miniov1.Bucket) (*providerv1.ProviderConfig, error) {
-	configName := bucket.GetProviderConfigReference().Name
-	config := &providerv1.ProviderConfig{}
-	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
-	return config, err
-}
-
-func (c *connector) getProviderConfigV1Beta1(ctx context.Context, bucket *miniov1beta1.Bucket) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfig(ctx context.Context, bucket *miniov1beta1.Bucket) (*providerv1.ProviderConfig, error) {
 	configName := bucket.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)

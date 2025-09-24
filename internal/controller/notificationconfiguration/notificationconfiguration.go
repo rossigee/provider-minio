@@ -308,4 +308,3 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 
 	return nil
 }
-

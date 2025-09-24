@@ -34,7 +34,7 @@ type Validator struct {
 // ValidateCreate implements admission.CustomValidator.
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	// Handle both v1 and v1beta1 API versions
-	if userv1, ok := obj.(*miniov1.User); ok {
+	if userv1, ok := obj.(*miniov1beta1.User); ok {
 		v.log.V(1).Info("Validate create v1")
 
 		providerConfigRef := userv1.Spec.ProviderConfigReference
@@ -72,8 +72,8 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 // ValidateUpdate implements admission.CustomValidator.
 func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	// Handle both v1 and v1beta1 API versions
-	if oldUserv1, ok := oldObj.(*miniov1.User); ok {
-		newUserv1 := newObj.(*miniov1.User)
+	if oldUserv1, ok := oldObj.(*miniov1beta1.User); ok {
+		newUserv1 := newObj.(*miniov1beta1.User)
 		v.log.V(1).Info("Validate update v1")
 
 		if newUserv1.GetUserName() != oldUserv1.GetUserName() {
@@ -131,7 +131,7 @@ func (v *Validator) ValidateDelete(_ context.Context, obj runtime.Object) (admis
 	return nil, nil
 }
 
-func (v *Validator) doesPolicyExist(ctx context.Context, user *miniov1.User) error {
+func (v *Validator) doesPolicyExist(ctx context.Context, user *miniov1beta1.User) error {
 
 	if len(user.Spec.ForProvider.Policies) == 0 {
 		return nil
@@ -187,7 +187,7 @@ func (v *Validator) doesPolicyExistV1Beta1(ctx context.Context, user *miniov1bet
 	return nil
 }
 
-func getProviderConfig(ctx context.Context, user *miniov1.User, kube client.Client) (*providerv1.ProviderConfig, error) {
+func getProviderConfig(ctx context.Context, user *miniov1beta1.User, kube client.Client) (*providerv1.ProviderConfig, error) {
 	configName := user.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := kube.Get(ctx, client.ObjectKey{Name: configName}, config)

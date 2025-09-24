@@ -15,7 +15,7 @@ import (
 
 // SetupController adds a controller that reconciles managed resources.
 func SetupController(mgr ctrl.Manager) error {
-	name := strings.ToLower(miniov1.ServiceAccountGroupKind)
+	name := strings.ToLower(miniov1beta1.ServiceAccountGroupKind)
 	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name))
 
 	return SetupControllerWithConnecter(mgr, name, recorder, &connector{
@@ -30,7 +30,7 @@ func SetupControllerWithConnecter(mgr ctrl.Manager, name string, recorder event.
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&miniov1.ServiceAccount{}).
+		For(&miniov1beta1.ServiceAccount{}).
 		Complete(r)
 }
 
@@ -38,7 +38,7 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
 
 	return managed.NewReconciler(mgr,
-		resource.ManagedKind(miniov1.ServiceAccountGroupVersionKind),
+		resource.ManagedKind(miniov1beta1.ServiceAccountGroupVersionKind),
 		managed.WithExternalConnecter(c),
 		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
 		managed.WithRecorder(recorder),
@@ -50,9 +50,9 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 // SetupWebhook adds a webhook for managed resources.
 func SetupWebhook(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&miniov1.ServiceAccount{}).
+		For(&miniov1beta1.ServiceAccount{}).
 		WithValidator(&Validator{
-			log:  mgr.GetLogger().WithName("webhook").WithName(strings.ToLower(miniov1.ServiceAccountKind)),
+			log:  mgr.GetLogger().WithName("webhook").WithName(strings.ToLower(miniov1beta1.ServiceAccountKind)),
 			kube: mgr.GetClient(),
 		}).
 		Complete()

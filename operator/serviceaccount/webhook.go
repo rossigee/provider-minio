@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +27,7 @@ type Validator struct {
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	v.log.V(1).Info("Validate create")
 
-	serviceAccount, ok := obj.(*miniov1.ServiceAccount)
+	serviceAccount, ok := obj.(*miniov1beta1.ServiceAccount)
 	if !ok {
 		return nil, errNotServiceAccount
 	}
@@ -65,11 +66,11 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	v.log.V(1).Info("Validate update")
 
-	oldServiceAccount, ok := oldObj.(*miniov1.ServiceAccount)
+	oldServiceAccount, ok := oldObj.(*miniov1beta1.ServiceAccount)
 	if !ok {
 		return nil, errNotServiceAccount
 	}
-	newServiceAccount, ok := newObj.(*miniov1.ServiceAccount)
+	newServiceAccount, ok := newObj.(*miniov1beta1.ServiceAccount)
 	if !ok {
 		return nil, errNotServiceAccount
 	}
@@ -110,7 +111,7 @@ func (v *Validator) ValidateDelete(_ context.Context, obj runtime.Object) (admis
 	return nil, nil
 }
 
-func (v *Validator) validatePolicy(ctx context.Context, serviceAccount *miniov1.ServiceAccount, policy string) error {
+func (v *Validator) validatePolicy(ctx context.Context, serviceAccount *miniov1beta1.ServiceAccount, policy string) error {
 	// Empty policy is valid (means inherit from parent user)
 	if policy == "" {
 		return nil
