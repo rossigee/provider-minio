@@ -8,23 +8,73 @@
 [build]: https://github.com/rossigee/provider-minio/actions/workflows/ci.yml
 [releases]: https://github.com/rossigee/provider-minio/releases
 
-**✅ BUILD STATUS: WORKING** - Successfully builds and passes all tests (v0.8.1)
+**✅ BUILD STATUS: WORKING** - Successfully builds and passes all tests (v0.17.0)
 
 Crossplane provider for managing MinIO object storage resources including buckets, users, and policies.
+
+## ⚡ **BREAKING CHANGE: v1→v2 API Migration**
+
+**Starting with v0.17.0, this provider uses Crossplane v2 namespaced APIs:**
+
+- **Old**: `minio.crossplane.io/v1` (cluster-scoped)
+- **New**: `minio.m.crossplane.io/v1beta1` (namespaced) ✅
+
+**See [API Migration Guide](#api-migration-v1v2) below for upgrade instructions.**
 
 ## Features
 
 - **Bucket Management**: Create, configure, and manage MinIO buckets
-- **User Management**: User accounts and access management  
+- **User Management**: User accounts and access management
 - **Policy Management**: Fine-grained access control policies
+- **Service Account Management**: MinIO service accounts for programmatic access
 - **TLS Support**: Custom certificate configuration for secure connections
+- **Crossplane v2**: Full support for namespaced resources and multi-tenancy
 - **Provider Status**: ✅ Production ready with standardized CI/CD pipeline
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.8.1`
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.17.0` ✅
 - **Harbor**: Available via environment configuration
 - **Upbound**: Available via environment configuration
+
+## API Migration (v1→v2)
+
+### Quick Migration Example
+
+**❌ Old v1 (cluster-scoped):**
+
+```yaml
+apiVersion: minio.crossplane.io/v1
+kind: Bucket
+metadata:
+  name: my-bucket  # No namespace
+```
+
+**✅ New v1beta1 (namespaced):**
+
+```yaml
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: my-bucket
+  namespace: production  # Namespace required
+```
+
+### Migration Steps
+
+1. **Update API Version**: `minio.crossplane.io/v1` → `minio.m.crossplane.io/v1beta1`
+2. **Add Namespace**: All resources now require a namespace
+3. **Update Provider Package**: Use v0.16.5+ for v2 support
+4. **Test Resources**: Verify resources work in target namespaces
+
+### Compatibility
+
+| Version | v1 APIs | v1beta1 APIs | Crossplane |
+|---------|---------|--------------|-------------|
+| < v0.16.5 | ✅ | ❌ | v1.x |
+| v0.16.5+ | ❌ | ✅ | v2.x |
+
+**Note**: This is a **breaking change**. v1 and v1beta1 APIs cannot coexist.
 
 Documentation: <https://vshn.github.io/provider-minio/provider-minio/>
 
