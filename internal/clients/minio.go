@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/minio/madmin-go/v3"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/minio/madmin-go/v3"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
@@ -33,8 +33,8 @@ type Config struct {
 
 // GetConfig extracts the MinIO configuration from a ProviderConfig
 func GetConfig(ctx context.Context, c client.Client, pc *v1.ProviderConfig) (*Config, error) {
-	switch {
-	case pc.Spec.Credentials.Source == xpv1.CredentialsSourceSecret:
+	switch pc.Spec.Credentials.Source {
+	case xpv1.CredentialsSourceSecret:
 		secretRef := &xpv1.SecretReference{
 			Name:      pc.Spec.Credentials.SecretRef.Name,
 			Namespace: pc.Spec.Credentials.SecretRef.Namespace,
@@ -66,7 +66,10 @@ func getConfigFromSecret(ctx context.Context, c client.Client, ref *xpv1.SecretR
 
 // NewMinIOClient creates a new MinIO admin client
 func NewMinIOClient(cfg Config) (*madmin.AdminClient, error) {
-	client, err := madmin.New(cfg.Endpoint, cfg.AccessKey, cfg.SecretKey, cfg.UseSSL)
+	client, err := madmin.NewWithOptions(cfg.Endpoint, &madmin.Options{
+		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
+		Secure: cfg.UseSSL,
+	})
 	if err != nil {
 		return nil, err
 	}

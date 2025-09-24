@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/minio/madmin-go/v3"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,7 +28,10 @@ func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.Prov
 		return nil, err
 	}
 
-	adminClient, err := madmin.New(parsed.Host, string(secret.Data[MinioIDKey]), string(secret.Data[MinioSecretKey]), IsTLSEnabled(parsed))
+	adminClient, err := madmin.NewWithOptions(parsed.Host, &madmin.Options{
+		Creds:  credentials.NewStaticV4(string(secret.Data[MinioIDKey]), string(secret.Data[MinioSecretKey]), ""),
+		Secure: IsTLSEnabled(parsed),
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/minio/madmin-go/v3"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -13,8 +14,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-
-	"github.com/minio/madmin-go/v3"
 
 	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	apisv1alpha1 "github.com/rossigee/provider-minio/apis/provider/v1"
@@ -179,9 +178,14 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	// Apply policies if specified
 	if len(cr.Spec.ForProvider.Policies) > 0 {
-		err = c.client.SetPolicy(ctx, strings.Join(cr.Spec.ForProvider.Policies, ","), userName, false)
-		if err != nil {
-			return managed.ExternalCreation{}, errors.Wrap(err, "cannot set user policies")
+		for _, policy := range cr.Spec.ForProvider.Policies {
+			_, err = c.client.AttachPolicy(ctx, madmin.PolicyAssociationReq{
+				Policies: []string{policy},
+				User:     userName,
+			})
+			if err != nil {
+				return managed.ExternalCreation{}, errors.Wrapf(err, "cannot attach policy %s to user", policy)
+			}
 		}
 	}
 
@@ -201,11 +205,34 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	userName := cr.GetUserName()
 
-	// Update policies
+	// Update policies - detach existing and attach new ones
 	if len(cr.Spec.ForProvider.Policies) > 0 {
-		err := c.client.SetPolicy(ctx, strings.Join(cr.Spec.ForProvider.Policies, ","), userName, false)
+		// Get current policies to detach them first
+		userInfo, err := c.client.GetUserInfo(ctx, userName)
 		if err != nil {
-			return managed.ExternalUpdate{}, errors.Wrap(err, "cannot update user policies")
+			return managed.ExternalUpdate{}, errors.Wrap(err, "cannot get current user info")
+		}
+
+		// Detach existing policies
+		if userInfo.PolicyName != "" {
+			_, err := c.client.DetachPolicy(ctx, madmin.PolicyAssociationReq{
+				Policies: []string{userInfo.PolicyName},
+				User:     userName,
+			})
+			if err != nil {
+				return managed.ExternalUpdate{}, errors.Wrapf(err, "cannot detach policy %s from user", userInfo.PolicyName)
+			}
+		}
+
+		// Attach new policies
+		for _, policy := range cr.Spec.ForProvider.Policies {
+			_, err := c.client.AttachPolicy(ctx, madmin.PolicyAssociationReq{
+				Policies: []string{policy},
+				User:     userName,
+			})
+			if err != nil {
+				return managed.ExternalUpdate{}, errors.Wrapf(err, "cannot attach policy %s to user", policy)
+			}
 		}
 	}
 
