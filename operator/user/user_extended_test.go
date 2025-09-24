@@ -83,7 +83,7 @@ func TestUserClient_userExists(t *testing.T) {
 }
 
 func TestUserClient_emitEvents(t *testing.T) {
-	user := &miniov1.User{
+	user := &miniov1beta1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-user",
 		},
@@ -109,7 +109,7 @@ func TestUserClient_equalPolicies_EdgeCases(t *testing.T) {
 	testCases := []struct {
 		name        string
 		minioUser   madmin.UserInfo
-		user        *miniov1.User
+		user        *miniov1beta1.User
 		expectEqual bool
 	}{
 		{
@@ -117,9 +117,9 @@ func TestUserClient_equalPolicies_EdgeCases(t *testing.T) {
 			minioUser: madmin.UserInfo{
 				PolicyName: "",
 			},
-			user: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			user: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: nil,
 					},
 				},
@@ -131,9 +131,9 @@ func TestUserClient_equalPolicies_EdgeCases(t *testing.T) {
 			minioUser: madmin.UserInfo{
 				PolicyName: "",
 			},
-			user: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			user: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: []string{},
 					},
 				},
@@ -145,9 +145,9 @@ func TestUserClient_equalPolicies_EdgeCases(t *testing.T) {
 			minioUser: madmin.UserInfo{
 				PolicyName: "read-only",
 			},
-			user: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			user: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: []string{"read-only"},
 					},
 				},
@@ -159,9 +159,9 @@ func TestUserClient_equalPolicies_EdgeCases(t *testing.T) {
 			minioUser: madmin.UserInfo{
 				PolicyName: "read-only,write-access",
 			},
-			user: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			user: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: []string{"read-only", "write-access"},
 					},
 				},
@@ -173,9 +173,9 @@ func TestUserClient_equalPolicies_EdgeCases(t *testing.T) {
 			minioUser: madmin.UserInfo{
 				PolicyName: "write-access,read-only",
 			},
-			user: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			user: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: []string{"read-only", "write-access"},
 					},
 				},
@@ -187,9 +187,9 @@ func TestUserClient_equalPolicies_EdgeCases(t *testing.T) {
 			minioUser: madmin.UserInfo{
 				PolicyName: "read-only",
 			},
-			user: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			user: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: []string{"read-only", "write-access"},
 					},
 				},
@@ -298,17 +298,17 @@ func TestErrorTypes(t *testing.T) {
 func TestUserNameValidation(t *testing.T) {
 	testCases := []struct {
 		name     string
-		user     *miniov1.User
+		user     *miniov1beta1.User
 		expected string
 	}{
 		{
 			name: "User with explicit username",
-			user: &miniov1.User{
+			user: &miniov1beta1.User{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-user",
 				},
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						UserName: "explicit-username",
 					},
 				},
@@ -317,12 +317,12 @@ func TestUserNameValidation(t *testing.T) {
 		},
 		{
 			name: "User without explicit username should use name",
-			user: &miniov1.User{
+			user: &miniov1beta1.User{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-user",
 				},
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{},
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{},
 				},
 			},
 			expected: "test-user",

@@ -11,7 +11,7 @@ func TestPolicyClient_Delete_InvalidResource(t *testing.T) {
 	client := &policyClient{}
 
 	// Test with non-policy resource - this should test the type assertion
-	_, err := client.Delete(context.TODO(), &miniov1.User{})
+	_, err := client.Delete(context.TODO(), &miniov1beta1.User{})
 
 	if err == nil {
 		t.Errorf("expected error for invalid resource type")
@@ -24,7 +24,7 @@ func TestPolicyClient_Delete_InvalidResource(t *testing.T) {
 
 func TestPolicyClient_Delete_TypeCheck(t *testing.T) {
 	// Test that a valid Policy resource passes the type check
-	policy := &miniov1.Policy{
+	policy := &miniov1beta1.Policy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-policy",
 		},

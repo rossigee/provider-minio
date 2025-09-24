@@ -69,12 +69,12 @@ func TestPolicyClient_getAllowBucketPolicy_DifferentBuckets(t *testing.T) {
 func TestPolicyClient_setLock(t *testing.T) {
 	testCases := []struct {
 		name               string
-		policy             *miniov1.Policy
+		policy             *miniov1beta1.Policy
 		expectedAnnotation bool
 	}{
 		{
 			name: "Policy with existing annotations",
-			policy: &miniov1.Policy{
+			policy: &miniov1beta1.Policy{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"existing": "annotation",
@@ -85,7 +85,7 @@ func TestPolicyClient_setLock(t *testing.T) {
 		},
 		{
 			name: "Policy with no annotations",
-			policy: &miniov1.Policy{
+			policy: &miniov1beta1.Policy{
 				ObjectMeta: metav1.ObjectMeta{},
 			},
 			expectedAnnotation: true,
@@ -117,7 +117,7 @@ func TestPolicyClient_setLock(t *testing.T) {
 }
 
 func TestPolicyClient_emitEvents(t *testing.T) {
-	policy := &miniov1.Policy{
+	policy := &miniov1beta1.Policy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-policy",
 		},
@@ -222,7 +222,7 @@ func TestPolicyClientErrorTypes(t *testing.T) {
 }
 
 func TestPolicyStatus_Conditions(t *testing.T) {
-	policy := &miniov1.Policy{
+	policy := &miniov1beta1.Policy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-policy",
 		},

@@ -123,7 +123,7 @@ type ServiceAccountList struct {
 // GetAccessKey returns the spec.forProvider.accessKey if given, otherwise defaults to metadata.name.
 func (in *ServiceAccount) GetAccessKey() string {
 	if in.Spec.ForProvider.AccessKey == "" {
-		return in.Name
+		return in.GetName()
 	}
 	return in.Spec.ForProvider.AccessKey
 }

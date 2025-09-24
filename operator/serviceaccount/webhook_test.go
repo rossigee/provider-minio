@@ -14,23 +14,23 @@ import (
 func TestValidator_ValidateCreate(t *testing.T) {
 	tests := []struct {
 		name          string
-		serviceAccount *miniov1.ServiceAccount
+		serviceAccount *miniov1beta1.ServiceAccount
 		expectedError bool
 		errorContains string
 	}{
 		{
 			name: "Valid ServiceAccount - should pass",
-			serviceAccount: &miniov1.ServiceAccount{
+			serviceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						Name:        "Test Service Account",
 						Description: "Test Description",
 						AccessKey:   "myaccessid",
@@ -43,12 +43,12 @@ func TestValidator_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "Missing ProviderConfigReference - should fail",
-			serviceAccount: &miniov1.ServiceAccount{
+			serviceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
-					ForProvider: miniov1.ServiceAccountParameters{
+				Spec: miniov1beta1.ServiceAccountSpec{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						Name: "Test Service Account",
 					},
 				},
@@ -58,17 +58,17 @@ func TestValidator_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "Invalid access key - too short",
-			serviceAccount: &miniov1.ServiceAccount{
+			serviceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						AccessKey: "ab", // Too short
 					},
 				},
@@ -78,17 +78,17 @@ func TestValidator_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "Invalid secret key - too short",
-			serviceAccount: &miniov1.ServiceAccount{
+			serviceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						SecretKey: "short", // Too short (less than 8 characters)
 					},
 				},
@@ -98,17 +98,17 @@ func TestValidator_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "Invalid JSON policy - should fail",
-			serviceAccount: &miniov1.ServiceAccount{
+			serviceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						Policy: `invalid json {`,
 					},
 				},
@@ -142,40 +142,40 @@ func TestValidator_ValidateCreate(t *testing.T) {
 func TestValidator_ValidateUpdate(t *testing.T) {
 	tests := []struct {
 		name              string
-		oldServiceAccount *miniov1.ServiceAccount
-		newServiceAccount *miniov1.ServiceAccount
+		oldServiceAccount *miniov1beta1.ServiceAccount
+		newServiceAccount *miniov1beta1.ServiceAccount
 		expectedError     bool
 		errorContains     string
 	}{
 		{
 			name: "Valid update - should pass",
-			oldServiceAccount: &miniov1.ServiceAccount{
+			oldServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						AccessKey:  "myaccessid",
 						TargetUser: "test-user",
 					},
 				},
 			},
-			newServiceAccount: &miniov1.ServiceAccount{
+			newServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						AccessKey:   "myaccessid", // Same access key
 						TargetUser:  "test-user",       // Same target user
 						Description: "Updated description", // This can change
@@ -186,27 +186,27 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 		},
 		{
 			name: "Changing access key - should fail",
-			oldServiceAccount: &miniov1.ServiceAccount{
+			oldServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
-					ForProvider: miniov1.ServiceAccountParameters{
+				Spec: miniov1beta1.ServiceAccountSpec{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						AccessKey: "olduser",
 					},
 				},
 			},
-			newServiceAccount: &miniov1.ServiceAccount{
+			newServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						AccessKey: "newuser", // Changed access key
 					},
 				},
@@ -216,27 +216,27 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 		},
 		{
 			name: "Changing target user - should fail",
-			oldServiceAccount: &miniov1.ServiceAccount{
+			oldServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
-					ForProvider: miniov1.ServiceAccountParameters{
+				Spec: miniov1beta1.ServiceAccountSpec{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						TargetUser: "old-user",
 					},
 				},
 			},
-			newServiceAccount: &miniov1.ServiceAccount{
+			newServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
 						},
 					},
-					ForProvider: miniov1.ServiceAccountParameters{
+					ForProvider: miniov1beta1.ServiceAccountParameters{
 						TargetUser: "new-user", // Changed target user
 					},
 				},
@@ -246,17 +246,17 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 		},
 		{
 			name: "Update during deletion - should pass",
-			oldServiceAccount: &miniov1.ServiceAccount{
+			oldServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceaccount",
 				},
 			},
-			newServiceAccount: &miniov1.ServiceAccount{
+			newServiceAccount: &miniov1beta1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "test-serviceaccount",
 					DeletionTimestamp: &metav1.Time{Time: metav1.Now().Time},
 				},
-				Spec: miniov1.ServiceAccountSpec{
+				Spec: miniov1beta1.ServiceAccountSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test-provider-config",
@@ -295,7 +295,7 @@ func TestValidator_ValidateDelete(t *testing.T) {
 		kube: fake.NewClientBuilder().Build(),
 	}
 
-	serviceAccount := &miniov1.ServiceAccount{
+	serviceAccount := &miniov1beta1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-serviceaccount",
 		},
@@ -311,7 +311,7 @@ func TestValidator_ValidatePolicy(t *testing.T) {
 		kube: fake.NewClientBuilder().Build(),
 	}
 
-	serviceAccount := &miniov1.ServiceAccount{}
+	serviceAccount := &miniov1beta1.ServiceAccount{}
 
 	tests := []struct {
 		name          string
