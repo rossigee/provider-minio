@@ -8,8 +8,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	k8svi "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -19,7 +19,7 @@ func (u *userClient) Update(ctx context.Context, mg resource.Managed) (managed.E
 	log := controllerruntime.LoggerFrom(ctx)
 	log.V(1).Info("updating resource")
 
-	user, ok := mg.(*miniov1.User)
+	user, ok := mg.(*miniov1beta1.User)
 	if !ok {
 		return managed.ExternalUpdate{}, errNotUser
 	}
@@ -73,7 +73,7 @@ func (u *userClient) Update(ctx context.Context, mg resource.Managed) (managed.E
 	return managed.ExternalUpdate{}, nil
 }
 
-func (u *userClient) emitUpdateEvent(user *miniov1.User) {
+func (u *userClient) emitUpdateEvent(user *miniov1beta1.User) {
 	u.recorder.Event(user, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Updated",

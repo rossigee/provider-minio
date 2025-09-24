@@ -8,14 +8,14 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // SetupController adds a controller that reconciles managed resources.
 func SetupController(mgr ctrl.Manager) error {
-	name := strings.ToLower(miniov1.PolicyGroupKind)
+	name := strings.ToLower(miniov1beta1.PolicyGroupKind)
 	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name))
 
 	return SetupControllerWithConnecter(mgr, name, recorder, &connector{
@@ -30,7 +30,7 @@ func SetupControllerWithConnecter(mgr ctrl.Manager, name string, recorder event.
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&miniov1.Policy{}).
+		For(&miniov1beta1.Policy{}).
 		Complete(r)
 }
 
@@ -38,7 +38,7 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
 
 	return managed.NewReconciler(mgr,
-		resource.ManagedKind(miniov1.PolicyGroupVersionKind),
+		resource.ManagedKind(miniov1beta1.PolicyGroupVersionKind),
 		managed.WithExternalConnecter(c),
 		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
 		managed.WithRecorder(recorder),
@@ -50,9 +50,9 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 // SetupWebhook adds a webhook for managed resources.
 func SetupWebhook(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&miniov1.Policy{}).
+		For(&miniov1beta1.Policy{}).
 		WithValidator(&Validator{
-			log: mgr.GetLogger().WithName("webhook").WithName(strings.ToLower(miniov1.PolicyKind)),
+			log: mgr.GetLogger().WithName("webhook").WithName(strings.ToLower(miniov1beta1.PolicyKind)),
 		}).
 		Complete()
 }

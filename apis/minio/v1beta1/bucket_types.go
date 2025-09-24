@@ -1,4 +1,4 @@
-package v1
+package v1beta1
 
 import (
 	"reflect"
@@ -22,10 +22,6 @@ const (
 // BucketDeletionPolicy determines how buckets should be deleted when a Bucket is deleted.
 type BucketDeletionPolicy string
 
-// We can't have this here, because ironically the generator breaks if this throws and error...
-// var _ resource.Managed = &Bucket{}
-// var _ runtime.Object = &Bucket{}
-
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
@@ -35,9 +31,11 @@ type BucketDeletionPolicy string
 // +kubebuilder:printcolumn:name="Bucket Name",type="string",JSONPath=".status.atProvider.bucketName"
 // +kubebuilder:printcolumn:name="Region",type="string",JSONPath=".spec.forProvider.region"
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,minio}
-// +kubebuilder:webhook:verbs=create;update,path=/validate-minio-crossplane-io-v1-bucket,mutating=false,failurePolicy=fail,groups=minio.crossplane.io,resources=buckets,versions=v1,name=buckets.minio.crossplane.io,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,minio}
+// +kubebuilder:webhook:verbs=create;update,path=/validate-minio-m-crossplane-io-v1beta1-bucket,mutating=false,failurePolicy=fail,groups=minio.m.crossplane.io,resources=buckets,versions=v1beta1,name=buckets.minio.m.crossplane.io,sideEffects=None,admissionReviewVersions=v1
 
+// Bucket is a namespaced managed resource that represents a MinIO bucket.
+// This is the Crossplane v2 namespaced version.
 type Bucket struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -46,12 +44,13 @@ type Bucket struct {
 	Status BucketStatus `json:"status,omitempty"`
 }
 
+// BucketSpec defines the desired state of a Bucket
 type BucketSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ProviderReference *xpv1.Reference  `json:"providerReference,omitempty"`
 	ForProvider       BucketParameters `json:"forProvider,omitempty"`
 }
 
+// BucketStatus defines the observed state of a Bucket
 type BucketStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	Endpoint            string               `json:"endpoint,omitempty"`
@@ -59,6 +58,7 @@ type BucketStatus struct {
 	AtProvider          BucketProviderStatus `json:"atProvider,omitempty"`
 }
 
+// BucketParameters define the desired state of a MinIO Bucket
 type BucketParameters struct {
 	// BucketName is the name of the bucket to create.
 	// Defaults to `metadata.name` if unset.
@@ -86,6 +86,7 @@ type BucketParameters struct {
 	Policy *string `json:"policy,omitempty"`
 }
 
+// BucketProviderStatus defines the observed state of a Bucket from the provider
 type BucketProviderStatus struct {
 	// BucketName is the name of the actual bucket.
 	BucketName string `json:"bucketName,omitempty"`
@@ -93,6 +94,7 @@ type BucketProviderStatus struct {
 
 // +kubebuilder:object:root=true
 
+// BucketList contains a list of Bucket resources
 type BucketList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -110,7 +112,7 @@ var (
 // GetBucketName returns the spec.forProvider.bucketName if given, otherwise defaults to metadata.name.
 func (in *Bucket) GetBucketName() string {
 	if in.Spec.ForProvider.BucketName == "" {
-		return in.Name
+		return in.GetName()
 	}
 	return in.Spec.ForProvider.BucketName
 }

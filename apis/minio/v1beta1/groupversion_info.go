@@ -1,9 +1,10 @@
 // +kubebuilder:object:generate=true
-// +groupName=minio.crossplane.io
-// +versionName=v1
+// +groupName=minio.m.crossplane.io
+// +versionName=v1beta1
 
-// Package v1 contains the v1 group minio.crossplane.io resources of provider-minio.
-package v1
+// Package v1beta1 contains the v1beta1 group minio.m.crossplane.io resources of provider-minio.
+// This is the namespaced version of the minio provider following Crossplane v2 patterns.
+package v1beta1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -12,8 +13,8 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "minio.crossplane.io"
-	Version = "v1"
+	Group   = "minio.m.crossplane.io"
+	Version = "v1beta1"
 )
 
 var (

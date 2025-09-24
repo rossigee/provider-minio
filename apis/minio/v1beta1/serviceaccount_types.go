@@ -1,4 +1,4 @@
-package v1
+package v1beta1
 
 import (
 	"reflect"
@@ -20,9 +20,11 @@ func init() {
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.atProvider.accountStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,minio}
-// +kubebuilder:webhook:verbs=create;update,path=/validate-minio-crossplane-io-v1-serviceaccount,mutating=false,failurePolicy=fail,groups=minio.crossplane.io,resources=serviceaccounts,versions=v1,name=serviceaccounts.minio.crossplane.io,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,minio}
+// +kubebuilder:webhook:verbs=create;update,path=/validate-minio-m-crossplane-io-v1beta1-serviceaccount,mutating=false,failurePolicy=fail,groups=minio.m.crossplane.io,resources=serviceaccounts,versions=v1beta1,name=serviceaccounts.minio.m.crossplane.io,sideEffects=None,admissionReviewVersions=v1
 
+// ServiceAccount is a namespaced managed resource that represents a MinIO service account.
+// This is the Crossplane v2 namespaced version.
 type ServiceAccount struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -31,18 +33,19 @@ type ServiceAccount struct {
 	Status ServiceAccountStatus `json:"status,omitempty"`
 }
 
+// ServiceAccountSpec defines the desired state of a ServiceAccount
 type ServiceAccountSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ProviderReference *xpv1.Reference `json:"providerReference,omitempty"`
-
-	ForProvider ServiceAccountParameters `json:"forProvider,omitempty"`
+	ForProvider       ServiceAccountParameters `json:"forProvider,omitempty"`
 }
 
+// ServiceAccountStatus defines the observed state of a ServiceAccount
 type ServiceAccountStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	AtProvider          ServiceAccountProviderStatus `json:"atProvider,omitempty"`
 }
 
+// ServiceAccountProviderStatus defines the observed state of a ServiceAccount from the provider
 type ServiceAccountProviderStatus struct {
 	// AccessKey is the access key ID of the service account
 	AccessKey string `json:"accessKey,omitempty"`
@@ -58,6 +61,7 @@ type ServiceAccountProviderStatus struct {
 	Expiration *metav1.Time `json:"expiration,omitempty"`
 }
 
+// ServiceAccountParameters define the desired state of a MinIO ServiceAccount
 type ServiceAccountParameters struct {
 	// TargetUser is the user that this service account will belong to.
 	// If not specified, the service account will be created for the user
@@ -109,6 +113,7 @@ type ServiceAccountParameters struct {
 
 // +kubebuilder:object:root=true
 
+// ServiceAccountList contains a list of ServiceAccount resources
 type ServiceAccountList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -118,7 +123,7 @@ type ServiceAccountList struct {
 // GetAccessKey returns the spec.forProvider.accessKey if given, otherwise defaults to metadata.name.
 func (in *ServiceAccount) GetAccessKey() string {
 	if in.Spec.ForProvider.AccessKey == "" {
-		return in.Name
+		return in.GetName()
 	}
 	return in.Spec.ForProvider.AccessKey
 }

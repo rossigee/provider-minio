@@ -1,4 +1,4 @@
-package v1
+package v1beta1
 
 import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"

@@ -1,6 +1,7 @@
 package bucket
 
 import (
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"context"
 	"testing"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,13 +28,13 @@ func TestValidator_ValidateCreate_RequireProviderConfig(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			bucket := &miniov1.Bucket{
+			bucket := &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Name: "bucket"},
-				Spec: miniov1.BucketSpec{
+				Spec: miniov1beta1.BucketSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{Name: tc.providerName},
 					},
-					ForProvider: miniov1.BucketParameters{BucketName: "bucket"},
+					ForProvider: miniov1beta1.BucketParameters{BucketName: "bucket"},
 				},
 			}
 			v := &Validator{log: logr.Discard()}
@@ -78,18 +78,18 @@ func TestValidator_ValidateUpdate_PreventBucketNameChange(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			oldBucket := &miniov1.Bucket{
+			oldBucket := &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Name: "bucket"},
-				Spec: miniov1.BucketSpec{
-					ForProvider:  miniov1.BucketParameters{BucketName: tc.oldBucketName},
+				Spec: miniov1beta1.BucketSpec{
+					ForProvider:  miniov1beta1.BucketParameters{BucketName: tc.oldBucketName},
 					ResourceSpec: xpv1.ResourceSpec{ProviderConfigReference: &xpv1.Reference{Name: "provider-config"}},
 				},
-				Status: miniov1.BucketStatus{AtProvider: miniov1.BucketProviderStatus{BucketName: tc.oldBucketName}},
+				Status: miniov1beta1.BucketStatus{AtProvider: miniov1beta1.BucketProviderStatus{BucketName: tc.oldBucketName}},
 			}
-			newBucket := &miniov1.Bucket{
+			newBucket := &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Name: "bucket"},
-				Spec: miniov1.BucketSpec{
-					ForProvider:  miniov1.BucketParameters{BucketName: tc.newBucketName},
+				Spec: miniov1beta1.BucketSpec{
+					ForProvider:  miniov1beta1.BucketParameters{BucketName: tc.newBucketName},
 					ResourceSpec: xpv1.ResourceSpec{ProviderConfigReference: &xpv1.Reference{Name: "provider-config"}},
 				},
 			}
@@ -127,23 +127,23 @@ func TestValidator_ValidateUpdate_RequireProviderConfig(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			oldBucket := &miniov1.Bucket{
+			oldBucket := &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Name: "bucket"},
-				Spec: miniov1.BucketSpec{
+				Spec: miniov1beta1.BucketSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: tc.providerConfigToRef,
 					},
-					ForProvider: miniov1.BucketParameters{BucketName: "bucket"},
+					ForProvider: miniov1beta1.BucketParameters{BucketName: "bucket"},
 				},
-				Status: miniov1.BucketStatus{AtProvider: miniov1.BucketProviderStatus{BucketName: "bucket"}},
+				Status: miniov1beta1.BucketStatus{AtProvider: miniov1beta1.BucketProviderStatus{BucketName: "bucket"}},
 			}
-			newBucket := &miniov1.Bucket{
+			newBucket := &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Name: "bucket"},
-				Spec: miniov1.BucketSpec{
+				Spec: miniov1beta1.BucketSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: tc.providerConfigToRef,
 					},
-					ForProvider: miniov1.BucketParameters{BucketName: "bucket"},
+					ForProvider: miniov1beta1.BucketParameters{BucketName: "bucket"},
 				},
 			}
 			v := &Validator{log: logr.Discard()}
@@ -175,21 +175,21 @@ func TestValidator_ValidateUpdate_PreventZoneChange(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			oldBucket := &miniov1.Bucket{
+			oldBucket := &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Name: "bucket"},
-				Spec: miniov1.BucketSpec{
-					ForProvider:  miniov1.BucketParameters{Region: tc.oldZone},
+				Spec: miniov1beta1.BucketSpec{
+					ForProvider:  miniov1beta1.BucketParameters{Region: tc.oldZone},
 					ResourceSpec: xpv1.ResourceSpec{ProviderConfigReference: &xpv1.Reference{Name: "provider-config"}},
 				},
-				Status: miniov1.BucketStatus{AtProvider: miniov1.BucketProviderStatus{BucketName: "bucket"}},
+				Status: miniov1beta1.BucketStatus{AtProvider: miniov1beta1.BucketProviderStatus{BucketName: "bucket"}},
 			}
-			newBucket := &miniov1.Bucket{
+			newBucket := &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Name: "bucket"},
-				Spec: miniov1.BucketSpec{
-					ForProvider:  miniov1.BucketParameters{Region: tc.newZone},
+				Spec: miniov1beta1.BucketSpec{
+					ForProvider:  miniov1beta1.BucketParameters{Region: tc.newZone},
 					ResourceSpec: xpv1.ResourceSpec{ProviderConfigReference: &xpv1.Reference{Name: "provider-config"}},
 				},
-				Status: miniov1.BucketStatus{AtProvider: miniov1.BucketProviderStatus{BucketName: "bucket"}},
+				Status: miniov1beta1.BucketStatus{AtProvider: miniov1beta1.BucketProviderStatus{BucketName: "bucket"}},
 			}
 			v := &Validator{log: logr.Discard()}
 			_, err := v.ValidateUpdate(context.TODO(), oldBucket, newBucket)

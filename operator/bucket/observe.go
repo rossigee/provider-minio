@@ -10,7 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
@@ -31,11 +31,12 @@ func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (manage
 	log := controllerruntime.LoggerFrom(ctx)
 	log.V(1).Info("observing resource")
 
-	bucket, ok := mg.(*miniov1.Bucket)
+	bucket, ok := mg.(*miniov1beta1.Bucket)
 	if !ok {
 		return managed.ExternalObservation{}, errNotBucket
 	}
 
+	log.V(1).Info("Observing bucket", "name", bucket.Name)
 	bucketName := bucket.GetBucketName()
 	exists, err := bucketExistsFn(ctx, d.mc, bucketName)
 
@@ -51,6 +52,11 @@ func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (manage
 		}
 		return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether bucket exists")
 	}
+
+	return d.observeBucket(ctx, bucket, bucketName, exists)
+}
+
+func (d *bucketClient) observeBucket(ctx context.Context, bucket *miniov1beta1.Bucket, bucketName string, exists bool) (managed.ExternalObservation, error) {
 	if _, hasAnnotation := bucket.GetAnnotations()[lockAnnotation]; hasAnnotation && exists {
 		bucket.Status.AtProvider.BucketName = bucketName
 		bucket.SetConditions(xpv1.Available())
@@ -61,7 +67,6 @@ func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (manage
 			if err != nil {
 				return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether a bucket policy exists")
 			}
-
 			isLatest = u
 		}
 

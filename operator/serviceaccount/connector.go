@@ -9,7 +9,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,7 +43,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	serviceAccount, ok := mg.(*miniov1.ServiceAccount)
+	serviceAccount, ok := mg.(*miniov1beta1.ServiceAccount)
 	if !ok {
 		return nil, errNotServiceAccount
 	}
@@ -74,7 +74,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	return sac, nil
 }
 
-func (c *connector) getProviderConfig(ctx context.Context, serviceAccount *miniov1.ServiceAccount) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfig(ctx context.Context, serviceAccount *miniov1beta1.ServiceAccount) (*providerv1.ProviderConfig, error) {
 	configName := serviceAccount.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)

@@ -8,7 +8,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -16,7 +16,7 @@ func (s *serviceAccountClient) Update(ctx context.Context, mg resource.Managed) 
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("updating resource")
 
-	serviceAccount, ok := mg.(*miniov1.ServiceAccount)
+	serviceAccount, ok := mg.(*miniov1beta1.ServiceAccount)
 	if !ok {
 		return managed.ExternalUpdate{}, errNotServiceAccount
 	}
@@ -65,7 +65,7 @@ func (s *serviceAccountClient) Update(ctx context.Context, mg resource.Managed) 
 	return managed.ExternalUpdate{}, nil
 }
 
-func (s *serviceAccountClient) emitUpdateEvent(serviceAccount *miniov1.ServiceAccount) {
+func (s *serviceAccountClient) emitUpdateEvent(serviceAccount *miniov1beta1.ServiceAccount) {
 	s.recorder.Event(serviceAccount, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Updated",

@@ -1,6 +1,7 @@
 package bucket
 
 import (
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"context"
 	"net/http"
 	"testing"
@@ -11,49 +12,48 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestProvisioningPipeline_Observe(t *testing.T) {
 	policy := "policy-struct"
 	tests := map[string]struct {
-		givenBucket  *miniov1.Bucket
+		givenBucket  *miniov1beta1.Bucket
 		bucketExists bool
 		returnError  error
 		policyLatest bool
 
 		expectedError             string
 		expectedResult            managed.ExternalObservation
-		expectedBucketObservation miniov1.BucketProviderStatus
+		expectedBucketObservation miniov1beta1.BucketProviderStatus
 	}{
 		"NewBucketDoesntYetExistOnMinio": {
-			givenBucket: &miniov1.Bucket{Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+			givenBucket: &miniov1beta1.Bucket{Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 				BucketName: "my-bucket"}},
 			},
 			expectedResult: managed.ExternalObservation{},
 		},
 		"NewBucketWithPolicyDoesntYetExistOnMinio": {
-			givenBucket: &miniov1.Bucket{Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+			givenBucket: &miniov1beta1.Bucket{Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 				BucketName: "my-bucket-with-policy",
 				Policy:     &policy}},
 			},
 			expectedResult: managed.ExternalObservation{},
 		},
 		"BucketExistsAndAccessibleWithOurCredentials": {
-			givenBucket: &miniov1.Bucket{
+			givenBucket: &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
 					lockAnnotation: "claimed",
 				}},
-				Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+				Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 					BucketName: "my-bucket"}},
 			},
 			bucketExists:              true,
 			expectedResult:            managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true},
-			expectedBucketObservation: miniov1.BucketProviderStatus{BucketName: "my-bucket"},
+			expectedBucketObservation: miniov1beta1.BucketProviderStatus{BucketName: "my-bucket"},
 		},
 		"NewBucketObservationThrowsGenericError": {
-			givenBucket: &miniov1.Bucket{Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+			givenBucket: &miniov1beta1.Bucket{Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 				BucketName: "my-bucket"}},
 			},
 			returnError:    errors.New("error"),
@@ -61,7 +61,7 @@ func TestProvisioningPipeline_Observe(t *testing.T) {
 			expectedError:  "cannot determine whether bucket exists: error",
 		},
 		"BucketAlreadyExistsOnMinio_WithoutAccess": {
-			givenBucket: &miniov1.Bucket{Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+			givenBucket: &miniov1beta1.Bucket{Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 				BucketName: "my-bucket"}},
 			},
 			returnError:    minio.ErrorResponse{StatusCode: http.StatusForbidden, Message: "Access Denied"},
@@ -71,8 +71,8 @@ func TestProvisioningPipeline_Observe(t *testing.T) {
 		"BucketAlreadyExistsOnMinio_WithAccess_PreventAdoption": {
 			// this is a case where we should avoid adopting an existing bucket even if we have access.
 			// Otherwise, there could be multiple K8s resources that manage the same bucket.
-			givenBucket: &miniov1.Bucket{
-				Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+			givenBucket: &miniov1beta1.Bucket{
+				Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 					BucketName: "my-bucket"}},
 				// no bucket name in status here.
 			},
@@ -81,8 +81,8 @@ func TestProvisioningPipeline_Observe(t *testing.T) {
 			expectedError:  "bucket already exists, try changing bucket name: my-bucket",
 		},
 		"BucketAlreadyExistsOnMinio_InAnotherZone": {
-			givenBucket: &miniov1.Bucket{
-				Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+			givenBucket: &miniov1beta1.Bucket{
+				Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 					BucketName: "my-bucket"}},
 			},
 			returnError:    minio.ErrorResponse{StatusCode: http.StatusMovedPermanently, Message: "301 Moved Permanently"},
@@ -90,18 +90,18 @@ func TestProvisioningPipeline_Observe(t *testing.T) {
 			expectedError:  "mismatching endpointURL and zone, or bucket exists already in a different region, try changing bucket name: 301 Moved Permanently",
 		},
 		"BucketPolicyNoChangeRequired": {
-			givenBucket: &miniov1.Bucket{
+			givenBucket: &miniov1beta1.Bucket{
 				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
 					lockAnnotation: "claimed",
 				}},
-				Spec: miniov1.BucketSpec{ForProvider: miniov1.BucketParameters{
+				Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 					BucketName: "my-bucket",
 					Policy:     &policy}},
 			},
 			policyLatest:              true,
 			bucketExists:              true,
 			expectedResult:            managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true},
-			expectedBucketObservation: miniov1.BucketProviderStatus{BucketName: "my-bucket"},
+			expectedBucketObservation: miniov1beta1.BucketProviderStatus{BucketName: "my-bucket"},
 		},
 	}
 	for name, tc := range tests {

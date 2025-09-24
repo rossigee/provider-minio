@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -20,12 +20,12 @@ type Validator struct {
 
 // ValidateCreate implements admission.CustomValidator.
 func (v *Validator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	bucket, ok := obj.(*miniov1.Bucket)
+	bucket, ok := obj.(*miniov1beta1.Bucket)
 	if !ok {
 		return nil, errNotBucket
 	}
-	v.log.V(1).Info("Validate create", "name", bucket.Name)
 
+	v.log.V(1).Info("Validate create", "name", bucket.Name)
 	providerConfigRef := bucket.Spec.ProviderConfigReference
 	if providerConfigRef == nil || providerConfigRef.Name == "" {
 		return nil, fmt.Errorf(".spec.providerConfigRef.name is required")
@@ -35,8 +35,12 @@ func (v *Validator) ValidateCreate(_ context.Context, obj runtime.Object) (admis
 
 // ValidateUpdate implements admission.CustomValidator.
 func (v *Validator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	newBucket := newObj.(*miniov1.Bucket)
-	oldBucket := oldObj.(*miniov1.Bucket)
+	newBucket, ok := newObj.(*miniov1beta1.Bucket)
+	if !ok {
+		return nil, errNotBucket
+	}
+
+	oldBucket := oldObj.(*miniov1beta1.Bucket)
 	v.log.V(1).Info("Validate update")
 
 	if oldBucket.Status.AtProvider.BucketName != "" {

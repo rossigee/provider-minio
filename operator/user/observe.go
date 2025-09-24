@@ -11,7 +11,7 @@ import (
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	k8svi "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,7 +25,7 @@ const (
 func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	user, ok := mg.(*miniov1.User)
+	user, ok := mg.(*miniov1beta1.User)
 	if !ok {
 		return managed.ExternalObservation{}, errNotUser
 	}
@@ -52,7 +52,7 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 	}
 
 	if !u.equalPolicies(minioUser, user) {
-		user.SetConditions(miniov1.Updating())
+		user.SetConditions(miniov1beta1.Updating())
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 	}
 
@@ -62,7 +62,7 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 	if minioUser.Status == madmin.AccountEnabled {
 		user.SetConditions(xpv1.Available())
 	} else {
-		user.SetConditions(miniov1.Disabled())
+		user.SetConditions(miniov1beta1.Disabled())
 	}
 
 	if mg.GetDeletionTimestamp() == nil {
@@ -97,7 +97,7 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
 }
 
-func (u *userClient) equalPolicies(minioUser madmin.UserInfo, user *miniov1.User) bool {
+func (u *userClient) equalPolicies(minioUser madmin.UserInfo, user *miniov1beta1.User) bool {
 	// policyName contains a string with all applied policies seperated by comma
 	minioPolicies := strings.Split(minioUser.PolicyName, ",")
 

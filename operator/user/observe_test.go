@@ -1,16 +1,16 @@
 package user
 
 import (
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"testing"
 
 	"github.com/minio/madmin-go/v3"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 )
 
 func Test_userClient_equalPolicies(t *testing.T) {
 	type args struct {
 		minioUser madmin.UserInfo
-		user      *miniov1.User
+		user      *miniov1beta1.User
 	}
 	tests := []struct {
 		name string
@@ -22,7 +22,7 @@ func Test_userClient_equalPolicies(t *testing.T) {
 			want: true,
 			args: args{
 				minioUser: madmin.UserInfo{},
-				user:      &miniov1.User{},
+				user:      &miniov1beta1.User{},
 			},
 		},
 		{
@@ -32,7 +32,7 @@ func Test_userClient_equalPolicies(t *testing.T) {
 				minioUser: madmin.UserInfo{
 					PolicyName: "mypolicy",
 				},
-				user: &miniov1.User{},
+				user: &miniov1beta1.User{},
 			},
 		},
 		{
@@ -42,9 +42,9 @@ func Test_userClient_equalPolicies(t *testing.T) {
 				minioUser: madmin.UserInfo{
 					PolicyName: "mypolicy",
 				},
-				user: &miniov1.User{
-					Spec: miniov1.UserSpec{
-						ForProvider: miniov1.UserParameters{
+				user: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
+						ForProvider: miniov1beta1.UserParameters{
 							Policies: []string{
 								"mypolicy",
 							},
@@ -60,9 +60,9 @@ func Test_userClient_equalPolicies(t *testing.T) {
 				minioUser: madmin.UserInfo{
 					PolicyName: "mypolicy,another",
 				},
-				user: &miniov1.User{
-					Spec: miniov1.UserSpec{
-						ForProvider: miniov1.UserParameters{
+				user: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
+						ForProvider: miniov1beta1.UserParameters{
 							Policies: []string{
 								"mypolicy",
 							},
@@ -76,9 +76,9 @@ func Test_userClient_equalPolicies(t *testing.T) {
 			want: false,
 			args: args{
 				minioUser: madmin.UserInfo{},
-				user: &miniov1.User{
-					Spec: miniov1.UserSpec{
-						ForProvider: miniov1.UserParameters{
+				user: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
+						ForProvider: miniov1beta1.UserParameters{
 							Policies: []string{
 								"mypolicy",
 							},

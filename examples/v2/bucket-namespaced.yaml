@@ -1,0 +1,26 @@
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: my-bucket
+  namespace: production
+spec:
+  forProvider:
+    bucketName: my-production-bucket
+    region: us-east-1
+    bucketDeletionPolicy: DeleteIfEmpty
+    policy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::my-production-bucket/*"
+          }
+        ]
+      }
+  providerConfigRef:
+    name: default

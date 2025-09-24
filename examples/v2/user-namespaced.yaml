@@ -1,0 +1,12 @@
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: User
+metadata:
+  name: app-user
+  namespace: production
+spec:
+  forProvider:
+    userName: application-user
+    policies:
+      - app-policy
+  providerConfigRef:
+    name: default

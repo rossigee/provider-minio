@@ -3,13 +3,12 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"net/url"
 
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	minio "github.com/minio/minio-go/v7"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,7 +18,7 @@ import (
 var _ managed.ExternalConnecter = &connector{}
 var _ managed.ExternalClient = &bucketClient{}
 
-const lockAnnotation = miniov1.Group + "/lock"
+const lockAnnotation = miniov1beta1.Group + "/lock"
 
 var (
 	errNotBucket = fmt.Errorf("managed resource is not a bucket")
@@ -46,12 +45,15 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	bucket, ok := mg.(*miniov1.Bucket)
+	var config *providerv1.ProviderConfig
+
+	bucket, ok := mg.(*miniov1beta1.Bucket)
 	if !ok {
 		return nil, errNotBucket
 	}
 
-	config, err := c.getProviderConfig(ctx, bucket)
+	log.V(1).Info("Connecting bucket", "name", bucket.Name)
+	config, err = c.getProviderConfig(ctx, bucket)
 	if err != nil {
 		return nil, err
 	}
@@ -66,17 +68,10 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		recorder: c.recorder,
 	}
 
-	parsed, err := url.Parse(config.Spec.MinioURL)
-	if err != nil {
-		return nil, err
-	}
-	bucket.Status.Endpoint = parsed.Host
-	bucket.Status.EndpointURL = parsed.String()
-
 	return bc, nil
 }
 
-func (c *connector) getProviderConfig(ctx context.Context, bucket *miniov1.Bucket) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfig(ctx context.Context, bucket *miniov1beta1.Bucket) (*providerv1.ProviderConfig, error) {
 	configName := bucket.GetProviderConfigReference().Name
 	config := &providerv1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)

@@ -12,11 +12,12 @@ import (
 // SetupControllers creates all controllers and adds them to the supplied manager.
 func SetupControllers(mgr ctrl.Manager) error {
 	for _, setup := range []func(ctrl.Manager) error{
+		config.SetupController,
+		// v1beta1 controllers for namespaced resources (now the main controllers)
 		bucket.SetupController,
 		user.SetupController,
 		policy.SetupController,
 		serviceaccount.SetupController,
-		config.SetupController,
 	} {
 		if err := setup(mgr); err != nil {
 			return err
@@ -28,6 +29,7 @@ func SetupControllers(mgr ctrl.Manager) error {
 // SetupWebhooks creates all webhooks and adds them to the supplied manager.
 func SetupWebhooks(mgr ctrl.Manager) error {
 	for _, setup := range []func(ctrl.Manager) error{
+		// v1beta1 webhooks for namespaced resources (now the main webhooks)
 		bucket.SetupWebhook,
 		user.SetupWebhook,
 		policy.SetupWebhook,

@@ -3,19 +3,19 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.0
-  name: buckets.minio.crossplane.io
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: notificationconfigurations.minio.m.crossplane.io
 spec:
-  group: minio.crossplane.io
+  group: minio.m.crossplane.io
   names:
     categories:
     - crossplane
     - minio
-    kind: Bucket
-    listKind: BucketList
-    plural: buckets
-    singular: bucket
-  scope: Cluster
+    kind: NotificationConfiguration
+    listKind: NotificationConfigurationList
+    plural: notificationconfigurations
+    singular: notificationconfiguration
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=='Ready')].status
@@ -30,18 +30,17 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    - jsonPath: .status.endpointURL
-      name: Endpoint
+    - jsonPath: .spec.forProvider.bucketName
+      name: Bucket
       type: string
-    - jsonPath: .status.atProvider.bucketName
-      name: Bucket Name
+    - jsonPath: .spec.forProvider.webhookConfiguration.endpoint
+      name: Target
       type: string
-    - jsonPath: .spec.forProvider.region
-      name: Region
-      type: string
-    name: v1
+    name: v1beta1
     schema:
       openAPIV3Schema:
+        description: NotificationConfiguration is a namespaced managed resource that
+          represents a MinIO bucket notification configuration.
         properties:
           apiVersion:
             description: |-
@@ -61,6 +60,8 @@ spec:
           metadata:
             type: object
           spec:
+            description: NotificationConfigurationSpec defines the desired state of
+              a NotificationConfiguration
             properties:
               deletionPolicy:
                 default: Delete
@@ -77,36 +78,99 @@ spec:
                 - Delete
                 type: string
               forProvider:
+                description: NotificationConfigurationParameters define the desired
+                  state of a MinIO notification configuration
                 properties:
-                  bucketDeletionPolicy:
-                    description: |-
-                      BucketDeletionPolicy determines how buckets should be deleted when Bucket is deleted.
-                       `DeleteIfEmpty` only deletes the bucket if the bucket is empty.
-                       `DeleteAll` recursively deletes all objects in the bucket and then removes it.
-                      To skip deletion of the bucket (orphan it) set `spec.deletionPolicy=Orphan`.
-                    type: string
                   bucketName:
-                    description: |-
-                      BucketName is the name of the bucket to create.
-                      Defaults to `metadata.name` if unset.
-                      Cannot be changed after bucket is created.
-                      Name must be acceptable by the S3 protocol, which follows RFC 1123.
-                      Be aware that S3 providers may require a unique name across the platform or zone.
+                    description: BucketName is the name of the bucket to configure
+                      notifications for.
                     type: string
-                  policy:
-                    description: |-
-                      Policy is a raw S3 bucket policy.
-                      Please consult https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html for more details about the policy.
-                    type: string
-                  region:
-                    default: us-east-1
-                    description: |-
-                      Region is the name of the region where the bucket shall be created.
-                      The region must be available in the S3 endpoint.
-                      Cannot be changed after bucket is created.
-                    type: string
+                  events:
+                    description: Events is the list of S3 events to notify on
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                  filter:
+                    description: Filter specifies object key name filtering rules
+                    properties:
+                      key:
+                        description: Key specifies object key name filtering rules
+                        properties:
+                          filterRules:
+                            description: FilterRules is the list of filter rules
+                            items:
+                              description: FilterRule specifies a single filter rule
+                              properties:
+                                name:
+                                  description: Name is the filter rule name (prefix
+                                    or suffix)
+                                  enum:
+                                  - prefix
+                                  - suffix
+                                  type: string
+                                value:
+                                  description: Value is the filter rule value
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                        type: object
+                    type: object
+                  queueConfiguration:
+                    description: QueueConfiguration defines SQS notification settings
+                    properties:
+                      id:
+                        description: ID is the unique identifier for this queue configuration
+                        type: string
+                      queueArn:
+                        description: QueueArn is the ARN of the SQS queue
+                        type: string
+                    required:
+                    - id
+                    - queueArn
+                    type: object
+                  topicConfiguration:
+                    description: TopicConfiguration defines SNS notification settings
+                    properties:
+                      id:
+                        description: ID is the unique identifier for this topic configuration
+                        type: string
+                      topicArn:
+                        description: TopicArn is the ARN of the SNS topic
+                        type: string
+                    required:
+                    - id
+                    - topicArn
+                    type: object
+                  webhookConfiguration:
+                    description: WebhookConfiguration defines webhook notification
+                      settings
+                    properties:
+                      authToken:
+                        description: AuthToken is an optional authentication token
+                          for the webhook
+                        type: string
+                      endpoint:
+                        description: Endpoint is the webhook URL to send notifications
+                          to
+                        type: string
+                      id:
+                        description: ID is the unique identifier for this webhook
+                          configuration
+                        type: string
+                      userAgent:
+                        description: UserAgent is an optional custom user agent string
+                        type: string
+                    required:
+                    - endpoint
+                    - id
+                    type: object
                 required:
-                - region
+                - bucketName
+                - events
                 type: object
               managementPolicies:
                 default:
@@ -142,40 +206,6 @@ spec:
                   ProviderConfigReference specifies how the provider that will be used to
                   create, observe, update, and delete this managed resource should be
                   configured.
-                properties:
-                  name:
-                    description: Name of the referenced object.
-                    type: string
-                  policy:
-                    description: Policies for referencing.
-                    properties:
-                      resolution:
-                        default: Required
-                        description: |-
-                          Resolution specifies whether resolution of this reference is required.
-                          The default is 'Required', which means the reconcile will fail if the
-                          reference cannot be resolved. 'Optional' means this reference will be
-                          a no-op if it cannot be resolved.
-                        enum:
-                        - Required
-                        - Optional
-                        type: string
-                      resolve:
-                        description: |-
-                          Resolve specifies when this reference should be resolved. The default
-                          is 'IfNotPresent', which will attempt to resolve the reference only when
-                          the corresponding field is not present. Use 'Always' to resolve the
-                          reference on every reconcile.
-                        enum:
-                        - Always
-                        - IfNotPresent
-                        type: string
-                    type: object
-                required:
-                - name
-                type: object
-              providerReference:
-                description: A Reference to a named object.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -308,11 +338,25 @@ spec:
                 type: object
             type: object
           status:
+            description: NotificationConfigurationStatus defines the observed state
+              of a NotificationConfiguration
             properties:
               atProvider:
+                description: NotificationConfigurationProviderStatus defines the observed
+                  state from the provider
                 properties:
                   bucketName:
-                    description: BucketName is the name of the actual bucket.
+                    description: BucketName is the name of the bucket this configuration
+                      applies to
+                    type: string
+                  configurationId:
+                    description: ConfigurationID is the actual configuration ID created
+                      in MinIO
+                    type: string
+                  lastUpdated:
+                    description: LastUpdated is the timestamp when the configuration
+                      was last updated
+                    format: date-time
                     type: string
                 type: object
               conditions:
@@ -361,10 +405,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              endpoint:
-                type: string
-              endpointURL:
-                type: string
               observedGeneration:
                 description: |-
                   ObservedGeneration is the latest metadata.generation

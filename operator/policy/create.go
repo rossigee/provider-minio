@@ -10,7 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/pkg/bucket/policy"
 	miniopolicy "github.com/minio/pkg/iam/policy"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -27,7 +27,7 @@ func (p *policyClient) Create(ctx context.Context, mg resource.Managed) (managed
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("creating resource")
 
-	policy, ok := mg.(*miniov1.Policy)
+	policy, ok := mg.(*miniov1beta1.Policy)
 	if !ok {
 		return managed.ExternalCreation{}, errNotPolicy
 	}
@@ -52,7 +52,7 @@ func (p *policyClient) Create(ctx context.Context, mg resource.Managed) (managed
 	return managed.ExternalCreation{}, fmt.Errorf("no policy specified")
 }
 
-func (p *policyClient) createBucketPolicy(ctx context.Context, policy *miniov1.Policy) error {
+func (p *policyClient) createBucketPolicy(ctx context.Context, policy *miniov1beta1.Policy) error {
 	parsedPolicy, err := p.getAllowBucketPolicy(policy.Spec.ForProvider.AllowBucket)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (p *policyClient) createBucketPolicy(ctx context.Context, policy *miniov1.P
 	return nil
 }
 
-func (p *policyClient) createRawPolicy(ctx context.Context, policy *miniov1.Policy) error {
+func (p *policyClient) createRawPolicy(ctx context.Context, policy *miniov1beta1.Policy) error {
 	err := p.ma.AddCannedPolicy(ctx, policy.GetName(), []byte(policy.Spec.ForProvider.RawPolicy))
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (p *policyClient) getAllowBucketPolicy(bucket string) (jsonPolicy, error) {
 	return json.Marshal(newPolicy)
 }
 
-func (p *policyClient) emitCreationEvent(policy *miniov1.Policy) {
+func (p *policyClient) emitCreationEvent(policy *miniov1beta1.Policy) {
 	p.recorder.Event(policy, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Created",
@@ -118,7 +118,7 @@ func (p *policyClient) emitCreationEvent(policy *miniov1.Policy) {
 	})
 }
 
-func (p *policyClient) setLock(policy *miniov1.Policy) {
+func (p *policyClient) setLock(policy *miniov1beta1.Policy) {
 	annotations := policy.GetAnnotations()
 	annotations[PolicyCreatedAnnotationKey] = "claimed"
 	policy.SetAnnotations(annotations)

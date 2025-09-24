@@ -8,7 +8,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/minio-go/v7"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
@@ -16,10 +16,12 @@ func (b *bucketClient) Delete(ctx context.Context, mg resource.Managed) (managed
 	log := controllerruntime.LoggerFrom(ctx)
 	log.Info("deleting resource")
 
-	bucket, ok := mg.(*miniov1.Bucket)
+	bucket, ok := mg.(*miniov1beta1.Bucket)
 	if !ok {
 		return managed.ExternalDelete{}, errNotBucket
 	}
+
+	log.V(1).Info("Deleting bucket", "name", bucket.Name)
 
 	if hasDeleteAllPolicy(bucket) {
 		err := b.deleteAllObjects(ctx, bucket)
@@ -34,14 +36,13 @@ func (b *bucketClient) Delete(ctx context.Context, mg resource.Managed) (managed
 	}
 
 	b.emitDeletionEvent(bucket)
-
 	return managed.ExternalDelete{}, nil
 }
-func hasDeleteAllPolicy(bucket *miniov1.Bucket) bool {
-	return bucket.Spec.ForProvider.BucketDeletionPolicy == miniov1.DeleteAll
+func hasDeleteAllPolicy(bucket *miniov1beta1.Bucket) bool {
+	return bucket.Spec.ForProvider.BucketDeletionPolicy == miniov1beta1.DeleteAll
 }
 
-func (b *bucketClient) deleteAllObjects(ctx context.Context, bucket *miniov1.Bucket) error {
+func (b *bucketClient) deleteAllObjects(ctx context.Context, bucket *miniov1beta1.Bucket) error {
 	log := controllerruntime.LoggerFrom(ctx)
 	bucketName := bucket.Status.AtProvider.BucketName
 
@@ -84,13 +85,13 @@ func (b *bucketClient) isBucketLockEnabled(ctx context.Context, bucketName strin
 // deleteS3Bucket deletes the bucket.
 // NOTE: The removal fails if there are still objects in the bucket.
 // This func does not recursively delete all objects beforehand.
-func (b *bucketClient) deleteS3Bucket(ctx context.Context, bucket *miniov1.Bucket) error {
+func (b *bucketClient) deleteS3Bucket(ctx context.Context, bucket *miniov1beta1.Bucket) error {
 	bucketName := bucket.Status.AtProvider.BucketName
 	err := b.mc.RemoveBucket(ctx, bucketName)
 	return err
 }
 
-func (b *bucketClient) emitDeletionEvent(bucket *miniov1.Bucket) {
+func (b *bucketClient) emitDeletionEvent(bucket *miniov1beta1.Bucket) {
 	b.recorder.Event(bucket, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Deleted",

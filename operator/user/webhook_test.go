@@ -1,13 +1,13 @@
 package user
 
 import (
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"context"
 	"encoding/json"
 	"testing"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/go-logr/logr"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -19,14 +19,14 @@ type mockAdminClient struct {
 func TestValidator_ValidateCreate(t *testing.T) {
 	tests := []struct {
 		name         string
-		obj          *miniov1.User
+		obj          *miniov1beta1.User
 		wantErr      bool
 		wantPolicies map[string]json.RawMessage
 	}{
 		{
 			name: "GivenValidObject_ThenNoError",
-			obj: &miniov1.User{
-				Spec: miniov1.UserSpec{
+			obj: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
 					ResourceSpec: xpv1.ResourceSpec{
 						ProviderConfigReference: &xpv1.Reference{
 							Name: "test",
@@ -38,14 +38,14 @@ func TestValidator_ValidateCreate(t *testing.T) {
 		{
 			name:    "GivenInvalidObject_ThenError",
 			wantErr: true,
-			obj:     &miniov1.User{},
+			obj:     &miniov1beta1.User{},
 		},
 		{
 			name:    "GivenNotExistingPolicies_ThenError",
 			wantErr: true,
-			obj: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			obj: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: []string{
 							"foo",
 						},
@@ -60,9 +60,9 @@ func TestValidator_ValidateCreate(t *testing.T) {
 		},
 		{
 			name: "GivenExistingPolicies_ThenNoError",
-			obj: &miniov1.User{
-				Spec: miniov1.UserSpec{
-					ForProvider: miniov1.UserParameters{
+			obj: &miniov1beta1.User{
+				Spec: miniov1beta1.UserSpec{
+					ForProvider: miniov1beta1.UserParameters{
 						Policies: []string{
 							"foo",
 						},
@@ -104,8 +104,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 
 func TestValidator_ValidateUpdate(t *testing.T) {
 	type args struct {
-		oldObj *miniov1.User
-		newObj *miniov1.User
+		oldObj *miniov1beta1.User
+		newObj *miniov1beta1.User
 	}
 	tests := []struct {
 		name         string
@@ -117,8 +117,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 			name: "GivenSameObject_ThenNoError",
 			args: args{
 
-				oldObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
+				oldObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
 						ResourceSpec: xpv1.ResourceSpec{
 							ProviderConfigReference: &xpv1.Reference{
 								Name: "provider",
@@ -126,8 +126,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 						},
 					},
 				},
-				newObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
+				newObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
 						ResourceSpec: xpv1.ResourceSpec{
 							ProviderConfigReference: &xpv1.Reference{
 								Name: "provider",
@@ -140,8 +140,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 		{
 			name: "GivenDifferentProviderConfigRef_ThenNoError",
 			args: args{
-				oldObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
+				oldObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
 						ResourceSpec: xpv1.ResourceSpec{
 							ProviderConfigReference: &xpv1.Reference{
 								Name: "provider",
@@ -149,8 +149,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 						},
 					},
 				},
-				newObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
+				newObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
 						ResourceSpec: xpv1.ResourceSpec{
 							ProviderConfigReference: &xpv1.Reference{
 								Name: "new",
@@ -164,8 +164,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 			name:    "GivenDifferentName_ThenError",
 			wantErr: true,
 			args: args{
-				oldObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
+				oldObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
 						ResourceSpec: xpv1.ResourceSpec{
 							ProviderConfigReference: &xpv1.Reference{
 								Name: "provider",
@@ -173,9 +173,9 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 						},
 					},
 				},
-				newObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
-						ForProvider: miniov1.UserParameters{
+				newObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
+						ForProvider: miniov1beta1.UserParameters{
 							UserName: "test",
 						},
 						ResourceSpec: xpv1.ResourceSpec{
@@ -191,8 +191,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 			name:    "GivenNotExistingPolicies_ThenError",
 			wantErr: true,
 			args: args{
-				oldObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
+				oldObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
 						ResourceSpec: xpv1.ResourceSpec{
 							ProviderConfigReference: &xpv1.Reference{
 								Name: "provider",
@@ -200,9 +200,9 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 						},
 					},
 				},
-				newObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
-						ForProvider: miniov1.UserParameters{
+				newObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
+						ForProvider: miniov1beta1.UserParameters{
 							Policies: []string{
 								"foo",
 							},
@@ -219,8 +219,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 		{
 			name: "GivenExistingPolicies_ThenNoError",
 			args: args{
-				oldObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
+				oldObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
 						ResourceSpec: xpv1.ResourceSpec{
 							ProviderConfigReference: &xpv1.Reference{
 								Name: "provider",
@@ -228,9 +228,9 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 						},
 					},
 				},
-				newObj: &miniov1.User{
-					Spec: miniov1.UserSpec{
-						ForProvider: miniov1.UserParameters{
+				newObj: &miniov1beta1.User{
+					Spec: miniov1beta1.UserSpec{
+						ForProvider: miniov1beta1.UserParameters{
 							Policies: []string{
 								"foo",
 							},
@@ -270,7 +270,7 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 	}
 }
 
-func getMockProviderConfig(context.Context, *miniov1.User, client.Client) (*providerv1.ProviderConfig, error) {
+func getMockProviderConfig(context.Context, *miniov1beta1.User, client.Client) (*providerv1.ProviderConfig, error) {
 	return &providerv1.ProviderConfig{}, nil
 }
 

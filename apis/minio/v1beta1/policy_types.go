@@ -1,4 +1,4 @@
-package v1
+package v1beta1
 
 import (
 	"reflect"
@@ -18,9 +18,11 @@ func init() {
 // +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,minio}
-// +kubebuilder:webhook:verbs=create;update,path=/validate-minio-crossplane-io-v1-policy,mutating=false,failurePolicy=fail,groups=minio.crossplane.io,resources=policies,versions=v1,name=policies.minio.crossplane.io,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,minio}
+// +kubebuilder:webhook:verbs=create;update,path=/validate-minio-m-crossplane-io-v1beta1-policy,mutating=false,failurePolicy=fail,groups=minio.m.crossplane.io,resources=policies,versions=v1beta1,name=policies.minio.m.crossplane.io,sideEffects=None,admissionReviewVersions=v1
 
+// Policy is a namespaced managed resource that represents a MinIO policy.
+// This is the Crossplane v2 namespaced version.
 type Policy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -29,23 +31,25 @@ type Policy struct {
 	Status PolicyStatus `json:"status,omitempty"`
 }
 
+// PolicySpec defines the desired state of a Policy
 type PolicySpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ProviderReference *xpv1.Reference `json:"providerReference,omitempty"`
-
-	ForProvider PolicyParameters `json:"forProvider,omitempty"`
+	ForProvider       PolicyParameters `json:"forProvider,omitempty"`
 }
 
+// PolicyStatus defines the observed state of a Policy
 type PolicyStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	AtProvider          PolicyProviderStatus `json:"atProvider,omitempty"`
 }
 
+// PolicyProviderStatus defines the observed state of a Policy from the provider
 type PolicyProviderStatus struct {
 	// Policy contains the rendered policy in JSON format as it's applied on minio.
 	Policy string `json:"policy,omitempty"`
 }
 
+// PolicyParameters define the desired state of a MinIO Policy
 type PolicyParameters struct {
 	// AllowBucket will create a simple policy that allows all operations for the given bucket.
 	// Mutually exclusive to `RawPolicy`.
@@ -59,6 +63,7 @@ type PolicyParameters struct {
 
 // +kubebuilder:object:root=true
 
+// PolicyList contains a list of Policy resources
 type PolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

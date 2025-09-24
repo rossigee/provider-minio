@@ -8,7 +8,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	miniopolicy "github.com/minio/pkg/iam/policy"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -17,7 +17,7 @@ func (p *policyClient) Observe(ctx context.Context, mg resource.Managed) (manage
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("observing resource")
 
-	policy, ok := mg.(*miniov1.Policy)
+	policy, ok := mg.(*miniov1beta1.Policy)
 	if !ok {
 		return managed.ExternalObservation{}, errNotPolicy
 	}
@@ -50,7 +50,7 @@ func (p *policyClient) Observe(ctx context.Context, mg resource.Managed) (manage
 			return managed.ExternalObservation{}, err
 		}
 		if !equal {
-			policy.SetConditions(miniov1.Updating())
+			policy.SetConditions(miniov1beta1.Updating())
 			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 		}
 	}
@@ -61,7 +61,7 @@ func (p *policyClient) Observe(ctx context.Context, mg resource.Managed) (manage
 			return managed.ExternalObservation{}, err
 		}
 		if !equal {
-			policy.SetConditions(miniov1.Updating())
+			policy.SetConditions(miniov1beta1.Updating())
 			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 		}
 	}

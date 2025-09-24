@@ -7,7 +7,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -16,7 +16,7 @@ func (p *policyClient) Update(ctx context.Context, mg resource.Managed) (managed
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("update resource")
 
-	policy, ok := mg.(*miniov1.Policy)
+	policy, ok := mg.(*miniov1beta1.Policy)
 	if !ok {
 		return managed.ExternalUpdate{}, errNotPolicy
 	}
@@ -44,7 +44,7 @@ func (p *policyClient) Update(ctx context.Context, mg resource.Managed) (managed
 	return managed.ExternalUpdate{}, nil
 }
 
-func (p *policyClient) emitUpdateEvent(policy *miniov1.Policy) {
+func (p *policyClient) emitUpdateEvent(policy *miniov1beta1.Policy) {
 	p.recorder.Event(policy, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Updated",

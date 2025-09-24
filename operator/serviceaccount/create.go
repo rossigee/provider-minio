@@ -9,8 +9,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/minio/madmin-go/v3"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/sethvargo/go-password/password"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -25,7 +25,7 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("creating resource")
 
-	serviceAccount, ok := mg.(*miniov1.ServiceAccount)
+	serviceAccount, ok := mg.(*miniov1beta1.ServiceAccount)
 	if !ok {
 		return managed.ExternalCreation{}, errNotServiceAccount
 	}
@@ -110,7 +110,7 @@ func (s *serviceAccountClient) serviceAccountExists(ctx context.Context, accessK
 	return true, nil
 }
 
-func (s *serviceAccountClient) emitCreationEvent(serviceAccount *miniov1.ServiceAccount) {
+func (s *serviceAccountClient) emitCreationEvent(serviceAccount *miniov1beta1.ServiceAccount) {
 	s.recorder.Event(serviceAccount, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Created",

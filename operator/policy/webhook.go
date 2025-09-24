@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	miniov1 "github.com/rossigee/provider-minio/apis/minio/v1"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -20,25 +20,23 @@ type Validator struct {
 
 // ValidateCreate implements admission.CustomValidator.
 func (v *Validator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	v.log.V(1).Info("Validate create")
-
-	policy, ok := obj.(*miniov1.Policy)
+	policy, ok := obj.(*miniov1beta1.Policy)
 	if !ok {
 		return nil, errNotPolicy
 	}
 
+	v.log.V(1).Info("Validate create")
 	return nil, v.validatePolicy(policy)
 }
 
 // ValidateUpdate implements admission.CustomValidator.
 func (v *Validator) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	v.log.V(1).Info("Validate update")
-
-	newPolicy, ok := newObj.(*miniov1.Policy)
+	newPolicy, ok := newObj.(*miniov1beta1.Policy)
 	if !ok {
 		return nil, errNotPolicy
 	}
 
+	v.log.V(1).Info("Validate update")
 	return nil, v.validatePolicy(newPolicy)
 }
 
@@ -48,7 +46,7 @@ func (v *Validator) ValidateDelete(_ context.Context, obj runtime.Object) (admis
 	return nil, nil
 }
 
-func (v *Validator) validatePolicy(policy *miniov1.Policy) error {
+func (v *Validator) validatePolicy(policy *miniov1beta1.Policy) error {
 	if policy.Spec.ForProvider.AllowBucket != "" && policy.Spec.ForProvider.RawPolicy != "" {
 		return fmt.Errorf(".spec.forProvider.allowBucket and .spec.forProvider.rawPolicy are mutual exclusive, please only specify one")
 	}

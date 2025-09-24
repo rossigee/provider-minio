@@ -1,0 +1,18 @@
+apiVersion: meta.pkg.crossplane.io/v1alpha1
+kind: ManagedResourceDefinition
+metadata:
+  name: policies.minio.m.crossplane.io
+  labels:
+    provider: provider-minio
+    resource: policy
+spec:
+  group: minio.m.crossplane.io
+  version: v1beta1
+  kind: Policy
+  plural: policies
+  singular: policy
+  scope: Namespaced
+  defaultActivationPolicy: Automatic
+  categories:
+    - crossplane
+    - minio

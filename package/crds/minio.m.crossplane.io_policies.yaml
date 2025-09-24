@@ -3,19 +3,19 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.0
-  name: users.minio.crossplane.io
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: policies.minio.m.crossplane.io
 spec:
-  group: minio.crossplane.io
+  group: minio.m.crossplane.io
   names:
     categories:
     - crossplane
     - minio
-    kind: User
-    listKind: UserList
-    plural: users
-    singular: user
-  scope: Cluster
+    kind: Policy
+    listKind: PolicyList
+    plural: policies
+    singular: policy
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=='Ready')].status
@@ -27,15 +27,15 @@ spec:
     - jsonPath: .metadata.annotations.crossplane\.io/external-name
       name: External Name
       type: string
-    - jsonPath: .status.atProvider.policies
-      name: Policies
-      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    name: v1
+    name: v1beta1
     schema:
       openAPIV3Schema:
+        description: |-
+          Policy is a namespaced managed resource that represents a MinIO policy.
+          This is the Crossplane v2 namespaced version.
         properties:
           apiVersion:
             description: |-
@@ -55,6 +55,7 @@ spec:
           metadata:
             type: object
           spec:
+            description: PolicySpec defines the desired state of a Policy
             properties:
               deletionPolicy:
                 default: Delete
@@ -71,19 +72,19 @@ spec:
                 - Delete
                 type: string
               forProvider:
+                description: PolicyParameters define the desired state of a MinIO
+                  Policy
                 properties:
-                  policies:
+                  allowBucket:
                     description: |-
-                      Policies contains a list of policies that should get assigned to this user.
-                      These policies need to be created seperately by using the policy CRD.
-                    items:
-                      type: string
-                    type: array
-                  userName:
+                      AllowBucket will create a simple policy that allows all operations for the given bucket.
+                      Mutually exclusive to `RawPolicy`.
+                    type: string
+                  rawPolicy:
                     description: |-
-                      UserName is the name of the user to create.
-                      Defaults to `metadata.name` if unset.
-                      Cannot be changed after user is created.
+                      RawPolicy describes a raw S3 policy ad verbatim.
+                      Please consult https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html for more details about the policy.
+                      Mutually exclusive to `AllowBucket`.
                     type: string
                 type: object
               managementPolicies:
@@ -120,40 +121,6 @@ spec:
                   ProviderConfigReference specifies how the provider that will be used to
                   create, observe, update, and delete this managed resource should be
                   configured.
-                properties:
-                  name:
-                    description: Name of the referenced object.
-                    type: string
-                  policy:
-                    description: Policies for referencing.
-                    properties:
-                      resolution:
-                        default: Required
-                        description: |-
-                          Resolution specifies whether resolution of this reference is required.
-                          The default is 'Required', which means the reconcile will fail if the
-                          reference cannot be resolved. 'Optional' means this reference will be
-                          a no-op if it cannot be resolved.
-                        enum:
-                        - Required
-                        - Optional
-                        type: string
-                      resolve:
-                        description: |-
-                          Resolve specifies when this reference should be resolved. The default
-                          is 'IfNotPresent', which will attempt to resolve the reference only when
-                          the corresponding field is not present. Use 'Always' to resolve the
-                          reference on every reconcile.
-                        enum:
-                        - Always
-                        - IfNotPresent
-                        type: string
-                    type: object
-                required:
-                - name
-                type: object
-              providerReference:
-                description: A Reference to a named object.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -286,19 +253,15 @@ spec:
                 type: object
             type: object
           status:
+            description: PolicyStatus defines the observed state of a Policy
             properties:
               atProvider:
+                description: PolicyProviderStatus defines the observed state of a
+                  Policy from the provider
                 properties:
-                  policies:
-                    description: Policies contains a list of policies that are applied
-                      to this user
-                    type: string
-                  status:
-                    description: Status indicates the user's status on the minio instance.
-                    type: string
-                  userName:
-                    description: UserName is populated it the user actually exists
-                      in minio during observe.
+                  policy:
+                    description: Policy contains the rendered policy in JSON format
+                      as it's applied on minio.
                     type: string
                 type: object
               conditions:
