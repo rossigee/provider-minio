@@ -1,9 +1,9 @@
 # Standardized CI/CD Template for Crossplane Providers
-# Version: 2025-08-14
+# Version: 2025-09-26 - Updated for Go 1.25.1
 #
-# This template implements Option 1: CI builds and validates, Release publishes
-# - CI: Build validation only (no publishing)
-# - Release: All publishing (version + latest tags from same image)
+# This template implements CI builds and validates ONLY
+# - CI: Build validation only (no publishing to avoid tag conflicts)
+# - Release: All publishing handled by release-template.yml
 #
 # Apply this pattern across all providers to eliminate tag conflicts
 
@@ -188,14 +188,6 @@ jobs:
       - name: Vendor Dependencies
         run: go mod vendor
 
-      - name: Install Crossplane CLI
-        run: |
-          # Create the tools directory and install crossplane CLI
-          mkdir -p .cache/tools/linux_x86_64
-          curl -fsSLo .cache/tools/linux_x86_64/crossplane-cli-v2.0.2 \
-            https://releases.crossplane.io/stable/v2.0.2/bin/linux_amd64/crank?source=build
-          chmod +x .cache/tools/linux_x86_64/crossplane-cli-v2.0.2
-
       - name: Validate Build Process
         run: |
           # Validate that all build steps work without publishing
@@ -207,7 +199,7 @@ jobs:
           echo "✅ Binary build successful"
 
           # Build Docker image locally (without push)
-          make do.build.images
+          make docker.build
           echo "✅ Docker image build successful"
 
           # Build Crossplane package locally (without push)
