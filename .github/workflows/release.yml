@@ -83,11 +83,15 @@ jobs:
 
           # Verify the container image was published
           echo "Verifying container image publication..."
-          if ! docker pull "ghcr.io/${{ github.repository_owner }}/provider-minio:${VERSION}" > /dev/null 2>&1; then
+          if docker pull "ghcr.io/${{ github.repository_owner }}/provider-minio:${VERSION}" > /dev/null 2>&1; then
+            echo "✅ Verified container image ${VERSION}"
+          else
             echo "❌ Failed to pull container image ${VERSION}"
             exit 1
           fi
-          if ! docker pull "ghcr.io/${{ github.repository_owner }}/provider-minio:latest" > /dev/null 2>&1; then
+          if docker pull "ghcr.io/${{ github.repository_owner }}/provider-minio:latest" > /dev/null 2>&1; then
+            echo "✅ Verified container image latest"
+          else
             echo "❌ Failed to pull container image latest"
             exit 1
           fi
