@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	corev1 "k8s.io/api/core/v1"
@@ -69,7 +70,7 @@ func NewConsolidatedMinioClient(ctx context.Context, config *ConsolidatedConfig)
 
 // GetConfigFromAPISecretRef extracts configuration from a Kubernetes secret
 // This consolidates the APISecretRef handling logic used in both functions
-func GetConfigFromAPISecretRef(ctx context.Context, secretRef *SecretReference, c client.Client) (*ConsolidatedConfig, error) {
+func GetConfigFromAPISecretRef(ctx context.Context, secretRef *xpv1.SecretReference, c client.Client) (*ConsolidatedConfig, error) {
 	secret := &corev1.Secret{}
 	secretKey := client.ObjectKey{
 		Name:      secretRef.Name,
