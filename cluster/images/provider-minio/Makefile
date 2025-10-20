@@ -27,5 +27,5 @@ img.build.shared:
 # Image Publish
 img.publish: img.build
 	@$(INFO) docker push $(IMAGE)
-	@docker push $(IMAGE)
+	docker push $(IMAGE)
 	@$(OK) docker push $(IMAGE)
