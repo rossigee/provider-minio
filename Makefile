@@ -33,6 +33,9 @@ IMAGES = provider-minio
 REGISTRY_ORGS = ghcr.io/rossigee
 -include build/makelib/imagelight.mk
 
+# Override to always publish images, not just on specific branches
+publish.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.publish.$(r).$(i)))
+
 # Setup XPKG - Standardized registry configuration
 # Primary registry: GitHub Container Registry under rossigee
 XPKG_REG_ORGS ?= ghcr.io/rossigee
