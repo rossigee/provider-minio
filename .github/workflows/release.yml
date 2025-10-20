@@ -69,6 +69,8 @@ jobs:
 
       - name: Build and Publish All Artifacts
         run: |
+          set -e
+
           # Use the standardized build system to handle everything
           export VERSION="${{ steps.version.outputs.version }}"
 
