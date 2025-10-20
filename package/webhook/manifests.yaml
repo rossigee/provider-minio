@@ -10,6 +10,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-minio-m-crossplane-io-v1beta1-bucketclaim
+  failurePolicy: Fail
+  name: bucketclaims.minio.m.crossplane.io
+  rules:
+  - apiGroups:
+    - minio.m.crossplane.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bucketclaims
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-minio-m-crossplane-io-v1beta1-bucket
   failurePolicy: Fail
   name: buckets.minio.m.crossplane.io

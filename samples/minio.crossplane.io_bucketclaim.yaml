@@ -1,0 +1,10 @@
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: BucketClaim
+metadata:
+  name: my-bucket-claim
+spec:
+  bucketName: my-claimed-bucket
+  region: us-east-1
+  bucketDeletionPolicy: DeleteIfEmpty
+  providerConfigRef:
+    name: provider-config
