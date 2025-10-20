@@ -79,6 +79,17 @@ jobs:
           # Build and publish using make targets that handle Docker + Crossplane packages
           make publish REGISTRY_ORGS="ghcr.io/${{ github.repository_owner }}" XPKG_REG_ORGS="ghcr.io/${{ github.repository_owner }}"
 
+          # Verify the container image was published
+          echo "Verifying container image publication..."
+          if ! docker pull "ghcr.io/${{ github.repository_owner }}/provider-minio:${VERSION}" > /dev/null 2>&1; then
+            echo "❌ Failed to pull container image ${VERSION}"
+            exit 1
+          fi
+          if ! docker pull "ghcr.io/${{ github.repository_owner }}/provider-minio:latest" > /dev/null 2>&1; then
+            echo "❌ Failed to pull container image latest"
+            exit 1
+          fi
+
           echo "✅ Published to ghcr.io/${{ github.repository_owner }}"
           echo "🏷️  Tags: ${VERSION}, latest"
 
