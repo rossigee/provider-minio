@@ -6,6 +6,7 @@ package clients
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 
@@ -48,7 +49,7 @@ func NewConsolidatedMinioClient(ctx context.Context, config *ConsolidatedConfig)
 		}
 
 		if config.CACertData != nil {
-			caCertPool := tls.NewCertPool()
+			caCertPool := x509.NewCertPool()
 			if ok := caCertPool.AppendCertsFromPEM(config.CACertData); !ok {
 				return nil, fmt.Errorf("failed to parse CA certificate")
 			}

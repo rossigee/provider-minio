@@ -24,6 +24,7 @@ Crossplane provider for managing MinIO object storage resources including bucket
 ## Features
 
 - **Bucket Management**: Create, configure, and manage MinIO buckets
+- **BucketClaim Management**: Direct credential-based bucket management for XRD compositions
 - **User Management**: User accounts and access management
 - **Policy Management**: Fine-grained access control policies
 - **Service Account Management**: MinIO service accounts for programmatic access

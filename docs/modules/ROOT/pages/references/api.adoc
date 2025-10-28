@@ -4,6 +4,50 @@ This page documents the Custom Resource Definitions (CRDs) provided by provider-
 
 == Core Resources
 
+=== BucketClaim
+
+Manages MinIO S3-compatible buckets using direct credential references.
+
+[source,yaml]
+----
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: BucketClaim
+metadata:
+  name: example-bucket-claim
+spec:
+  credentialsSecretRef:
+    name: minio-credentials
+    namespace: default
+  bucketName: my-bucket  # Optional: defaults to metadata.name
+  region: us-east-1      # Optional: defaults to us-east-1
+  bucketDeletionPolicy: DeleteIfEmpty  # Optional: DeleteIfEmpty or DeleteAll
+  policy: |              # Optional: bucket policy
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": ["s3:GetObject"],
+          "Resource": ["arn:aws:s3:::my-bucket/*"]
+        }
+      ]
+    }
+----
+
+**Key Features:**
+- Direct credential reference via secrets (no ProviderConfig required)
+- Automatic bucket creation and deletion
+- Region specification support
+- Bucket policy management
+- Flexible deletion policies
+- XRD composition support
+
+**Use Cases:**
+- XRD compositions that need direct MinIO access
+- Applications that manage their own MinIO credentials
+- Multi-tenant scenarios with isolated credentials
+
 === Bucket
 
 Manages MinIO S3-compatible buckets.

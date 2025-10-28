@@ -3,8 +3,9 @@ kind: BucketClaim
 metadata:
   name: my-bucket-claim
 spec:
+  credentialsSecretRef:
+    name: minio-credentials
+    namespace: default
   bucketName: my-claimed-bucket
   region: us-east-1
   bucketDeletionPolicy: DeleteIfEmpty
-  providerConfigRef:
-    name: provider-config
