@@ -4,6 +4,7 @@
 
 # Build
 /provider-minio
+/provider
 *.out
 /package/*.xpkg
 *.xpkg
@@ -16,6 +17,9 @@ build/
 /.cache/
 /.public/
 /node_modules/
+
+# Go modules
+/vendor/
 
 # work
 /.work/
