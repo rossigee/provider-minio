@@ -50,7 +50,7 @@ func TestGetBucketConfig(t *testing.T) {
 			},
 			expectError: false,
 			validate: func(t *testing.T, creds *miniocreds.Credentials) {
-				value, err := creds.Get()
+				value, err := creds.GetWithContext(nil)
 				if err != nil {
 					t.Errorf("failed to get credentials value: %v", err)
 					return
@@ -168,7 +168,7 @@ func TestGetBucketConfig(t *testing.T) {
 			},
 			expectError: false,
 			validate: func(t *testing.T, creds *miniocreds.Credentials) {
-				value, err := creds.Get()
+				value, err := creds.GetWithContext(nil)
 				if err != nil {
 					t.Errorf("failed to get credentials value: %v", err)
 					return
