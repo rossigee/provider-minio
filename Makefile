@@ -9,7 +9,7 @@ PLATFORMS ?= linux_amd64 linux_arm64
 -include build/makelib/output.mk
 
 # Setup Go
-GO_REQUIRED_VERSION ?= 1.24
+GO_REQUIRED_VERSION ?= 1.25
 # Override golangci-lint version for Go 1.25 compatibility
 GOLANGCILINT_VERSION ?= 2.5.0
 NPROCS ?= 1
@@ -24,7 +24,6 @@ GO111MODULE = on
 UP_VERSION = v0.28.0
 UP_CHANNEL = stable
 UPTEST_VERSION = v0.11.1
-CROSSPLANE_CLI_VERSION = v2.0.2
 -include build/makelib/k8s_tools.mk
 
 # Setup Images
@@ -33,8 +32,14 @@ IMAGES = provider-minio
 REGISTRY_ORGS = ghcr.io/rossigee
 -include build/makelib/imagelight.mk
 
-# Override to always publish images, not just on specific branches
-publish.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.publish.$(r).$(i)))
+# Ensure publish only happens on release branches
+publish.artifacts:
+	@if ! echo "$(BRANCH_NAME)" | grep -qE "$(subst $(SPACE),|,main|master|release-.*)"; then \
+		$(ERR) Publishing is only allowed on branches matching: main|master|release-.* (current: $(BRANCH_NAME)); \
+		exit 1; \
+	fi
+	$(foreach r,$(XPKG_REG_ORGS), $(foreach x,$(XPKGS),@$(MAKE) xpkg.release.publish.$(r).$(x)))
+	$(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),@$(MAKE) img.release.publish.$(r).$(i)))
 
 # Setup XPKG - Standardized registry configuration
 # Primary registry: GitHub Container Registry under rossigee
