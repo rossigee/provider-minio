@@ -194,13 +194,9 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           echo "Repository owner: ${{ github.repository_owner }}"
 
-          # Build binary
+          # Build binary and artifacts (includes Docker image build)
           make build
-          echo "✅ Binary build successful"
-
-          # Build Docker image locally (without push)
-          make docker.build
-          echo "✅ Docker image build successful"
+          echo "✅ Binary and artifacts build successful"
 
           # Note: xpkg.build is validated in release workflow, not CI
 
