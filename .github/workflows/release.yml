@@ -52,6 +52,9 @@ jobs:
       - name: Vendor Dependencies
         run: go mod vendor
 
+      - name: Install Build Tools
+        run: make build.init
+
       - name: Determine Version
         id: version
         run: |
