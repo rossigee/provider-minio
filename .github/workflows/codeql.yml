@@ -1,16 +1,19 @@
-# Standardized Security Template for Crossplane Providers
-# Version: 2025-09-26
+# Standardized CodeQL Security Scanning for Crossplane Providers
+# Version: 2025-10-29 - Combined from template codeql.yml and security.yml
 #
-# This template provides MANUAL/ON-DEMAND security scanning ONLY
-# - NO scheduled scans to eliminate daily email spam
-# - Manual workflow_dispatch trigger for security audits
-# - Comprehensive security analysis when needed
-# - Can be triggered manually or by other workflows
+# This template provides automated CodeQL security scanning
+# - Triggers on pushes/PRs to master/release-* (with no-op detection)
+# - Includes comprehensive security analysis (CodeQL + additional scans)
+# - Results uploaded to GitHub Security tab
+# - No scheduled scans to avoid email spam
 
-name: Security Scanning
+name: CodeQL Security Scanning
 
 on:
-  # IMPORTANT: No schedule trigger to avoid daily email spam
+  push:
+    branches:
+      - master
+      - release-*
   workflow_dispatch:
     inputs:
       scan_type:
@@ -40,9 +43,23 @@ env:
   GO_VERSION: '1.25.1'
 
 jobs:
+  detect-noop:
+    runs-on: ubuntu-24.04
+    outputs:
+      noop: ${{ steps.noop.outputs.should_skip }}
+    steps:
+      - name: Detect No-op Changes
+        id: noop
+        uses: fkirc/skip-duplicate-actions@v5.3.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          paths_ignore: '["**.md", "**.png", "**.jpg"]'
+          do_not_skip: '["workflow_dispatch", "schedule", "push"]'
   security-analysis:
     name: Security Analysis
     runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -116,7 +133,8 @@ jobs:
   supply-chain-scan:
     name: Supply Chain Security
     runs-on: ubuntu-24.04
-    if: github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'dependencies' || github.event.inputs.scan_type == ''
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true' && (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'dependencies' || github.event.inputs.scan_type == '')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
