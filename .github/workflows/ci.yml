@@ -188,12 +188,6 @@ jobs:
       - name: Vendor Dependencies
         run: go mod vendor
 
-      - name: Download Tools
-        run: |
-          mkdir -p .cache/tools/linux_x86_64
-          curl -fsSLo .cache/tools/linux_x86_64/crossplane-cli-v2.0.2 --create-dirs https://releases.crossplane.io/stable/v2.0.2/bin/linux_amd64/crossplane
-          chmod +x .cache/tools/linux_x86_64/crossplane-cli-v2.0.2
-
       - name: Validate Build Process
         run: |
           # Validate that all build steps work without publishing
