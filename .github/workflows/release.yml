@@ -30,8 +30,11 @@ env:
   GO_VERSION: '1.25.3'
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        platform: [linux_amd64, linux_arm64]
     permissions:
       contents: write
       packages: write
@@ -66,6 +69,9 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
+      - name: Set Platform
+        run: echo "PLATFORM=${{ matrix.platform }}" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -76,7 +82,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN }}
 
-      - name: Build and Publish All Artifacts
+      - name: Build Artifacts
         run: |
           set -e  # Fail fast on any error
 
@@ -93,15 +99,99 @@ jobs:
           # See: build/makelib/xpkg.mk:125-127 and build/makelib/common.mk:87
           export BRANCH_NAME="master"
 
-          # Limit to linux_amd64 for single-platform CI
-          export PLATFORMS="linux_amd64"
+          # Build artifacts for the current platform
+          make build.artifacts
 
-          # Build and publish using make targets that handle Docker + Crossplane packages
-          make publish \
+      - name: Upload XPKG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpkg-${{ matrix.platform }}
+          path: _output/xpkg/${{ matrix.platform }}/provider-minio-${{ steps.version.outputs.version }}.xpkg
+
+  publish:
+    runs-on: ubuntu-24.04
+    needs: build
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vendor Dependencies
+        run: go mod vendor
+
+      - name: Install Build Tools
+        run: make build.init
+
+      - name: Determine Version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Download XPKG Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: _output/xpkg
+
+      - name: Publish All Artifacts
+        run: |
+          set -e  # Fail fast on any error
+
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "Repository: ${{ github.repository }}"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          echo "Version: ${VERSION}"
+
+          # CRITICAL: Override BRANCH_NAME to bypass release branch filter
+          export BRANCH_NAME="master"
+
+          # Move downloaded xpkgs to correct locations
+          mkdir -p _output/xpkg/linux_amd64 _output/xpkg/linux_arm64
+          mv _output/xpkg/xpkg-linux_amd64/provider-minio-${VERSION}.xpkg _output/xpkg/linux_amd64/
+          mv _output/xpkg/xpkg-linux_arm64/provider-minio-${VERSION}.xpkg _output/xpkg/linux_arm64/
+
+          # Build multi-platform image
+          make img.build.provider-minio PLATFORM="linux/amd64,linux/arm64" \
+            REGISTRY_ORGS="ghcr.io/${{ github.repository_owner }}"
+
+          # Publish using make targets that handle Docker + Crossplane packages
+          make publish.artifacts \
             REGISTRY_ORGS="ghcr.io/${{ github.repository_owner }}" \
             XPKG_REG_ORGS="ghcr.io/${{ github.repository_owner }}" \
-            BRANCH_NAME=master \
-            PLATFORMS="linux_amd64"
+            BRANCH_NAME=master
 
           echo "✅ Published to ghcr.io/${{ github.repository_owner }}"
           echo "🏷️  Tags: ${VERSION}, latest"
