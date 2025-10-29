@@ -26,6 +26,9 @@ UP_CHANNEL = stable
 UPTEST_VERSION = v0.11.1
 -include build/makelib/k8s_tools.mk
 
+# Override CROSSPLANE_CLI to use UP for xpkg commands
+CROSSPLANE_CLI = $(UP)
+
 # Setup Images
 IMAGES = provider-minio
 # Force registry override (can be overridden by make command arguments)
