@@ -35,6 +35,48 @@ spec:
       key: ca.crt
 ```
 
+#### Option 2: Inline CA Certificate Data
+
+```yaml
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-ca-data
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    caData: |
+      -----BEGIN CERTIFICATE-----
+      MIIDxTCCAq2gAwIBAgIJAKXGz9P2v7s2MA0GCSqGSIb3DQEBCwUAMHkxCzAJBgNV
+      # ... your CA certificate content ...
+      -----END CERTIFICATE-----
+```
+
+#### Option 3: CA Certificate from ConfigMap
+
+```yaml
+apiVersion: minio.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config-with-ca-configmap
+spec:
+  credentials:
+    apiSecretRef:
+      name: minio-secret
+      namespace: crossplane-system
+    source: Secret
+  minioURL: https://minio.example.com:9000/
+  tls:
+    caConfigMapRef:
+      name: ca-certificates
+      key: minio-ca.crt
+```
+
 ### Mutual TLS Authentication
 
 ```yaml

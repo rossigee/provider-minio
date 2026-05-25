@@ -404,8 +404,9 @@ func TestNewMinioClient(t *testing.T) {
 	}
 }
 
-func Test_getSecretData(t *testing.T) {
+func Test_getTLSData(t *testing.T) {
 	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, corev1.AddToScheme(scheme))
 
 	testSecret := &corev1.Secret{
@@ -418,27 +419,39 @@ func Test_getSecretData(t *testing.T) {
 		},
 	}
 
+	testConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-configmap",
+			Namespace: "test-namespace",
+		},
+		Data: map[string]string{
+			"cm-key": "configmap-data",
+		},
+	}
+
 	fakeClient := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithObjects(testSecret).
+		WithObjects(testSecret, testConfigMap).
 		Build()
 
 	tests := []struct {
-		name      string
-		secretRef *corev1.SecretKeySelector
-		namespace string
-		want      []byte
-		wantErr   bool
+		name         string
+		inlineData   string
+		secretRef    *corev1.SecretKeySelector
+		configMapRef *corev1.ConfigMapKeySelector
+		namespace    string
+		want         string
+		wantErr      bool
 	}{
 		{
-			name:      "Nil secret reference should return error",
-			secretRef: nil,
-			namespace: "test-namespace",
-			want:      nil,
-			wantErr:   true,
+			name:       "Inline data should be returned",
+			inlineData: "inline-data",
+			namespace:  "test-namespace",
+			want:       "inline-data",
+			wantErr:    false,
 		},
 		{
-			name: "Valid secret reference should return data",
+			name: "Secret reference should return data",
 			secretRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: "test-secret",
@@ -446,8 +459,26 @@ func Test_getSecretData(t *testing.T) {
 				Key: "test-key",
 			},
 			namespace: "test-namespace",
-			want:      []byte("test-data"),
+			want:      "test-data",
 			wantErr:   false,
+		},
+		{
+			name: "ConfigMap reference should return data",
+			configMapRef: &corev1.ConfigMapKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "test-configmap",
+				},
+				Key: "cm-key",
+			},
+			namespace: "test-namespace",
+			want:      "configmap-data",
+			wantErr:   false,
+		},
+		{
+			name:       "No data source should return empty",
+			namespace:  "test-namespace",
+			want:       "",
+			wantErr:    false,
 		},
 		{
 			name: "Nonexistent secret should return error",
@@ -458,26 +489,24 @@ func Test_getSecretData(t *testing.T) {
 				Key: "test-key",
 			},
 			namespace: "test-namespace",
-			want:      nil,
 			wantErr:   true,
 		},
 		{
-			name: "Nonexistent key should return error",
-			secretRef: &corev1.SecretKeySelector{
+			name: "Nonexistent configmap should return error",
+			configMapRef: &corev1.ConfigMapKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "test-secret",
+					Name: "nonexistent-configmap",
 				},
-				Key: "nonexistent-key",
+				Key: "cm-key",
 			},
 			namespace: "test-namespace",
-			want:      nil,
 			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getSecretData(context.Background(), fakeClient, tt.secretRef, tt.namespace)
+			got, err := getTLSData(context.Background(), fakeClient, tt.namespace, tt.inlineData, tt.secretRef, tt.configMapRef)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
