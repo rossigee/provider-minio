@@ -3,8 +3,8 @@ package bucketclaim
 import (
 	"context"
 
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )

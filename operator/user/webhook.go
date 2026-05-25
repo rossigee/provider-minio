@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	//nolint:staticcheck
 	_                   admission.CustomValidator = &Validator{}
 	getProviderConfigFn                           = getProviderConfig
 	getMinioAdminFn                               = getMinioAdmin

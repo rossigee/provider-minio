@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	madmin "github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
@@ -22,7 +22,7 @@ var (
 type connector struct {
 	kube     client.Client
 	recorder event.Recorder
-	usage    resource.Tracker
+	usage resource.ModernTracker
 }
 
 type policyClient struct {
@@ -34,7 +34,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("connecting resource")
 
-	err := c.usage.Track(ctx, mg)
+	err := c.usage.Track(ctx, mg.(resource.ModernManaged))
 	if err != nil {
 		return nil, err
 	}

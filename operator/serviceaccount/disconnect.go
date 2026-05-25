@@ -3,7 +3,7 @@ package serviceaccount
 import (
 	"context"
 
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 )
 
 func (s *serviceAccountClient) Disconnect(ctx context.Context) error {
@@ -13,4 +13,4 @@ func (s *serviceAccountClient) Disconnect(ctx context.Context) error {
 }
 
 var _ managed.ExternalClient = &serviceAccountClient{}
-var _ managed.ExternalConnecter = &connector{}
+var _ managed.ExternalConnector = &connector{}

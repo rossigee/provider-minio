@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+//nolint:staticcheck
 var _ admission.CustomValidator = &Validator{}
 
 // Validator validates admission requests.

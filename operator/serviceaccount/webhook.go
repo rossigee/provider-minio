@@ -14,6 +14,7 @@ import (
 )
 
 var (
+	//nolint:staticcheck
 	_ admission.CustomValidator = &Validator{}
 )
 

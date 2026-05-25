@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/go-logr/logr"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,8 +27,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 			name: "GivenValidObject_ThenNoError",
 			obj: &miniov1beta1.User{
 				Spec: miniov1beta1.UserSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test",
 						},
 					},
@@ -50,8 +50,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 							"foo",
 						},
 					},
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test",
 						},
 					},
@@ -67,8 +67,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 							"foo",
 						},
 					},
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test",
 						},
 					},
@@ -119,8 +119,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 
 				oldObj: &miniov1beta1.User{
 					Spec: miniov1beta1.UserSpec{
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "provider",
 							},
 						},
@@ -128,8 +128,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 				},
 				newObj: &miniov1beta1.User{
 					Spec: miniov1beta1.UserSpec{
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "provider",
 							},
 						},
@@ -142,8 +142,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 			args: args{
 				oldObj: &miniov1beta1.User{
 					Spec: miniov1beta1.UserSpec{
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "provider",
 							},
 						},
@@ -151,8 +151,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 				},
 				newObj: &miniov1beta1.User{
 					Spec: miniov1beta1.UserSpec{
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "new",
 							},
 						},
@@ -166,8 +166,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 			args: args{
 				oldObj: &miniov1beta1.User{
 					Spec: miniov1beta1.UserSpec{
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "provider",
 							},
 						},
@@ -178,8 +178,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 						ForProvider: miniov1beta1.UserParameters{
 							UserName: "test",
 						},
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "new",
 							},
 						},
@@ -193,8 +193,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 			args: args{
 				oldObj: &miniov1beta1.User{
 					Spec: miniov1beta1.UserSpec{
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "provider",
 							},
 						},
@@ -207,8 +207,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 								"foo",
 							},
 						},
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "test",
 							},
 						},
@@ -221,8 +221,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 			args: args{
 				oldObj: &miniov1beta1.User{
 					Spec: miniov1beta1.UserSpec{
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "provider",
 							},
 						},
@@ -235,8 +235,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 								"foo",
 							},
 						},
-						ResourceSpec: xpv1.ResourceSpec{
-							ProviderConfigReference: &xpv1.Reference{
+						ManagedResourceSpec: xpv1.ManagedResourceSpec{
+							ProviderConfigReference: &xpv1.ProviderConfigReference{
 								Name: "test",
 							},
 						},

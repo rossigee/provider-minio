@@ -10,10 +10,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/crossplane/crossplane-runtime/pkg/controller"
-	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 
 	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	apisv1alpha1 "github.com/rossigee/provider-minio/apis/provider/v1"
@@ -37,30 +37,27 @@ const (
 func Setup(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1beta1.UserGroupKind)
 
-	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o.ForControllerRuntime()).
 		For(&v1beta1.User{}).
 		Complete(managed.NewReconciler(mgr,
 			resource.ManagedKind(v1beta1.UserGroupVersionKind),
-			managed.WithExternalConnecter(&connector{
+			managed.WithExternalConnector(&connector{
 				kube:         mgr.GetClient(),
 				usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &apisv1alpha1.ProviderConfigUsage{}),
 				newServiceFn: clients.NewMinIOClient,
 			}),
 			managed.WithLogger(o.Logger.WithValues("controller", name)),
 			managed.WithPollInterval(o.PollInterval),
-			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
-			managed.WithConnectionPublishers(cps...)))
+			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
 }
 
 // A connector is expected to produce an ExternalClient when its Connect method
 // is called.
 type connector struct {
 	kube         client.Client
-	usage        resource.Tracker
+	usage resource.ModernTracker
 	newServiceFn func(cfg clients.Config) (*madmin.AdminClient, error)
 }
 
@@ -75,7 +72,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New(errNotUser)
 	}
 
-	if err := c.usage.Track(ctx, mg); err != nil {
+	if err := c.usage.Track(ctx, mg.(resource.ModernManaged)); err != nil {
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 

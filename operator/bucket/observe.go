@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/crossplane/crossplane-runtime/pkg/errors"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/go-logr/logr"
 	"github.com/minio/minio-go/v7"
 	"github.com/stretchr/testify/assert"

@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 
@@ -56,8 +56,8 @@ func (u *userClient) Update(ctx context.Context, mg resource.Managed) (managed.E
 		secret := k8svi.Secret{}
 
 		err = u.kube.Get(ctx, types.NamespacedName{
-			Namespace: mg.GetWriteConnectionSecretToReference().Namespace,
-			Name:      mg.GetWriteConnectionSecretToReference().Name,
+			Namespace: mg.GetNamespace(),
+			Name:      mg.(resource.ModernManaged).GetWriteConnectionSecretToReference().Name,
 		}, &secret)
 		if err != nil {
 			return managed.ExternalUpdate{}, err

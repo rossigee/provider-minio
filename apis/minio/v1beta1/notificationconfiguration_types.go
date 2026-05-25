@@ -3,7 +3,7 @@ package v1beta1
 import (
 	"reflect"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -34,13 +34,13 @@ type NotificationConfiguration struct {
 
 // NotificationConfigurationSpec defines the desired state of a NotificationConfiguration
 type NotificationConfigurationSpec struct {
-	xpv1.ResourceSpec `json:",inline"`
+	xpv1.ManagedResourceSpec `json:",inline"`
 	ForProvider       NotificationConfigurationParameters `json:"forProvider,omitempty"`
 }
 
 // NotificationConfigurationStatus defines the observed state of a NotificationConfiguration
 type NotificationConfigurationStatus struct {
-	xpv1.ResourceStatus `json:",inline"`
+	xpv1.ConditionedStatus `json:",inline"`
 	AtProvider          NotificationConfigurationProviderStatus `json:"atProvider,omitempty"`
 }
 

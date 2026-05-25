@@ -3,7 +3,7 @@ package v1beta1
 import (
 	"reflect"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -35,13 +35,13 @@ type ServiceAccount struct {
 
 // ServiceAccountSpec defines the desired state of a ServiceAccount
 type ServiceAccountSpec struct {
-	xpv1.ResourceSpec `json:",inline"`
+	xpv1.ManagedResourceSpec `json:",inline"`
 	ForProvider       ServiceAccountParameters `json:"forProvider,omitempty"`
 }
 
 // ServiceAccountStatus defines the observed state of a ServiceAccount
 type ServiceAccountStatus struct {
-	xpv1.ResourceStatus `json:",inline"`
+	xpv1.ConditionedStatus `json:",inline"`
 	AtProvider          ServiceAccountProviderStatus `json:"atProvider,omitempty"`
 }
 
@@ -103,12 +103,6 @@ type ServiceAccountParameters struct {
 	// each other.
 	WriteConnectionSecretsToRef *xpv1.SecretReference `json:"writeConnectionSecretsToRef,omitempty"`
 
-	// PublishConnectionDetailsTo specifies the connection secret config which
-	// contains a name, metadata and a reference to secret store config to
-	// which any connection details for this managed resource should be written.
-	// Connection details frequently include the endpoint, username,
-	// and password required to connect to the managed resource.
-	PublishConnectionDetailsTo *xpv1.PublishConnectionDetailsTo `json:"publishConnectionDetailsTo,omitempty"`
 }
 
 // +kubebuilder:object:root=true
