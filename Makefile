@@ -35,7 +35,7 @@ REGISTRY_ORGS = ghcr.io/rossigee
 -include build/makelib/imagelight.mk
 
 # Ensure publish only happens on release branches
-publish.artifacts: build.artifacts
+publish.artifacts: do.build.artifacts
 	@if ! echo "$(BRANCH_NAME)" | grep -qE "$(subst $(SPACE),|,main|master|release-.*)"; then \
 		$(ERR) Publishing is only allowed on branches matching: main|master|release-.* (current: $(BRANCH_NAME)); \
 		exit 1; \
