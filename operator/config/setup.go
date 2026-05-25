@@ -14,7 +14,7 @@ import (
 // their current usage.
 func SetupController(mgr ctrl.Manager) error {
 	name := providerconfig.ControllerName(providerv1.ProviderConfigGroupKind)
-	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name)) //nolint:staticcheck
+	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name)) //nolint:staticcheck
 
 	of := resource.ProviderConfigKinds{
 		Config:    providerv1.ProviderConfigGroupVersionKind,

@@ -50,14 +50,14 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 			}),
 			managed.WithLogger(o.Logger.WithValues("controller", name)),
 			managed.WithPollInterval(o.PollInterval),
-			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
+			managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorder(name)))))
 }
 
 // A connector is expected to produce an ExternalClient when its Connect method
 // is called.
 type connector struct {
 	kube         client.Client
-	usage resource.ModernTracker
+	usage        resource.ModernTracker
 	newServiceFn func(cfg clients.Config) (*madmin.AdminClient, error)
 }
 

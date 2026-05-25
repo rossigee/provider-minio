@@ -5,7 +5,7 @@
 package v1beta1
 
 import (
-	v1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane/apis/v2/core/v2"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -116,7 +116,7 @@ func (in *BucketClaimSpec) DeepCopyInto(out *BucketClaimSpec) {
 	in.ManagedResourceSpec.DeepCopyInto(&out.ManagedResourceSpec)
 	if in.CredentialsSecretRef != nil {
 		in, out := &in.CredentialsSecretRef, &out.CredentialsSecretRef
-		*out = new(v1.SecretReference)
+		*out = new(v2.SecretReference)
 		**out = **in
 	}
 	if in.Policy != nil {
@@ -192,6 +192,13 @@ func (in *BucketParameters) DeepCopyInto(out *BucketParameters) {
 		in, out := &in.Policy, &out.Policy
 		*out = new(string)
 		**out = **in
+	}
+	if in.Tags != nil {
+		in, out := &in.Tags, &out.Tags
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 }
 
@@ -667,7 +674,7 @@ func (in *ServiceAccountParameters) DeepCopyInto(out *ServiceAccountParameters) 
 	}
 	if in.WriteConnectionSecretsToRef != nil {
 		in, out := &in.WriteConnectionSecretsToRef, &out.WriteConnectionSecretsToRef
-		*out = new(v1.SecretReference)
+		*out = new(v2.SecretReference)
 		**out = **in
 	}
 }

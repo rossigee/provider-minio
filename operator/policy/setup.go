@@ -16,7 +16,7 @@ import (
 // SetupController adds a controller that reconciles managed resources.
 func SetupController(mgr ctrl.Manager) error {
 	name := strings.ToLower(miniov1beta1.PolicyGroupKind)
-	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name)) //nolint:staticcheck
+	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name)) //nolint:staticcheck
 
 	return SetupControllerWithConnecter(mgr, name, recorder, &connector{
 		kube:     mgr.GetClient(),

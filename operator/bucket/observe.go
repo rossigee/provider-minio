@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
@@ -25,6 +26,21 @@ var bucketPolicyLatestFn = func(ctx context.Context, mc *minio.Client, bucketNam
 	}
 
 	return current == policy, nil
+}
+
+var bucketTagsLatestFn = func(ctx context.Context, mc *minio.Client, bucketName string, desiredTags map[string]string) (bool, error) {
+	current, err := mc.GetBucketTagging(ctx, bucketName)
+	if err != nil {
+		// MinIO returns NoSuchTagSet when no tags are set
+		if minio.ToErrorResponse(err).Code == "NoSuchTagSet" {
+			return len(desiredTags) == 0, nil
+		}
+		return false, err
+	}
+	if current == nil {
+		return len(desiredTags) == 0, nil
+	}
+	return reflect.DeepEqual(current.ToMap(), desiredTags), nil
 }
 
 func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
@@ -66,6 +82,14 @@ func (d *bucketClient) observeBucket(ctx context.Context, bucket *miniov1beta1.B
 			u, err := bucketPolicyLatestFn(ctx, d.mc, bucketName, *bucket.Spec.ForProvider.Policy)
 			if err != nil {
 				return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether a bucket policy exists")
+			}
+			isLatest = u
+		}
+
+		if isLatest && bucket.Spec.ForProvider.Tags != nil {
+			u, err := bucketTagsLatestFn(ctx, d.mc, bucketName, bucket.Spec.ForProvider.Tags)
+			if err != nil {
+				return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether bucket tags are up to date")
 			}
 			isLatest = u
 		}

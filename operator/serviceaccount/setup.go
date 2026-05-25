@@ -16,7 +16,7 @@ import (
 // SetupController adds a controller that reconciles managed resources.
 func SetupController(mgr ctrl.Manager) error {
 	name := strings.ToLower(miniov1beta1.ServiceAccountGroupKind)
-	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name)) //nolint:staticcheck
+	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name)) //nolint:staticcheck
 
 	return SetupControllerWithConnecter(mgr, name, recorder, &connector{
 		kube:     mgr.GetClient(),
@@ -58,7 +58,7 @@ func SetupWebhook(mgr ctrl.Manager) error {
 // SetupV1Beta1Controller adds a controller that reconciles v1beta1 managed resources.
 func SetupV1Beta1Controller(mgr ctrl.Manager) error {
 	name := strings.ToLower(miniov1beta1.ServiceAccountGroupKind)
-	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name)) //nolint:staticcheck
+	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name)) //nolint:staticcheck
 
 	return SetupV1Beta1ControllerWithConnecter(mgr, name, recorder, &connector{
 		kube:     mgr.GetClient(),

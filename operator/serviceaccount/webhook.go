@@ -85,14 +85,14 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		return nil, field.Invalid(field.NewPath("spec", "forProvider", "targetUser"), newServiceAccount.Spec.ForProvider.TargetUser, "Changing the target user is not allowed")
 	}
 
+	// Skip further validation if the service account is being deleted
+	if newServiceAccount.GetDeletionTimestamp() != nil {
+		return nil, nil
+	}
+
 	providerConfigRef := newServiceAccount.Spec.ProviderConfigReference
 	if providerConfigRef == nil || providerConfigRef.Name == "" {
 		return nil, field.Invalid(field.NewPath("spec", "providerConfigRef", "name"), "null", "Provider config is required")
-	}
-
-	// Skip validation if the service account is being deleted
-	if newServiceAccount.GetDeletionTimestamp() != nil {
-		return nil, nil
 	}
 
 	// Validate policy if specified
