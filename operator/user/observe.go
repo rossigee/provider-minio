@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -70,8 +70,8 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 		secret := k8svi.Secret{}
 
 		err = u.kube.Get(ctx, types.NamespacedName{
-			Namespace: mg.GetWriteConnectionSecretToReference().Namespace,
-			Name:      mg.GetWriteConnectionSecretToReference().Name,
+			Namespace: mg.GetNamespace(),
+			Name:      mg.(resource.ModernManaged).GetWriteConnectionSecretToReference().Name,
 		}, &secret)
 		if err != nil {
 			return managed.ExternalObservation{}, err

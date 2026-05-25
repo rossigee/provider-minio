@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	minio "github.com/minio/minio-go/v7"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/rossigee/provider-minio/internal/clients"
@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ managed.ExternalConnecter = &connector{}
+var _ managed.ExternalConnector = &connector{}
 var _ managed.ExternalClient = &bucketClaimClient{}
 
 const bucketClaimLockAnnotation = miniov1beta1.Group + "/bucketclaim-lock"
@@ -33,7 +33,7 @@ type bucketClaimClient struct {
 	recorder event.Recorder
 }
 
-// Connect implements managed.ExternalConnecter.
+// Connect implements managed.ExternalConnector.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("connecting bucket claim resource")

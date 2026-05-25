@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	miniopolicy "github.com/minio/pkg/iam/policy"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"

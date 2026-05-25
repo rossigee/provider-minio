@@ -3,7 +3,7 @@ package v1beta1
 import (
 	"reflect"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -46,16 +46,16 @@ type Bucket struct {
 
 // BucketSpec defines the desired state of a Bucket
 type BucketSpec struct {
-	xpv1.ResourceSpec `json:",inline"`
-	ForProvider       BucketParameters `json:"forProvider,omitempty"`
+	xpv1.ManagedResourceSpec `json:",inline"`
+	ForProvider              BucketParameters `json:"forProvider,omitempty"`
 }
 
 // BucketStatus defines the observed state of a Bucket
 type BucketStatus struct {
-	xpv1.ResourceStatus `json:",inline"`
-	Endpoint            string               `json:"endpoint,omitempty"`
-	EndpointURL         string               `json:"endpointURL,omitempty"`
-	AtProvider          BucketProviderStatus `json:"atProvider,omitempty"`
+	xpv1.ConditionedStatus `json:",inline"`
+	Endpoint               string               `json:"endpoint,omitempty"`
+	EndpointURL            string               `json:"endpointURL,omitempty"`
+	AtProvider             BucketProviderStatus `json:"atProvider,omitempty"`
 }
 
 // BucketParameters define the desired state of a MinIO Bucket
@@ -84,6 +84,12 @@ type BucketParameters struct {
 	// Policy is a raw S3 bucket policy.
 	// Please consult https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html for more details about the policy.
 	Policy *string `json:"policy,omitempty"`
+
+	// Tags is a map of key-value pairs to set as S3 bucket tags on the MinIO bucket.
+	// When set (including to an empty map), the bucket tags are reconciled to exactly
+	// this set. When omitted (nil), bucket tags are not managed by this resource.
+	// +optional
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 // BucketProviderStatus defines the observed state of a Bucket from the provider

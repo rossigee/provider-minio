@@ -21,7 +21,7 @@ import (
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,7 +54,7 @@ func newBucketSample() *miniov1beta1.Bucket {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "bucket-local-dev"},
 		Spec: miniov1beta1.BucketSpec{
-			ResourceSpec: xpv1.ResourceSpec{
+			ResourceSpec: xpv1.ManagedResourceSpec{
 				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
 			},
 			ForProvider: miniov1beta1.BucketParameters{
@@ -127,7 +127,7 @@ func newUserSample() *miniov1beta1.User {
 			Name: "devuser",
 		},
 		Spec: miniov1beta1.UserSpec{
-			ResourceSpec: xpv1.ResourceSpec{
+			ResourceSpec: xpv1.ManagedResourceSpec{
 				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
 				WriteConnectionSecretToReference: &xpv1.SecretReference{
 					Name:      "devuser",
@@ -153,7 +153,7 @@ func newPolicySample() *miniov1beta1.Policy {
 			Name: "mypolicy",
 		},
 		Spec: miniov1beta1.PolicySpec{
-			ResourceSpec: xpv1.ResourceSpec{
+			ResourceSpec: xpv1.ManagedResourceSpec{
 				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
 			},
 			ForProvider: miniov1beta1.PolicyParameters{

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/stretchr/testify/assert"
 
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
@@ -201,22 +201,4 @@ func TestBucketClaim_ValidateDelete(t *testing.T) {
 
 	_, err := v.ValidateDelete(context.Background(), bucketClaim)
 	assert.NoError(t, err)
-}
-
-func TestBucketClaim_ValidateCreate_WrongType(t *testing.T) {
-	v := &Validator{}
-	wrongType := &miniov1beta1.Bucket{}
-
-	_, err := v.ValidateCreate(context.Background(), wrongType)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "managed resource is not a bucket claim")
-}
-
-func TestBucketClaim_ValidateUpdate_WrongType(t *testing.T) {
-	v := &Validator{}
-	wrongType := &miniov1beta1.Bucket{}
-
-	_, err := v.ValidateUpdate(context.Background(), wrongType, wrongType)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "managed resource is not a bucket claim")
 }

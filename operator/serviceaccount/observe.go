@@ -3,9 +3,9 @@ package serviceaccount
 import (
 	"context"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	k8svi "k8s.io/api/core/v1"
@@ -74,12 +74,12 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 	}
 
 	// Validate connection credentials if the service account is not being deleted
-	if mg.GetDeletionTimestamp() == nil && mg.GetWriteConnectionSecretToReference() != nil {
+	if mg.GetDeletionTimestamp() == nil && mg.(resource.ModernManaged).GetWriteConnectionSecretToReference() != nil {
 		secret := k8svi.Secret{}
 
 		err = s.kube.Get(ctx, types.NamespacedName{
-			Namespace: mg.GetWriteConnectionSecretToReference().Namespace,
-			Name:      mg.GetWriteConnectionSecretToReference().Name,
+			Namespace: mg.GetNamespace(),
+			Name:      mg.(resource.ModernManaged).GetWriteConnectionSecretToReference().Name,
 		}, &secret)
 		if err != nil {
 			log.V(1).Info("connection secret not found or not accessible", "error", err)

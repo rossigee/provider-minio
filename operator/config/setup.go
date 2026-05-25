@@ -1,10 +1,10 @@
 package config
 
 import (
-	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/providerconfig"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/providerconfig"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
@@ -14,7 +14,7 @@ import (
 // their current usage.
 func SetupController(mgr ctrl.Manager) error {
 	name := providerconfig.ControllerName(providerv1.ProviderConfigGroupKind)
-	recorder := event.NewAPIRecorder(mgr.GetEventRecorderFor(name))
+	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name))
 
 	of := resource.ProviderConfigKinds{
 		Config:    providerv1.ProviderConfigGroupVersionKind,

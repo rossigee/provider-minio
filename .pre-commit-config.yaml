@@ -29,7 +29,7 @@ repos:
         args: [--profile=black]
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.59.1
+    rev: v2.12.2
     hooks:
       - id: golangci-lint
         args: [--timeout=5m]
@@ -38,7 +38,9 @@ repos:
     rev: v1.0.0-rc.1
     hooks:
       - id: go-fmt
+        exclude: (zz_generated|internal/controller)
       - id: go-imports
+        exclude: (zz_generated|internal/controller)
       - id: go-vet-mod
       - id: go-mod-tidy
 
@@ -47,6 +49,7 @@ repos:
     hooks:
       - id: yamllint
         args: [-c=.yamllint.yaml]
+        exclude: ^package/  # generated CRD/webhook YAML; format is controlled by controller-gen
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.41.0

@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	corev1 "k8s.io/api/core/v1"

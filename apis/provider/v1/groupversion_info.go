@@ -20,6 +20,7 @@ var (
 	// SchemeGroupVersion is group version used to register these objects
 	SchemeGroupVersion = schema.GroupVersion{Group: Group, Version: Version}
 
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
+	// TODO: migrate to runtime.NewSchemeBuilder (controller-runtime scheme.Builder is deprecated).
+	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion} //nolint:staticcheck
 )

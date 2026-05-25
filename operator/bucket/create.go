@@ -3,10 +3,11 @@ package bucket
 import (
 	"context"
 
-	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/tags"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
@@ -29,6 +30,17 @@ func (b *bucketClient) Create(ctx context.Context, mg resource.Managed) (managed
 
 	if bucket.Spec.ForProvider.Policy != nil {
 		err = b.mc.SetBucketPolicy(ctx, bucket.GetBucketName(), *bucket.Spec.ForProvider.Policy)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+	}
+
+	if bucket.Spec.ForProvider.Tags != nil {
+		bucketTags, err := tags.NewTags(bucket.Spec.ForProvider.Tags, false)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+		err = b.mc.SetBucketTagging(ctx, bucket.GetBucketName(), bucketTags)
 		if err != nil {
 			return managed.ExternalCreation{}, err
 		}

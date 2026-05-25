@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -26,8 +26,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test-provider-config",
 						},
 					},
@@ -64,8 +64,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test-provider-config",
 						},
 					},
@@ -84,8 +84,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test-provider-config",
 						},
 					},
@@ -104,8 +104,8 @@ func TestValidator_ValidateCreate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test-provider-config",
 						},
 					},
@@ -155,8 +155,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test-provider-config",
 						},
 					},
@@ -171,8 +171,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
+					ManagedResourceSpec: xpv1.ManagedResourceSpec{
+						ProviderConfigReference: &xpv1.ProviderConfigReference{
 							Name: "test-provider-config",
 						},
 					},
@@ -202,11 +202,6 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
-							Name: "test-provider-config",
-						},
-					},
 					ForProvider: miniov1beta1.ServiceAccountParameters{
 						AccessKey: "newuser", // Changed access key
 					},
@@ -232,11 +227,6 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 					Name: "test-serviceaccount",
 				},
 				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
-							Name: "test-provider-config",
-						},
-					},
 					ForProvider: miniov1beta1.ServiceAccountParameters{
 						TargetUser: "new-user", // Changed target user
 					},
@@ -257,13 +247,7 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 					Name:              "test-serviceaccount",
 					DeletionTimestamp: &metav1.Time{Time: metav1.Now().Time},
 				},
-				Spec: miniov1beta1.ServiceAccountSpec{
-					ResourceSpec: xpv1.ResourceSpec{
-						ProviderConfigReference: &xpv1.Reference{
-							Name: "test-provider-config",
-						},
-					},
-				},
+				Spec: miniov1beta1.ServiceAccountSpec{},
 			},
 			expectedError: false,
 		},

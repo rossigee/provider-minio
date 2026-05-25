@@ -6,25 +6,19 @@ import (
 
 	"github.com/go-logr/logr"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var _ admission.CustomValidator = &Validator{}
+var _ admission.Validator[*miniov1beta1.Bucket] = &Validator{}
 
 // Validator validates admission requests.
 type Validator struct {
 	log logr.Logger
 }
 
-// ValidateCreate implements admission.CustomValidator.
-func (v *Validator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	bucket, ok := obj.(*miniov1beta1.Bucket)
-	if !ok {
-		return nil, errNotBucket
-	}
-
+// ValidateCreate implements admission.Validator.
+func (v *Validator) ValidateCreate(_ context.Context, bucket *miniov1beta1.Bucket) (admission.Warnings, error) {
 	v.log.V(1).Info("Validate create", "name", bucket.Name)
 	providerConfigRef := bucket.Spec.ProviderConfigReference
 	if providerConfigRef == nil || providerConfigRef.Name == "" {
@@ -33,14 +27,8 @@ func (v *Validator) ValidateCreate(_ context.Context, obj runtime.Object) (admis
 	return nil, nil
 }
 
-// ValidateUpdate implements admission.CustomValidator.
-func (v *Validator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	newBucket, ok := newObj.(*miniov1beta1.Bucket)
-	if !ok {
-		return nil, errNotBucket
-	}
-
-	oldBucket := oldObj.(*miniov1beta1.Bucket)
+// ValidateUpdate implements admission.Validator.
+func (v *Validator) ValidateUpdate(_ context.Context, oldBucket, newBucket *miniov1beta1.Bucket) (admission.Warnings, error) {
 	v.log.V(1).Info("Validate update")
 
 	if oldBucket.Status.AtProvider.BucketName != "" {
@@ -58,8 +46,8 @@ func (v *Validator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Obj
 	return nil, nil
 }
 
-// ValidateDelete implements admission.CustomValidator.
-func (v *Validator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator.
+func (v *Validator) ValidateDelete(_ context.Context, _ *miniov1beta1.Bucket) (admission.Warnings, error) {
 	v.log.V(1).Info("validate delete (noop)")
 	return nil, nil
 }
