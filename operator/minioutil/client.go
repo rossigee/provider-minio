@@ -74,65 +74,77 @@ func buildTLSConfig(ctx context.Context, c client.Client, tlsConfig *common.TLSC
 		InsecureSkipVerify: tlsConfig.InsecureSkipVerify,
 	}
 
-	// Handle CA certificate from secret reference
-	if tlsConfig.CASecretRef != nil {
-		caData, err := getSecretData(ctx, c, tlsConfig.CASecretRef, namespace)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get CA certificate from secret: %w", err)
-		}
-
+	// Handle CA certificate
+	caData, err := getTLSData(ctx, c, namespace, tlsConfig.CAData, tlsConfig.CASecretRef, tlsConfig.CAConfigMapRef)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CA certificate data: %w", err)
+	}
+	if caData != "" {
 		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM(caData) {
-			return nil, fmt.Errorf("failed to parse CA certificate from secret")
+		if !caCertPool.AppendCertsFromPEM([]byte(caData)) {
+			return nil, fmt.Errorf("failed to parse CA certificate data")
 		}
 		config.RootCAs = caCertPool
 	}
 
-	// Handle client certificate and key for mutual TLS from secret references
-	if tlsConfig.ClientCertSecretRef != nil && tlsConfig.ClientKeySecretRef != nil {
-		certData, err := getSecretData(ctx, c, tlsConfig.ClientCertSecretRef, namespace)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get client certificate from secret: %w", err)
-		}
+	// Handle client certificate
+	clientCertData, err := getTLSData(ctx, c, namespace, tlsConfig.ClientCertData, tlsConfig.ClientCertSecretRef, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client certificate data: %w", err)
+	}
 
-		keyData, err := getSecretData(ctx, c, tlsConfig.ClientKeySecretRef, namespace)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get client key from secret: %w", err)
-		}
+	// Handle client key
+	clientKeyData, err := getTLSData(ctx, c, namespace, tlsConfig.ClientKeyData, tlsConfig.ClientKeySecretRef, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client key data: %w", err)
+	}
 
-		cert, err := tls.X509KeyPair(certData, keyData)
+	// Handle client certificate and key for mutual TLS
+	if clientCertData != "" && clientKeyData != "" {
+		cert, err := tls.X509KeyPair([]byte(clientCertData), []byte(clientKeyData))
 		if err != nil {
 			return nil, fmt.Errorf("failed to load client certificate and key: %w", err)
 		}
 		config.Certificates = []tls.Certificate{cert}
-	} else if tlsConfig.ClientCertSecretRef != nil || tlsConfig.ClientKeySecretRef != nil {
-		return nil, fmt.Errorf("both client certificate and key secret references must be provided for mutual TLS")
+	} else if clientCertData != "" || clientKeyData != "" {
+		return nil, fmt.Errorf("both client certificate and key must be provided for mutual TLS")
 	}
 
 	return config, nil
 }
 
-// getSecretData retrieves data from a Kubernetes secret using the provided secret key selector
-func getSecretData(ctx context.Context, c client.Client, secretRef *corev1.SecretKeySelector, namespace string) ([]byte, error) {
-	if secretRef == nil {
-		return nil, fmt.Errorf("secret reference is nil")
+// getTLSData retrieves TLS data from inline data, secret reference, or configmap reference
+func getTLSData(ctx context.Context, c client.Client, namespace string, inlineData string, secretRef *corev1.SecretKeySelector, configMapRef *corev1.ConfigMapKeySelector) (string, error) {
+	// Priority: inline data > secret ref > configmap ref
+	if inlineData != "" {
+		return inlineData, nil
 	}
 
-	secret := &corev1.Secret{}
-	key := client.ObjectKey{
-		Name:      secretRef.Name,
-		Namespace: namespace,
+	if secretRef != nil {
+		secret := &corev1.Secret{}
+		key := client.ObjectKey{Name: secretRef.Name, Namespace: namespace}
+		if err := c.Get(ctx, key, secret); err != nil {
+			return "", fmt.Errorf("failed to get secret %s: %w", secretRef.Name, err)
+		}
+		data, ok := secret.Data[secretRef.Key]
+		if !ok {
+			return "", fmt.Errorf("key %s not found in secret %s", secretRef.Key, secretRef.Name)
+		}
+		return string(data), nil
 	}
 
-	err := c.Get(ctx, key, secret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get secret %s in namespace %s: %w", secretRef.Name, namespace, err)
+	if configMapRef != nil {
+		configMap := &corev1.ConfigMap{}
+		key := client.ObjectKey{Name: configMapRef.Name, Namespace: namespace}
+		if err := c.Get(ctx, key, configMap); err != nil {
+			return "", fmt.Errorf("failed to get configmap %s: %w", configMapRef.Name, err)
+		}
+		data, ok := configMap.Data[configMapRef.Key]
+		if !ok {
+			return "", fmt.Errorf("key %s not found in configmap %s", configMapRef.Key, configMapRef.Name)
+		}
+		return data, nil
 	}
 
-	data, exists := secret.Data[secretRef.Key]
-	if !exists {
-		return nil, fmt.Errorf("key %s not found in secret %s", secretRef.Key, secretRef.Name)
-	}
-
-	return data, nil
+	return "", nil
 }

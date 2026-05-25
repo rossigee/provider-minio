@@ -21,18 +21,37 @@ import (
 
 // TLSConfig represents the TLS configuration for MinIO connections.
 type TLSConfig struct {
-	// CASecretRef references a Kubernetes Secret or ConfigMap containing the CA certificate.
-	// The referenced secret should contain the CA certificate in PEM format.
+	// CAData contains the CA certificate data in PEM format for verifying the server's certificate.
+	// This is useful for self-signed certificates or private CA certificates.
+	// +optional
+	CAData string `json:"caData,omitempty"`
+
+	// CASecretRef references a Secret containing the CA certificate data.
+	// The Secret must contain a key named 'ca.crt' or 'tls.crt' with the CA certificate data.
 	// +optional
 	CASecretRef *corev1.SecretKeySelector `json:"caSecretRef,omitempty"`
 
-	// ClientCertSecretRef references a Kubernetes Secret containing the client certificate.
-	// The referenced secret should contain the client certificate in PEM format.
+	// CAConfigMapRef references a ConfigMap containing the CA certificate data.
+	// The ConfigMap must contain a key with the CA certificate data.
+	// +optional
+	CAConfigMapRef *corev1.ConfigMapKeySelector `json:"caConfigMapRef,omitempty"`
+
+	// ClientCertData contains the client certificate data in PEM format for mutual TLS authentication.
+	// +optional
+	ClientCertData string `json:"clientCertData,omitempty"`
+
+	// ClientCertSecretRef references a Secret containing the client certificate data.
+	// The Secret must contain a key with the client certificate data.
 	// +optional
 	ClientCertSecretRef *corev1.SecretKeySelector `json:"clientCertSecretRef,omitempty"`
 
-	// ClientKeySecretRef references a Kubernetes Secret containing the client private key.
-	// The referenced secret should contain the client private key in PEM format.
+	// ClientKeyData contains the client private key data in PEM format for mutual TLS authentication.
+	// DEPRECATED: Use ClientKeySecretRef instead. Private keys should not be stored in CRDs.
+	// +optional
+	ClientKeyData string `json:"clientKeyData,omitempty"`
+
+	// ClientKeySecretRef references a Secret containing the client private key data.
+	// The Secret must contain a key with the client private key data.
 	// +optional
 	ClientKeySecretRef *corev1.SecretKeySelector `json:"clientKeySecretRef,omitempty"`
 
