@@ -16,7 +16,7 @@ build/
 # Docs
 /.cache/
 /.public/
-/node_modules/
+/docs/node_modules/
 
 # Go modules
 /vendor/
