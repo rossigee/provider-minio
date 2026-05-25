@@ -16,16 +16,16 @@ import (
 // SetupController adds a controller that reconciles managed resources.
 func SetupController(mgr ctrl.Manager) error {
 	name := strings.ToLower(miniov1beta1.UserGroupKind)
-	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name)) //nolint:staticcheck
+	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name))
 
-	return SetupControllerWithConnecter(mgr, name, recorder, &connector{
+	return SetupControllerWithConnector(mgr, name, recorder, &connector{
 		kube:     mgr.GetClient(),
 		recorder: recorder,
 		usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1.ProviderConfigUsage{}),
 	}, 0*time.Second)
 }
 
-func SetupControllerWithConnecter(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnector, creationGracePeriod time.Duration) error {
+func SetupControllerWithConnector(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnector, creationGracePeriod time.Duration) error {
 	r := createReconciler(mgr, name, recorder, c, creationGracePeriod)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -48,7 +48,7 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 // SetupWebhook adds a webhook for managed resources.
 func SetupWebhook(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, &miniov1beta1.User{}).
-		WithCustomValidator(&Validator{
+		WithValidator(&Validator{
 			log:  mgr.GetLogger().WithName("webhook").WithName(strings.ToLower(miniov1beta1.UserKind)),
 			kube: mgr.GetClient(),
 		}).

@@ -7,16 +7,12 @@ import (
 
 	"github.com/go-logr/logr"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var (
-	//nolint:staticcheck
-	_ admission.CustomValidator = &Validator{}
-)
+var _ admission.Validator[*miniov1beta1.ServiceAccount] = &Validator{}
 
 // Validator validates admission requests.
 type Validator struct {
@@ -24,14 +20,9 @@ type Validator struct {
 	kube client.Client
 }
 
-// ValidateCreate implements admission.CustomValidator.
-func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+// ValidateCreate implements admission.Validator.
+func (v *Validator) ValidateCreate(ctx context.Context, serviceAccount *miniov1beta1.ServiceAccount) (admission.Warnings, error) {
 	v.log.V(1).Info("Validate create")
-
-	serviceAccount, ok := obj.(*miniov1beta1.ServiceAccount)
-	if !ok {
-		return nil, errNotServiceAccount
-	}
 
 	providerConfigRef := serviceAccount.Spec.ProviderConfigReference
 	if providerConfigRef == nil || providerConfigRef.Name == "" {
@@ -63,18 +54,9 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 	return nil, nil
 }
 
-// ValidateUpdate implements admission.CustomValidator.
-func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+// ValidateUpdate implements admission.Validator.
+func (v *Validator) ValidateUpdate(ctx context.Context, oldServiceAccount, newServiceAccount *miniov1beta1.ServiceAccount) (admission.Warnings, error) {
 	v.log.V(1).Info("Validate update")
-
-	oldServiceAccount, ok := oldObj.(*miniov1beta1.ServiceAccount)
-	if !ok {
-		return nil, errNotServiceAccount
-	}
-	newServiceAccount, ok := newObj.(*miniov1beta1.ServiceAccount)
-	if !ok {
-		return nil, errNotServiceAccount
-	}
 
 	// Check if immutable fields have changed
 	if newServiceAccount.GetAccessKey() != oldServiceAccount.GetAccessKey() {
@@ -106,8 +88,8 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return nil, nil
 }
 
-// ValidateDelete implements admission.CustomValidator.
-func (v *Validator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+// ValidateDelete implements admission.Validator.
+func (v *Validator) ValidateDelete(_ context.Context, _ *miniov1beta1.ServiceAccount) (admission.Warnings, error) {
 	v.log.V(1).Info("validate delete (noop)")
 	return nil, nil
 }
