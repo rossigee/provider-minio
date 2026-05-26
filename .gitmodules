@@ -1,4 +1,3 @@
 [submodule "build"]
 	path = build
-	url = https://github.com/crossplane/build
-	shallow = true
+	url = https://github.com/rossigee/build.git

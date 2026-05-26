@@ -5,8 +5,7 @@
 # never needed and the stale crossplane/build submodule history is never
 # traversed. The build submodule is initialised shallowly for the current
 # commit only.
-
-name: Release
+name: Release (Official Workflows)
 
 on:
   push:
@@ -24,12 +23,9 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-      packages: write
-      id-token: write
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
           fetch-depth: 0       # full history — no --unshallow needed
           submodules: false    # skip recursive submodule checkout; we init manually below
@@ -69,6 +65,52 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN }}
 
+      - name: Build Artifacts
+        run: |
+          set -e  # Fail fast on any error
+
+          # Use the standardized build system to handle everything
+          export VERSION="${{ steps.version.outputs.version }}"
+
+          echo "Repository: ${{ github.repository }}"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          echo "Version: ${VERSION}"
+
+          # CRITICAL: Override BRANCH_NAME to bypass release branch filter
+          # When pushing tags, git is in detached HEAD state and branch detection fails.
+          # Without this, publish.artifacts becomes an empty target that silently succeeds.
+          # See: build/makelib/xpkg.mk:125-127 and build/makelib/common.mk:87
+          export BRANCH_NAME="master"
+
+          # Build binary and artifacts for the current platform
+          make build.platform.$(PLATFORM) build.artifacts
+
+      - name: Upload XPKG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpkg-${{ matrix.platform }}
+          path: _output/xpkg/${{ matrix.platform }}/provider-minio-${{ steps.version.outputs.version }}.xpkg
+
+  publish:
+    runs-on: ubuntu-24.04
+    needs: release
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.3'
+
       - name: Vendor Dependencies
         run: go mod vendor
 
@@ -94,7 +136,6 @@ jobs:
           REGISTRY_PATH="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
 
           echo "Verifying publication to ${REGISTRY_PATH}:${VERSION}"
-
           if docker pull "${REGISTRY_PATH}:${VERSION}" > /dev/null 2>&1; then
             DIGEST=$(docker inspect "${REGISTRY_PATH}:${VERSION}" --format='{{index .RepoDigests 0}}' | cut -d'@' -f2)
             echo "✅ Verified container image ${VERSION} (${DIGEST})"
@@ -110,3 +151,40 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
+
+  # Add publication verification (preserves your custom verification)
+  verify-publication:
+    needs: release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify Publication
+        run: |
+          set -e  # Fail fast on any error
+
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          PROVIDER_NAME="${{ github.event.repository.name }}"
+          REGISTRY_PATH="ghcr.io/rossigee/${PROVIDER_NAME}"
+
+          echo "Verifying publication to ${REGISTRY_PATH}:${VERSION}"
+
+          # Verify version tag exists and is pullable
+          if docker pull "${REGISTRY_PATH}:${VERSION}" > /dev/null 2>&1; then
+            echo "✅ Verified container image latest"
+          else
+            echo "❌ Failed to pull container image latest"
+            exit 1
+          fi
+
+          # Verify both tags point to same image (identical digests)
+          VERSION_DIGEST=$(docker inspect "${REGISTRY_PATH}:${VERSION}" --format='{{index .RepoDigests 0}}' | cut -d'@' -f2)
+          LATEST_DIGEST=$(docker inspect "${REGISTRY_PATH}:latest" --format='{{index .RepoDigests 0}}' | cut -d'@' -f2)
+
+          if [ "$VERSION_DIGEST" = "$LATEST_DIGEST" ]; then
+            echo "✅ Version and latest tags point to identical image"
+            echo "   Digest: ${VERSION_DIGEST}"
+          else
+            echo "❌ Version and latest tags point to different images"
+            echo "   Version digest: ${VERSION_DIGEST}"
+            echo "   Latest digest:  ${LATEST_DIGEST}"
+            exit 1
+          fi
