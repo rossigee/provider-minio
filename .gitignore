@@ -1,27 +1,62 @@
-# Goreleaser
-/dist/
-/.github/release-notes.md
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
-# Build
-/provider-minio
-/provider
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
 *.out
-/package/*.xpkg
-*.xpkg
-/kubeconfig
-__debug*
+coverage.out
+coverage.txt
+
+# Dependency directories
+vendor/
+vendor-new/
+.vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Build output
+/bin/
+/provider
 _output/
+dist/
 build/
 
-# Docs
-/.cache/
-/.public/
-/docs/node_modules/
-
-# Go modules
-/vendor/
-
-# work
-/.work/
+# IDE
+.idea/
 .vscode/
-.kind
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Crossplane
+*.xpkg
+*.xpkg.lock
+
+# Cache
+.cache/
+.work/
+.monitoring/
+
+# Environment
+.env
+.env.local
+
+# Temp files
+tmp/
+temp/
+*.tmp
+*.temp
+__debug*
