@@ -1,6 +1,6 @@
 module github.com/rossigee/provider-minio
 
-go 1.26.3
+go 1.26.4
 
 replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.24.1
 

@@ -54,8 +54,8 @@ func newBucketSample() *miniov1beta1.Bucket {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "bucket-local-dev"},
 		Spec: miniov1beta1.BucketSpec{
-			ResourceSpec: xpv1.ManagedResourceSpec{
-				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
+			ManagedResourceSpec: xpv1.ManagedResourceSpec{
+				ProviderConfigReference: &xpv1.ProviderConfigReference{Name: "provider-config"},
 			},
 			ForProvider: miniov1beta1.BucketParameters{
 				Region: "us-east-1",
@@ -127,11 +127,10 @@ func newUserSample() *miniov1beta1.User {
 			Name: "devuser",
 		},
 		Spec: miniov1beta1.UserSpec{
-			ResourceSpec: xpv1.ManagedResourceSpec{
-				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
-				WriteConnectionSecretToReference: &xpv1.SecretReference{
-					Name:      "devuser",
-					Namespace: "default",
+			ManagedResourceSpec: xpv1.ManagedResourceSpec{
+				ProviderConfigReference: &xpv1.ProviderConfigReference{Name: "provider-config"},
+				WriteConnectionSecretToReference: &xpv1.LocalSecretReference{
+					Name: "devuser",
 				},
 			},
 		},
@@ -153,8 +152,8 @@ func newPolicySample() *miniov1beta1.Policy {
 			Name: "mypolicy",
 		},
 		Spec: miniov1beta1.PolicySpec{
-			ResourceSpec: xpv1.ManagedResourceSpec{
-				ProviderConfigReference: &xpv1.Reference{Name: "provider-config"},
+			ManagedResourceSpec: xpv1.ManagedResourceSpec{
+				ProviderConfigReference: &xpv1.ProviderConfigReference{Name: "provider-config"},
 			},
 			ForProvider: miniov1beta1.PolicyParameters{
 				AllowBucket: "bucket-local-dev",
