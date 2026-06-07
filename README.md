@@ -3,14 +3,98 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/rossigee/provider-minio/ci.yml?branch=master)][build]
 ![Go version](https://img.shields.io/github/go-mod/go-version/rossigee/provider-minio)
 [![Version](https://img.shields.io/github/v/release/rossigee/provider-minio)][releases]
-[![GitHub downloads](https://img.shields.io/github/downloads/rossigee/provider-minio/total)][releases]
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [build]: https://github.com/rossigee/provider-minio/actions/workflows/ci.yml
 [releases]: https://github.com/rossigee/provider-minio/releases
 
-**✅ BUILD STATUS: WORKING** - Successfully builds and passes all tests (v0.17.4)
-
 Crossplane provider for managing MinIO object storage resources including buckets, users, and policies.
+
+## Container Registry
+
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.17.4`
+
+## Getting Started
+
+### Prerequisites
+
+- Kubernetes cluster with Crossplane installed
+- MinIO server with API access enabled
+- MinIO root credentials
+
+### Installation
+
+Install the provider:
+
+```bash
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.17.4
+```
+
+Create a secret with your MinIO credentials:
+
+```bash
+kubectl create secret generic minio-credentials \
+  --from-literal=credentials='{"accessKeyId":"YOUR_ACCESS_KEY","secretAccessKey":"YOUR_SECRET_KEY"}' \
+  -n crossplane-system
+```
+
+Configure the provider:
+
+```yaml
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  endpoint: http://localhost:9000
+  credentials:
+    source: Secret
+    secretRef:
+      name: minio-credentials
+      namespace: crossplane-system
+      key: credentials
+```
+
+## Usage
+
+### Create a Bucket (v1beta1 namespaced)
+
+```yaml
+apiVersion: minio.m.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: my-bucket
+  namespace: production
+spec:
+  forProvider:
+    bucketName: my-bucket
+    region: us-east-1
+  providerConfigRef:
+    name: default
+  deletionPolicy: Delete
+```
+
+## Resource Types
+
+### Bucket
+
+- **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
+- Create and manage MinIO buckets
+
+### User
+
+- **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
+- Manage user accounts and access
+
+### Policy
+
+- **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
+- Define fine-grained access control policies
+
+### ServiceAccount
+
+- **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
+- Create service accounts for programmatic access
 
 ## ⚡ **BREAKING CHANGE: v1→v2 API Migration**
 
@@ -31,12 +115,6 @@ Crossplane provider for managing MinIO object storage resources including bucket
 - **TLS Support**: Custom certificate configuration for secure connections
 - **Crossplane v2**: Full support for namespaced resources and multi-tenancy
 - **Provider Status**: ✅ Production ready with standardized CI/CD pipeline
-
-## Container Registry
-
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.17.4` ✅
-- **Harbor**: Available via environment configuration
-- **Upbound**: Available via environment configuration
 
 ## API Migration (v1→v2)
 
@@ -184,3 +262,11 @@ but `kubectl describe ...` should show you the events.
 ### Cleaning up e2e tests
 
 `make clean`
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## License
+
+provider-minio is under the Apache 2.0 license.
