@@ -1,19 +1,27 @@
-# Standardized CodeQL Security Scanning for Crossplane Providers
-# Version: 2025-10-29 - Combined from template codeql.yml and security.yml
+# Standardized Security Template for Crossplane Providers
+# Version: 2025-12-21 - Merged with CodeQL approach
 #
-# This template provides automated CodeQL security scanning
-# - Triggers on pushes/PRs to master/release-* (with no-op detection)
-# - Includes comprehensive security analysis (CodeQL + additional scans)
+# This template provides:
+# - AUTOMATED security scanning on pushes/PRs (with no-op detection)
+# - ON-DEMAND manual scanning (workflow_dispatch)
+# - No scheduled scans to eliminate daily email spam
+# - Comprehensive security analysis (CodeQL + gosec + govulncheck + trufflehog)
+# - Supply chain security (OSV scanner + dependency review)
 # - Results uploaded to GitHub Security tab
-# - No scheduled scans to avoid email spam
 
-name: CodeQL Security Scanning
+name: Security Scanning
 
 on:
+  # Automated on code changes (with no-op detection)
   push:
     branches:
       - master
       - release-*
+  pull_request:
+    branches:
+      - master
+      - release-*
+  # Manual on-demand scanning
   workflow_dispatch:
     inputs:
       scan_type:
@@ -38,9 +46,10 @@ permissions:
   actions: read
   id-token: write
   attestations: write
+  pull-requests: write
 
 env:
-  GO_VERSION: '1.25.1'
+  GO_VERSION: '1.26.4'
 
 jobs:
   detect-noop:
@@ -55,6 +64,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           paths_ignore: '["**.md", "**.png", "**.jpg"]'
           do_not_skip: '["workflow_dispatch", "schedule", "push"]'
+
   security-analysis:
     name: Security Analysis
     runs-on: ubuntu-24.04
@@ -65,10 +75,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0  # Full history for better analysis
+          fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -77,18 +87,18 @@ jobs:
 
       - name: Initialize CodeQL
         if: github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == ''
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: go
           queries: security-extended,security-and-quality
 
       - name: Autobuild for CodeQL
         if: github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == ''
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
         if: github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == ''
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:go"
 
@@ -115,7 +125,7 @@ jobs:
 
       - name: Upload Gosec Results
         if: (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'vulnerabilities' || github.event.inputs.scan_type == '') && always() && hashFiles('gosec-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: gosec-results.sarif
           category: gosec
@@ -140,30 +150,28 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Check for known malicious packages
         run: |
-          # Use OSV scanner to check for known malicious packages
           curl -sSfL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
           chmod +x osv-scanner
           ./osv-scanner --lockfile=go.sum --format=sarif --output=osv-results.sarif || true
 
       - name: Upload OSV scan results
         if: always() && hashFiles('osv-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: osv-results.sarif
 
       - name: Dependency Review
+        if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: moderate
           allow-licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0
-          base-ref: ${{ github.event.before || github.ref }}
-          head-ref: ${{ github.sha || github.ref }}
 
   notification:
     name: Security Scan Notification
@@ -177,28 +185,23 @@ jobs:
           echo "Supply Chain Scan Result: ${{ needs.supply-chain-scan.result }}"
 
           if [[ "${{ needs.security-analysis.result }}" == "failure" ]] || [[ "${{ needs.supply-chain-scan.result }}" == "failure" ]]; then
-            echo "🚨 Security scan detected issues"
+            echo "Security scan detected issues"
             echo "Check the Security tab in GitHub for detailed results"
             echo "Repository: ${{ github.repository }}"
             echo "Run ID: ${{ github.run_id }}"
           else
-            echo "✅ Security scan completed successfully"
+            echo "Security scan completed successfully"
             echo "No critical security issues detected"
           fi
 
 # Key Principles for this Template:
 #
-# 1. NO SCHEDULED SCANS
-#    - Eliminates daily email spam from cron triggers
-#    - Only runs when manually triggered via workflow_dispatch
-#    - Can be triggered by other workflows if needed
+# 1. AUTOMATED WITH NO-OP DETECTION
+#    - Triggers on pushes/PRs to master/release-* with skip-duplicate-actions
+#    - Manual trigger available for custom scans
+#    - No scheduled scans to avoid email spam
 #
-# 2. ON-DEMAND FLEXIBILITY
-#    - Configurable scan types (comprehensive, vulnerabilities, secrets, dependencies)
-#    - Optional notification control
-#    - Manual trigger with custom parameters
-#
-# 3. COMPREHENSIVE SECURITY COVERAGE
+# 2. COMPREHENSIVE SECURITY COVERAGE
 #    - CodeQL static analysis for Go code
 #    - Go vulnerability scanning (govulncheck)
 #    - Security scanning (gosec)
@@ -206,24 +209,24 @@ jobs:
 #    - Supply chain security (OSV scanner)
 #    - Dependency review with license checking
 #
+# 3. FLEXIBLE SCAN TYPES
+#    - Comprehensive (all scans)
+#    - Vulnerabilities (govulncheck + gosec)
+#    - Secrets (trufflehog)
+#    - Dependencies (OSV + dependency review)
+#
 # 4. PROPER RESULTS HANDLING
 #    - SARIF format uploads for GitHub Security tab
 #    - Proper error handling and continue-on-error for scans
 #    - Clear notifications when enabled
 #
-# 5. INTELLIGENT EXECUTION
-#    - Conditional job execution based on scan type
-#    - Parallel execution of security analysis and supply chain scans
-#    - Proper permissions for security events
+# 5. STANDARDIZED VERSION
+#    - Go 1.26.4
+#    - Actions: checkout@v4, setup-go@v6, codeql-action@v4
+#    - Runners: ubuntu-24.04
 #
 # To apply this template:
 # 1. Copy to .github/workflows/security.yml
-# 2. REMOVE any existing security.yml files with scheduled triggers
-# 3. Run security scans manually when needed via GitHub Actions UI
-# 4. Trigger from other workflows if automated scanning is desired
-# 5. Monitor Security tab in GitHub for results instead of emails
-#
-# To run security scans:
-# - Go to Actions tab → Security Scanning → Run workflow
-# - Choose scan type and notification preferences
-# - View results in Security tab (no email spam!)
+# 2. Run on pushes to master/release-* or manually via Actions UI
+# 3. View results in Security tab (no email spam!)
+# 4. Use scan_type inputs for targeted scans when needed
