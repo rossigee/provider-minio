@@ -6,7 +6,7 @@ replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.24.1
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
-	github.com/crossplane/crossplane-runtime/v2 v2.4.0-rc.0
+	github.com/crossplane/crossplane-runtime/v2 v2.3.2
 	github.com/crossplane/crossplane-tools v0.0.0-20251017183449-dd4517244339
 	github.com/crossplane/crossplane/apis/v2 v2.3.1
 	github.com/go-logr/logr v1.4.3
