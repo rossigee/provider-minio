@@ -50,6 +50,7 @@ permissions:
 
 env:
   GO_VERSION: '1.26.4'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   detect-noop:
