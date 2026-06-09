@@ -121,9 +121,13 @@ jobs:
       - name: Install Build Tools
         run: make build.init
 
+      - name: Determine Version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Build and Publish Artifacts
         env:
-          VERSION: ${{ steps.version.outputs.version }}
           BRANCH_NAME: master   # override: tag-based builds are in detached HEAD state
         run: |
           set -e
@@ -136,7 +140,7 @@ jobs:
       - name: Verify Publication
         run: |
           set -e
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${GITHUB_REF#refs/tags/}"
           REGISTRY_PATH="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
 
           echo "Verifying publication to ${REGISTRY_PATH}:${VERSION}"
@@ -158,7 +162,7 @@ jobs:
 
   # Add publication verification (preserves your custom verification)
   verify-publication:
-    needs: release
+    needs: publish
     runs-on: ubuntu-24.04
     steps:
       - name: Verify Publication
