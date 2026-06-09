@@ -17,6 +17,12 @@ metadata:
       [rossigee/provider-minio](https://github.com/rossigee/provider-minio/issues) repo.
 spec:
   controller:
-    permissionRequests: []
+    permissionRequests:
+    - apiGroups: ["minio.crossplane.io"]
+      resources: ["providerconfigs", "providerconfigusages"]
+      verbs: ["*"]
+    - apiGroups: ["minio.m.crossplane.io"]
+      resources: ["buckets", "bucketclaims", "policies", "serviceaccounts", "users", "notificationconfigurations"]
+      verbs: ["*"]
   crossplane:
     version: ">=v2.0.0"
