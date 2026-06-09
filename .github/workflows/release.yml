@@ -24,14 +24,18 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0       # full history — no --unshallow needed
-          submodules: false    # skip recursive submodule checkout; we init manually below
+          fetch-depth: 0
 
       - name: Init build submodule (current commit only)
         run: git submodule update --init --depth 1 build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
 
       - name: Determine Version
         id: version
@@ -83,13 +87,13 @@ jobs:
           export BRANCH_NAME="master"
 
           # Build binary and artifacts for the current platform
-          make build.platform.$(PLATFORM) build.artifacts
+          make build.all build.artifacts
 
       - name: Upload XPKG Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: xpkg-${{ matrix.platform }}
-          path: _output/xpkg/${{ matrix.platform }}/provider-minio-${{ steps.version.outputs.version }}.xpkg
+          name: xpkg
+          path: _output/xpkg/linux_amd64/provider-minio-${{ steps.version.outputs.version }}.xpkg
 
   publish:
     runs-on: ubuntu-24.04
