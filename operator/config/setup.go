@@ -18,6 +18,7 @@ func SetupController(mgr ctrl.Manager) error {
 
 	of := resource.ProviderConfigKinds{
 		Config:    providerv1.ProviderConfigGroupVersionKind,
+		Usage:     providerv1.ProviderConfigUsageGroupVersionKind,
 		UsageList: providerv1.ProviderConfigUsageListGroupVersionKind,
 	}
 
