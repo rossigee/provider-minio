@@ -130,6 +130,13 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
       - name: Build and Publish Artifacts
         env:
           BRANCH_NAME: master   # override: tag-based builds are in detached HEAD state
