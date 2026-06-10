@@ -18,11 +18,43 @@ metadata:
 spec:
   controller:
     permissionRequests:
-    - apiGroups: ["minio.crossplane.io"]
-      resources: ["providerconfigs", "providerconfigusages"]
-      verbs: ["*"]
-    - apiGroups: ["minio.m.crossplane.io"]
-      resources: ["buckets", "bucketclaims", "policies", "serviceaccounts", "users", "notificationconfigurations"]
-      verbs: ["*"]
+    - apiGroups:
+      - minio.crossplane.io
+      resources:
+      - providerconfigs
+      - providerconfigs/status
+      - providerconfigusages
+      - providerconfigusages/status
+      verbs:
+      - "*"
+    - apiGroups:
+      - minio.m.crossplane.io
+      resources:
+      - buckets
+      - buckets/status
+      - bucketclaims
+      - bucketclaims/status
+      - policies
+      - policies/status
+      - serviceaccounts
+      - serviceaccounts/status
+      - users
+      - users/status
+      - notificationconfigurations
+      - notificationconfigurations/status
+      verbs:
+      - "*"
+    - apiGroups:
+      - ""
+      resources:
+      - secrets
+      verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   crossplane:
     version: ">=v2.0.0"
