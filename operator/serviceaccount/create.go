@@ -30,9 +30,18 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 		return managed.ExternalCreation{}, errNotServiceAccount
 	}
 
-	// Generate secret key if not provided
+	// Get access key from spec or empty (MinIO will generate one)
+	accessKey := serviceAccount.Spec.ForProvider.AccessKey
 	secretKey := serviceAccount.Spec.ForProvider.SecretKey
-	if secretKey == "" {
+
+	// If no access key is provided but secret key is, that's an error
+	// If no access key is provided, don't provide secret key either - let MinIO generate both
+	if accessKey == "" && secretKey != "" {
+		return managed.ExternalCreation{}, fmt.Errorf("access key must be specified if secret key is specified")
+	}
+
+	// Generate secret key if not provided (and access key is also not provided - MinIO will generate both)
+	if secretKey == "" && accessKey == "" {
 		var err error
 		secretKey, err = password.Generate(64, 5, 0, false, true)
 		if err != nil {
@@ -42,7 +51,7 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 
 	// Prepare the AddServiceAccountReq
 	req := madmin.AddServiceAccountReq{
-		AccessKey:   serviceAccount.Spec.ForProvider.AccessKey,
+		AccessKey:   accessKey,
 		SecretKey:   secretKey,
 		TargetUser:  serviceAccount.Spec.ForProvider.TargetUser,
 		Name:        serviceAccount.Spec.ForProvider.Name,
@@ -59,18 +68,15 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 		req.Expiration = &serviceAccount.Spec.ForProvider.Expiration.Time
 	}
 
-	// Check if service account already exists
-	accessKey := serviceAccount.GetAccessKey()
-	if req.AccessKey != "" {
-		accessKey = req.AccessKey
-	}
-
-	exists, err := s.serviceAccountExists(ctx, accessKey)
-	if err != nil {
-		return managed.ExternalCreation{}, err
-	}
-	if exists {
-		return managed.ExternalCreation{}, fmt.Errorf("service account already exists")
+	// Check if service account already exists (only if access key was specified)
+	if accessKey != "" {
+		exists, err := s.serviceAccountExists(ctx, accessKey)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+		if exists {
+			return managed.ExternalCreation{}, fmt.Errorf("service account already exists")
+		}
 	}
 
 	// Create the service account
