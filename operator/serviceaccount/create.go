@@ -40,8 +40,9 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 		return managed.ExternalCreation{}, fmt.Errorf("access key must be specified if secret key is specified")
 	}
 
-	// Generate secret key if not provided (and access key is also not provided - MinIO will generate both)
-	if secretKey == "" && accessKey == "" {
+	// Only generate secret key if access key is also provided
+	// If neither is provided, let MinIO generate both
+	if secretKey == "" && accessKey != "" {
 		var err error
 		secretKey, err = password.Generate(64, 5, 0, false, true)
 		if err != nil {
