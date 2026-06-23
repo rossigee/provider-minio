@@ -4,6 +4,7 @@ import (
 	"github.com/rossigee/provider-minio/operator/bucket"
 	"github.com/rossigee/provider-minio/operator/bucketclaim"
 	"github.com/rossigee/provider-minio/operator/config"
+	"github.com/rossigee/provider-minio/operator/notificationconfiguration"
 	"github.com/rossigee/provider-minio/operator/policy"
 	"github.com/rossigee/provider-minio/operator/serviceaccount"
 	"github.com/rossigee/provider-minio/operator/user"
@@ -20,6 +21,7 @@ func SetupControllers(mgr ctrl.Manager) error {
 		user.SetupController,
 		policy.SetupController,
 		serviceaccount.SetupController,
+		notificationconfiguration.SetupController,
 	} {
 		if err := setup(mgr); err != nil {
 			return err
@@ -37,6 +39,7 @@ func SetupWebhooks(mgr ctrl.Manager) error {
 		user.SetupWebhook,
 		policy.SetupWebhook,
 		serviceaccount.SetupWebhook,
+		notificationconfiguration.SetupWebhook,
 	} {
 		if err := setup(mgr); err != nil {
 			return err
