@@ -102,13 +102,11 @@ type external struct {
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.observe", "User", mg.GetName(), "observe")
-	defer span.End()
-
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotUser)
 	}
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.observe", "User", cr.GetName(), "observe")
 
 	userName := cr.GetUserName()
 
@@ -160,12 +158,10 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.create", "User", mg.GetName(), "create")
-	defer span.End()
-
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotUser)
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.create", "User", cr.GetName(), "create")
 	}
 
 	userName := cr.GetUserName()
@@ -202,12 +198,10 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.update", "User", mg.GetName(), "update")
-	defer span.End()
-
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotUser)
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.update", "User", cr.GetName(), "update")
 	}
 
 	userName := cr.GetUserName()
@@ -247,9 +241,6 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
-	_, span := tracing.StartSpanWithAttrs(ctx, "user.delete", "User", mg.GetName(), "delete")
-	defer span.End()
-
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalDelete{}, errors.New(errNotUser)
