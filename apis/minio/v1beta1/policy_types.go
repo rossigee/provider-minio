@@ -1,21 +1,15 @@
 package v1beta1
 
 import (
-	"reflect"
-
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func init() {
-	SchemeBuilder.Register(&Policy{}, &PolicyList{})
-}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane.io/external-name"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,minio}
@@ -69,11 +63,3 @@ type PolicyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Policy `json:"items"`
 }
-
-// Dummy type metadata.
-var (
-	PolicyKind             = reflect.TypeOf(Policy{}).Name()
-	PolicyGroupKind        = schema.GroupKind{Group: Group, Kind: PolicyKind}.String()
-	PolicyKindAPIVersion   = PolicyKind + "." + SchemeGroupVersion.String()
-	PolicyGroupVersionKind = SchemeGroupVersion.WithKind(PolicyKind)
-)

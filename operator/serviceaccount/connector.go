@@ -23,7 +23,7 @@ var (
 type connector struct {
 	kube     client.Client
 	recorder event.Recorder
-	usage resource.ModernTracker
+	usage    resource.ModernTracker
 }
 
 type serviceAccountClient struct {

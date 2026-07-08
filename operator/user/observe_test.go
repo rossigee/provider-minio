@@ -1,10 +1,10 @@
 package user
 
 import (
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"testing"
 
 	"github.com/minio/madmin-go/v3"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 )
 
 func Test_userClient_equalPolicies(t *testing.T) {

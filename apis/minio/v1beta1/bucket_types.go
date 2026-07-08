@@ -1,16 +1,10 @@
 package v1beta1
 
 import (
-	"reflect"
-
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func init() {
-	SchemeBuilder.Register(&Bucket{}, &BucketList{})
-}
 
 const (
 	// DeleteIfEmpty only deletes the bucket if the bucket is empty.
@@ -25,7 +19,7 @@ type BucketDeletionPolicy string
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane.io/external-name"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".status.endpointURL"
 // +kubebuilder:printcolumn:name="Bucket Name",type="string",JSONPath=".status.atProvider.bucketName"
@@ -107,13 +101,7 @@ type BucketList struct {
 	Items           []Bucket `json:"items"`
 }
 
-// Dummy type metadata.
-var (
-	BucketKind             = reflect.TypeOf(Bucket{}).Name()
-	BucketGroupKind        = schema.GroupKind{Group: Group, Kind: BucketKind}.String()
-	BucketKindAPIVersion   = BucketKind + "." + SchemeGroupVersion.String()
-	BucketGroupVersionKind = SchemeGroupVersion.WithKind(BucketKind)
-)
+
 
 // GetBucketName returns the spec.forProvider.bucketName if given, otherwise defaults to metadata.name.
 func (in *Bucket) GetBucketName() string {

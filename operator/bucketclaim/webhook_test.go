@@ -5,9 +5,8 @@ import (
 	"testing"
 
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
-	"github.com/stretchr/testify/assert"
-
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBucketClaim_Validator(t *testing.T) {

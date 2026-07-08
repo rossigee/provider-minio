@@ -1,11 +1,11 @@
 package serviceaccount
 
 import (
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"testing"
 	"time"
 
 	"github.com/minio/madmin-go/v3"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

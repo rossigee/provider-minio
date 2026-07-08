@@ -1,13 +1,13 @@
 package user
 
 import (
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"context"
 	"encoding/json"
 	"testing"
 
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/go-logr/logr"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -1,21 +1,15 @@
 package v1beta1
 
 import (
-	"reflect"
-
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func init() {
-	SchemeBuilder.Register(&NotificationConfiguration{}, &NotificationConfigurationList{})
-}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane.io/external-name"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Bucket",type="string",JSONPath=".spec.forProvider.bucketName"
 // +kubebuilder:printcolumn:name="Target",type="string",JSONPath=".spec.forProvider.webhookConfiguration.endpoint"
@@ -149,11 +143,3 @@ type NotificationConfigurationList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []NotificationConfiguration `json:"items"`
 }
-
-// Dummy type metadata.
-var (
-	NotificationConfigurationKind             = reflect.TypeOf(NotificationConfiguration{}).Name()
-	NotificationConfigurationGroupKind        = schema.GroupKind{Group: Group, Kind: NotificationConfigurationKind}.String()
-	NotificationConfigurationKindAPIVersion   = NotificationConfigurationKind + "." + SchemeGroupVersion.String()
-	NotificationConfigurationGroupVersionKind = SchemeGroupVersion.WithKind(NotificationConfigurationKind)
-)

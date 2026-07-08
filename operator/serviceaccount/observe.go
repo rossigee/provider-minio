@@ -10,7 +10,7 @@ import (
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	k8svi "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -77,7 +77,7 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 
 	// Validate connection credentials if the service account is not being deleted
 	if mg.GetDeletionTimestamp() == nil && mg.(resource.ModernManaged).GetWriteConnectionSecretToReference() != nil {
-		secret := k8svi.Secret{}
+		secret := corev1.Secret{}
 
 		err = s.kube.Get(ctx, types.NamespacedName{
 			Namespace: mg.GetNamespace(),

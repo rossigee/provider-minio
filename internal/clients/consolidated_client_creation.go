@@ -19,14 +19,14 @@ import (
 
 // ConsolidatedConfig represents the complete MinIO client configuration
 type ConsolidatedConfig struct {
-	Endpoint        string
-	AccessKey       string
-	SecretKey       string
-	Region          string
-	UseSSL          bool
-	TLSCertData     []byte
-	TLSKeyData      []byte
-	CACertData      []byte
+	Endpoint           string
+	AccessKey          string
+	SecretKey          string
+	Region             string
+	UseSSL             bool
+	TLSCertData        []byte
+	TLSKeyData         []byte
+	CACertData         []byte
 	InsecureSkipVerify bool
 }
 
@@ -59,9 +59,9 @@ func NewConsolidatedMinioClient(ctx context.Context, config *ConsolidatedConfig)
 
 	// Create MinIO client options
 	opts := &minio.Options{
-		Creds: credentials.NewStaticV4(config.AccessKey, config.SecretKey, ""),
-		Secure: config.UseSSL,
-		Region: config.Region,
+		Creds:     credentials.NewStaticV4(config.AccessKey, config.SecretKey, ""),
+		Secure:    config.UseSSL,
+		Region:    config.Region,
 		Transport: transport,
 	}
 

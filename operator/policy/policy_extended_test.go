@@ -1,11 +1,11 @@
 package policy
 
 import (
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"encoding/json"
 	"testing"
 
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -1,21 +1,15 @@
 package v1beta1
 
 import (
-	"reflect"
-
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func init() {
-	SchemeBuilder.Register(&User{}, &UserList{})
-}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane.io/external-name"
 // +kubebuilder:printcolumn:name="Policies",type="string",JSONPath=".status.atProvider.policies"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
@@ -83,11 +77,3 @@ func (in *User) GetUserName() string {
 	}
 	return in.Spec.ForProvider.UserName
 }
-
-// Dummy type metadata.
-var (
-	UserKind             = reflect.TypeOf(User{}).Name()
-	UserGroupKind        = schema.GroupKind{Group: Group, Kind: UserKind}.String()
-	UserKindAPIVersion   = UserKind + "." + SchemeGroupVersion.String()
-	UserGroupVersionKind = SchemeGroupVersion.WithKind(UserKind)
-)

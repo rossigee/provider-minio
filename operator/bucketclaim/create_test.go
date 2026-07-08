@@ -3,10 +3,9 @@ package bucketclaim
 import (
 	"testing"
 
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 )
 
 func TestBucketClaim_GetBucketName(t *testing.T) {

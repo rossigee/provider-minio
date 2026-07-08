@@ -8,11 +8,11 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/minio-go/v7"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	controllerruntime "sigs.k8s.io/controller-runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (b *bucketClaimClient) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	log := controllerruntime.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("creating bucket claim resource")
 
 	bucketClaim, ok := mg.(*miniov1beta1.BucketClaim)

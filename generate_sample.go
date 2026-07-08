@@ -10,22 +10,20 @@ package main
 
 import (
 	"fmt"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/rossigee/provider-minio/apis"
+	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
+	"github.com/rossigee/provider-minio/apis/provider/v1"
+	"github.com/rossigee/provider-minio/operator/minioutil"
 	"io"
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/rossigee/provider-minio/apis"
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
-	"github.com/rossigee/provider-minio/operator/minioutil"
-
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	serializerjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 var (

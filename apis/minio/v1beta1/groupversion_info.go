@@ -7,8 +7,8 @@
 package v1beta1
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 // Package type metadata.
@@ -23,5 +23,23 @@ var (
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	// TODO: migrate to runtime.NewSchemeBuilder (controller-runtime scheme.Builder is deprecated).
-	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion} //nolint:staticcheck
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 )
+
+func addKnownTypes(s *runtime.Scheme) error {
+	s.AddKnownTypes(SchemeGroupVersion,
+		&BucketClaim{},
+		&BucketClaimList{},
+		&User{},
+		&UserList{},
+		&Bucket{},
+		&BucketList{},
+		&ServiceAccount{},
+		&ServiceAccountList{},
+		&NotificationConfiguration{},
+		&NotificationConfigurationList{},
+		&Policy{},
+		&PolicyList{},
+	)
+	return nil
+}

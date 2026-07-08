@@ -4,21 +4,19 @@ import (
 	"context"
 	"strings"
 
-	"github.com/minio/madmin-go/v3"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-
+	"github.com/minio/madmin-go/v3"
+	"github.com/pkg/errors"
 	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	apisv1alpha1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/internal/clients"
 	"github.com/rossigee/provider-minio/internal/tracing"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -46,7 +44,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 			resource.ManagedKind(v1beta1.UserGroupVersionKind),
 			managed.WithExternalConnector(&connector{
 				kube:         mgr.GetClient(),
-				usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &apisv1alpha1.ProviderConfigUsage{}),
+				usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1.ProviderConfigUsage{}),
 				newServiceFn: clients.NewMinIOClient,
 			}),
 			managed.WithLogger(o.Logger.WithValues("controller", name)),
@@ -77,7 +75,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 
-	pc := &apisv1alpha1.ProviderConfig{}
+	pc := &providerv1.ProviderConfig{}
 	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.GetProviderConfigReference().Name}, pc); err != nil {
 		return nil, errors.Wrap(err, errGetPC)
 	}
@@ -107,6 +105,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotUser)
 	}
 	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.observe", "User", cr.GetName(), "observe")
+	defer span.End()
 
 	userName := cr.GetUserName()
 
@@ -161,8 +160,9 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotUser)
-	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.create", "User", cr.GetName(), "create")
 	}
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.create", "User", cr.GetName(), "create")
+	defer span.End()
 
 	userName := cr.GetUserName()
 
@@ -201,8 +201,9 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotUser)
-	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.update", "User", cr.GetName(), "update")
 	}
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.update", "User", cr.GetName(), "update")
+	defer span.End()
 
 	userName := cr.GetUserName()
 
@@ -245,6 +246,8 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalDelete{}, errors.New(errNotUser)
 	}
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.delete", "User", cr.GetName(), "delete")
+	defer span.End()
 
 	userName := cr.GetUserName()
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	miniocreds "github.com/minio/minio-go/v7/pkg/credentials"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,7 +19,7 @@ func TestGetBucketConfig(t *testing.T) {
 		bucketClaim *v1beta1.BucketClaim
 		secrets     []*corev1.Secret
 		expectError bool
-		validate    func(*testing.T, *miniocreds.Credentials)
+		validate    func(*testing.T, *credentials.Credentials)
 	}{
 		{
 			name: "APISecretRef with valid credentials",
@@ -49,7 +49,7 @@ func TestGetBucketConfig(t *testing.T) {
 				},
 			},
 			expectError: false,
-			validate: func(t *testing.T, creds *miniocreds.Credentials) {
+			validate: func(t *testing.T, creds *credentials.Credentials) {
 				value, err := creds.GetWithContext(nil)
 				if err != nil {
 					t.Errorf("failed to get credentials value: %v", err)
@@ -157,17 +157,17 @@ func TestGetBucketConfig(t *testing.T) {
 						Namespace: "test-ns",
 					},
 					Data: map[string][]byte{
-						"accessKey":    []byte("test-access-key"),
-						"secretKey":    []byte("test-secret-key"),
-						"endpoint":     []byte("https://minio.example.com"),
-						"caBundle":     []byte("-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"),
-						"clientCert":   []byte("-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"),
-						"clientKey":    []byte("-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"),
+						"accessKey":  []byte("test-access-key"),
+						"secretKey":  []byte("test-secret-key"),
+						"endpoint":   []byte("https://minio.example.com"),
+						"caBundle":   []byte("-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"),
+						"clientCert": []byte("-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"),
+						"clientKey":  []byte("-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"),
 					},
 				},
 			},
 			expectError: false,
-			validate: func(t *testing.T, creds *miniocreds.Credentials) {
+			validate: func(t *testing.T, creds *credentials.Credentials) {
 				value, err := creds.GetWithContext(nil)
 				if err != nil {
 					t.Errorf("failed to get credentials value: %v", err)

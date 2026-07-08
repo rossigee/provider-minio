@@ -9,10 +9,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
-	minio "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	controllerruntime "sigs.k8s.io/controller-runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var bucketExistsFn = func(ctx context.Context, mc *minio.Client, bucketName string) (bool, error) {
@@ -44,7 +44,7 @@ var bucketTagsLatestFn = func(ctx context.Context, mc *minio.Client, bucketName 
 }
 
 func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	log := controllerruntime.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("observing resource")
 
 	bucket, ok := mg.(*miniov1beta1.Bucket)

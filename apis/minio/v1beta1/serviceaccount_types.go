@@ -1,21 +1,15 @@
 package v1beta1
 
 import (
-	"reflect"
-
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func init() {
-	SchemeBuilder.Register(&ServiceAccount{}, &ServiceAccountList{})
-}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane.io/external-name"
 // +kubebuilder:printcolumn:name="Access Key",type="string",JSONPath=".status.atProvider.accessKey"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.atProvider.accountStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -121,11 +115,3 @@ func (in *ServiceAccount) GetAccessKey() string {
 	}
 	return in.Spec.ForProvider.AccessKey
 }
-
-// Dummy type metadata.
-var (
-	ServiceAccountKind             = reflect.TypeOf(ServiceAccount{}).Name()
-	ServiceAccountGroupKind        = schema.GroupKind{Group: Group, Kind: ServiceAccountKind}.String()
-	ServiceAccountKindAPIVersion   = ServiceAccountKind + "." + SchemeGroupVersion.String()
-	ServiceAccountGroupVersionKind = SchemeGroupVersion.WithKind(ServiceAccountKind)
-)

@@ -1,23 +1,23 @@
 package serviceaccount
 
 import (
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"context"
 	"testing"
 
-	"github.com/go-logr/logr/testr"
-	"github.com/stretchr/testify/assert"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/go-logr/logr/testr"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestValidator_ValidateCreate(t *testing.T) {
 	tests := []struct {
-		name          string
+		name           string
 		serviceAccount *miniov1beta1.ServiceAccount
-		expectedError bool
-		errorContains string
+		expectedError  bool
+		errorContains  string
 	}{
 		{
 			name: "Valid ServiceAccount - should pass",
@@ -177,8 +177,8 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 						},
 					},
 					ForProvider: miniov1beta1.ServiceAccountParameters{
-						AccessKey:   "myaccessid", // Same access key
-						TargetUser:  "test-user",       // Same target user
+						AccessKey:   "myaccessid",          // Same access key
+						TargetUser:  "test-user",           // Same target user
 						Description: "Updated description", // This can change
 					},
 				},

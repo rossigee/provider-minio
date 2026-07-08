@@ -8,8 +8,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	"github.com/minio/pkg/bucket/policy"
-	miniopolicy "github.com/minio/pkg/iam/policy"
+	bucketpolicy "github.com/minio/pkg/bucket/policy"
+	iamPolicy "github.com/minio/pkg/iam/policy"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -83,19 +83,19 @@ func (p *policyClient) createRawPolicy(ctx context.Context, policy *miniov1beta1
 
 func (p *policyClient) getAllowBucketPolicy(bucket string) (jsonPolicy, error) {
 
-	actionSet := miniopolicy.NewActionSet(miniopolicy.AllActions)
+	actionSet := iamPolicy.NewActionSet(iamPolicy.AllActions)
 
-	resourceSet := miniopolicy.NewResourceSet(
-		miniopolicy.NewResource(bucket, "/"),
-		miniopolicy.NewResource(bucket, "*"),
+	resourceSet := iamPolicy.NewResourceSet(
+		iamPolicy.NewResource(bucket, "/"),
+		iamPolicy.NewResource(bucket, "*"),
 	)
 
-	newPolicy := miniopolicy.Policy{
+	newPolicy := iamPolicy.Policy{
 		Version: "2012-10-17",
-		Statements: []miniopolicy.Statement{
+		Statements: []iamPolicy.Statement{
 			{
 				SID:       "addPerm",
-				Effect:    policy.Allow,
+				Effect:    bucketpolicy.Allow,
 				Actions:   actionSet,
 				Resources: resourceSet,
 			},

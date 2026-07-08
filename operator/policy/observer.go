@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	miniopolicy "github.com/minio/pkg/iam/policy"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	iamPolicy "github.com/minio/pkg/iam/policy"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -75,8 +75,8 @@ func (p *policyClient) Observe(ctx context.Context, mg resource.Managed) (manage
 // sameObject will marshal both given objects to a map.
 // After that it will do a deepEquals to verify that they have the equal values.
 func (p *policyClient) sameObject(a, b json.RawMessage) (bool, error) {
-	aPol := &miniopolicy.Policy{}
-	bPol := &miniopolicy.Policy{}
+	aPol := &iamPolicy.Policy{}
+	bPol := &iamPolicy.Policy{}
 
 	err := json.Unmarshal(a, aPol)
 	if err != nil {

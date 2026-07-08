@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	miniopolicy "github.com/minio/pkg/iam/policy"
+	policy "github.com/minio/pkg/iam/policy"
 )
 
 // Test the sameObject function that compares two policy JSON documents
@@ -63,15 +63,15 @@ func TestCreateAllowBucketPolicyHelper(t *testing.T) {
 
 // mustMarshalAllowBucketPolicy creates a policy that allows all actions on a bucket
 func mustMarshalAllowBucketPolicy(bucket string) []byte {
-	actionSet := miniopolicy.NewActionSet(miniopolicy.AllActions)
-	resourceSet := miniopolicy.NewResourceSet(
-		miniopolicy.NewResource(bucket, "/"),
-		miniopolicy.NewResource(bucket, "*"),
+	actionSet := policy.NewActionSet(policy.AllActions)
+	resourceSet := policy.NewResourceSet(
+		policy.NewResource(bucket, "/"),
+		policy.NewResource(bucket, "*"),
 	)
 
-	policy := miniopolicy.Policy{
+	pol := policy.Policy{
 		Version: "2012-10-17",
-		Statements: []miniopolicy.Statement{
+		Statements: []policy.Statement{
 			{
 				SID:       "addPerm",
 				Effect:    "Allow",
@@ -81,7 +81,7 @@ func mustMarshalAllowBucketPolicy(bucket string) []byte {
 		},
 	}
 
-	data, err := json.Marshal(policy)
+	data, err := json.Marshal(pol)
 	if err != nil {
 		panic(err)
 	}

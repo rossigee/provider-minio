@@ -4,11 +4,9 @@ import (
 	"context"
 	"testing"
 
-	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
-
 	"github.com/go-logr/logr"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

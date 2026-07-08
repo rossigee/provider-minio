@@ -9,14 +9,13 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-
-	k8svi "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	controllerruntime "sigs.k8s.io/controller-runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (u *userClient) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	log := controllerruntime.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("updating resource")
 
 	user, ok := mg.(*miniov1beta1.User)
@@ -53,7 +52,7 @@ func (u *userClient) Update(ctx context.Context, mg resource.Managed) (managed.E
 
 	if mg.GetDeletionTimestamp() == nil {
 
-		secret := k8svi.Secret{}
+		secret := corev1.Secret{}
 
 		err = u.kube.Get(ctx, types.NamespacedName{
 			Namespace: mg.GetNamespace(),

@@ -230,34 +230,34 @@ func TestUserConstants(t *testing.T) {
 func TestUserClient_StringManipulation(t *testing.T) {
 	// Test string manipulation logic used in the user module
 	testCases := []struct {
-		name           string
-		input          string
-		expectedSlice  []string
-		expectedEmpty  bool
+		name          string
+		input         string
+		expectedSlice []string
+		expectedEmpty bool
 	}{
 		{
-			name:           "Empty string",
-			input:          "",
-			expectedSlice:  []string{""},
-			expectedEmpty:  true,
+			name:          "Empty string",
+			input:         "",
+			expectedSlice: []string{""},
+			expectedEmpty: true,
 		},
 		{
-			name:           "Single policy",
-			input:          "read-only",
-			expectedSlice:  []string{"read-only"},
-			expectedEmpty:  false,
+			name:          "Single policy",
+			input:         "read-only",
+			expectedSlice: []string{"read-only"},
+			expectedEmpty: false,
 		},
 		{
-			name:           "Multiple policies",
-			input:          "read-only,write-access,admin",
-			expectedSlice:  []string{"read-only", "write-access", "admin"},
-			expectedEmpty:  false,
+			name:          "Multiple policies",
+			input:         "read-only,write-access,admin",
+			expectedSlice: []string{"read-only", "write-access", "admin"},
+			expectedEmpty: false,
 		},
 		{
-			name:           "Policies with spaces",
-			input:          "read-only, write-access, admin",
-			expectedSlice:  []string{"read-only", " write-access", " admin"},
-			expectedEmpty:  false,
+			name:          "Policies with spaces",
+			input:         "read-only, write-access, admin",
+			expectedSlice: []string{"read-only", " write-access", " admin"},
+			expectedEmpty: false,
 		},
 	}
 

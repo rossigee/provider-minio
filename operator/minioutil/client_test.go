@@ -6,10 +6,10 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/rossigee/provider-minio/apis/common"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -475,10 +475,10 @@ func Test_getTLSData(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:       "No data source should return empty",
-			namespace:  "test-namespace",
-			want:       "",
-			wantErr:    false,
+			name:      "No data source should return empty",
+			namespace: "test-namespace",
+			want:      "",
+			wantErr:   false,
 		},
 		{
 			name: "Nonexistent secret should return error",

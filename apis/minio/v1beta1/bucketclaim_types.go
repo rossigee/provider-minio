@@ -1,21 +1,15 @@
 package v1beta1
 
 import (
-	"reflect"
-
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func init() {
-	SchemeBuilder.Register(&BucketClaim{}, &BucketClaimList{})
-}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
-// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
+// +kubebuilder:printcolumn:name="External Name",type="string",JSONPath=".metadata.annotations.crossplane.io/external-name"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Bucket Name",type="string",JSONPath=".spec.bucketName"
 // +kubebuilder:printcolumn:name="Region",type="string",JSONPath=".spec.region"
@@ -83,13 +77,6 @@ type BucketClaimList struct {
 	Items           []BucketClaim `json:"items"`
 }
 
-// Dummy type metadata.
-var (
-	BucketClaimKind             = reflect.TypeOf(BucketClaim{}).Name()
-	BucketClaimGroupKind        = schema.GroupKind{Group: Group, Kind: BucketClaimKind}.String()
-	BucketClaimKindAPIVersion   = BucketClaimKind + "." + SchemeGroupVersion.String()
-	BucketClaimGroupVersionKind = SchemeGroupVersion.WithKind(BucketClaimKind)
-)
 
 // GetBucketName returns the spec.bucketName if given, otherwise defaults to metadata.name.
 func (in *BucketClaim) GetBucketName() string {

@@ -4,23 +4,21 @@ import (
 	"context"
 	"encoding/json"
 
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/pkg/errors"
+	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
+	"github.com/rossigee/provider-minio/apis/provider/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
-
-	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	"github.com/rossigee/provider-minio/apis/provider/v1"
 )
 
 const (
-	errGetProviderConfig = "cannot get provider config"
-	errGetConnectionSecret = "cannot get connection secret"
-	errUnmarshalCredentials = "cannot unmarshal credentials"
+	errGetProviderConfig        = "cannot get provider config"
+	errGetConnectionSecret      = "cannot get connection secret"
+	errUnmarshalCredentials     = "cannot unmarshal credentials"
 	errFmtUnsupportedCredSource = "credentials source %q is not currently supported"
 )
 

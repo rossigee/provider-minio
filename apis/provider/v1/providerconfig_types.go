@@ -3,11 +3,11 @@ package v1
 import (
 	"reflect"
 
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/rossigee/provider-minio/apis/common"
 )
 
@@ -25,13 +25,10 @@ type ProviderConfigSpec struct {
 // ProviderCredentials required to authenticate.
 type ProviderCredentials struct {
 	//+kubebuilder:validation:Enum=None;Secret;InjectedIdentity;Environment;Filesystem
-
 	// Source represents location of the cluster token.
 	Source xpv1.CredentialsSource `json:"source,omitempty"`
-
 	// APISecretRef is the reference to the secret with the minio API Key and Secret.
 	APISecretRef corev1.SecretReference `json:"apiSecretRef,omitempty"`
-
 	xpv1.CommonCredentialSelectors `json:",inline"`
 }
 
@@ -45,18 +42,15 @@ type ProviderConfigStatus struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Secret-Name",type="string",JSONPath=".spec.credentials.secretRef.name",priority=1
 // +kubebuilder:resource:scope=Cluster
-
 // A ProviderConfig configures a Template provider.
 type ProviderConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
 	Spec   ProviderConfigSpec   `json:"spec"`
 	Status ProviderConfigStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-
 // ProviderConfigList contains a list of ProviderConfig.
 type ProviderConfigList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -71,7 +65,3 @@ var (
 	ProviderConfigKindAPIVersion   = ProviderConfigKind + "." + SchemeGroupVersion.String()
 	ProviderConfigGroupVersionKind = SchemeGroupVersion.WithKind(ProviderConfigKind)
 )
-
-func init() {
-	SchemeBuilder.Register(&ProviderConfig{}, &ProviderConfigList{})
-}

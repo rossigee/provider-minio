@@ -5,14 +5,14 @@ import (
 	"reflect"
 	"strings"
 
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	k8svi "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -67,7 +67,7 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 
 	if mg.GetDeletionTimestamp() == nil {
 
-		secret := k8svi.Secret{}
+		secret := corev1.Secret{}
 
 		err = u.kube.Get(ctx, types.NamespacedName{
 			Namespace: mg.GetNamespace(),

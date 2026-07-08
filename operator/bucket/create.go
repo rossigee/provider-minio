@@ -9,11 +9,11 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/tags"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	controllerruntime "sigs.k8s.io/controller-runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (b *bucketClient) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	log := controllerruntime.LoggerFrom(ctx)
+	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("creating resource")
 
 	bucket, ok := mg.(*miniov1beta1.Bucket)

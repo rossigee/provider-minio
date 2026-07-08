@@ -24,7 +24,7 @@ spec:
     - jsonPath: .status.conditions[?(@.type=='Synced')].status
       name: Synced
       type: string
-    - jsonPath: .metadata.annotations.crossplane\.io/external-name
+    - jsonPath: .metadata.annotations.crossplane.io/external-name
       name: External Name
       type: string
     - jsonPath: .metadata.creationTimestamp
