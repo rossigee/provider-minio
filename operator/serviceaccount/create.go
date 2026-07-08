@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
@@ -88,14 +90,11 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 
 	s.emitCreationEvent(serviceAccount)
 
-	annotations := serviceAccount.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
-	annotations[ServiceAccountCreatedAnnotationKey] = "true"
-	serviceAccount.SetAnnotations(annotations)
+	// Set the external-name annotation to the MinIO-generated access key.
+	// This is the source of truth for locating the resource in future reconciles.
+	meta.SetExternalName(serviceAccount, credentials.AccessKey)
 
-	// Update the status with the created access key
+	// Update the status with the created access key (for display/status purposes only)
 	serviceAccount.Status.AtProvider.AccessKey = credentials.AccessKey
 
 	connectionDetails := managed.ConnectionDetails{
@@ -110,9 +109,12 @@ func (s *serviceAccountClient) serviceAccountExists(ctx context.Context, accessK
 	// Try to get info about the service account
 	_, err := s.ma.InfoServiceAccount(ctx, accessKey)
 	if err != nil {
-		// If we get an error, assume it doesn't exist
-		// This might need refinement based on specific error types
-		return false, nil
+		// Distinguish not-found from transient errors
+		if strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "not found") {
+			return false, nil
+		}
+		// Transient error (auth, network, etc.) - propagate it to trigger a requeue
+		return false, err
 	}
 	return true, nil
 }

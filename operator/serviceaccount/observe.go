@@ -2,10 +2,12 @@ package serviceaccount
 
 import (
 	"context"
+	"strings"
 
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	k8svi "k8s.io/api/core/v1"
@@ -27,26 +29,26 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 		return managed.ExternalObservation{}, errNotServiceAccount
 	}
 
-	// Check if the service account has been created yet
-	_, ok = serviceAccount.GetAnnotations()[ServiceAccountCreatedAnnotationKey]
-	if !ok && serviceAccount.Status.AtProvider.AccessKey == "" {
-		// The service account has not yet been created
+	// Get the external-name (MinIO access key) - source of truth for resource identity.
+	// This is set during Create() and persisted via crossplane-runtime's
+	// UpdateCriticalAnnotations mechanism, which survives status-write failures.
+	accessKey := meta.GetExternalName(serviceAccount)
+	if accessKey == "" {
+		// Resource has not yet been created (no external-name set)
 		return managed.ExternalObservation{}, nil
-	}
-
-	accessKey := serviceAccount.GetAccessKey()
-	if serviceAccount.Status.AtProvider.AccessKey != "" {
-		// Use the access key from status if available (post-creation)
-		accessKey = serviceAccount.Status.AtProvider.AccessKey
 	}
 
 	// Check if the service account exists in MinIO
 	info, err := s.ma.InfoServiceAccount(ctx, accessKey)
 	if err != nil {
-		// If we get an error, the service account likely doesn't exist
-		log.V(1).Info("service account doesn't exist", "accessKey", accessKey, "error", err)
-		serviceAccount.Status.AtProvider.AccessKey = ""
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		// Distinguish not-found from transient errors
+		if strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "not found") {
+			log.V(1).Info("service account doesn't exist", "accessKey", accessKey)
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		// Transient error (auth, network, etc.) - let the reconciler handle it with a requeue
+		log.V(1).Info("error checking service account existence", "accessKey", accessKey, "error", err)
+		return managed.ExternalObservation{}, err
 	}
 
 	// Update the status with information from MinIO

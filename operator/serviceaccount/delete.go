@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
@@ -19,9 +20,12 @@ func (s *serviceAccountClient) Delete(ctx context.Context, mg resource.Managed) 
 		return managed.ExternalDelete{}, errNotServiceAccount
 	}
 
-	accessKey := serviceAccount.Status.AtProvider.AccessKey
+	// Get the external-name (MinIO access key) for this resource
+	accessKey := meta.GetExternalName(serviceAccount)
 	if accessKey == "" {
-		accessKey = serviceAccount.GetAccessKey()
+		// Resource was never created (no external-name), so deletion is a no-op
+		s.emitDeleteEvent(serviceAccount)
+		return managed.ExternalDelete{}, nil
 	}
 
 	// Check if the service account exists before attempting deletion

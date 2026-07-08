@@ -3,8 +3,10 @@ package serviceaccount
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
@@ -21,9 +23,10 @@ func (s *serviceAccountClient) Update(ctx context.Context, mg resource.Managed) 
 		return managed.ExternalUpdate{}, errNotServiceAccount
 	}
 
-	accessKey := serviceAccount.Status.AtProvider.AccessKey
+	// Get the external-name (MinIO access key) for this resource
+	accessKey := meta.GetExternalName(serviceAccount)
 	if accessKey == "" {
-		accessKey = serviceAccount.GetAccessKey()
+		return managed.ExternalUpdate{}, fmt.Errorf("service account has not been created yet (no external-name)")
 	}
 
 	// Prepare the update request
