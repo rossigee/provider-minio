@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/ratelimiter"
 
 	"github.com/rossigee/provider-minio/apis"
+	"github.com/rossigee/provider-minio/internal/tracing"
 	"github.com/rossigee/provider-minio/operator"
 )
 
@@ -37,6 +39,8 @@ func main() {
 
 	zl := zap.New(zap.UseDevMode(*debug))
 	log := logging.NewLogrLogger(zl.WithName("provider-minio"))
+
+	defer shutdownTracing(context.Background())
 
 	// Always set the controller-runtime logger to prevent stacktraces
 	// This must be called before any controller-runtime operations
