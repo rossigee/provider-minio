@@ -40,6 +40,7 @@ func main() {
 	zl := zap.New(zap.UseDevMode(*debug))
 	log := logging.NewLogrLogger(zl.WithName("provider-minio"))
 
+	shutdownTracing := tracing.Init("provider-minio")
 	defer shutdownTracing(context.Background())
 
 	// Always set the controller-runtime logger to prevent stacktraces

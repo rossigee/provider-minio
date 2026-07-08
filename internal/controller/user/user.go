@@ -18,6 +18,7 @@ import (
 	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	apisv1alpha1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	"github.com/rossigee/provider-minio/internal/clients"
+	"github.com/rossigee/provider-minio/internal/tracing"
 )
 
 const (
@@ -101,6 +102,9 @@ type external struct {
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.observe", "User", mg.GetName(), "observe")
+	defer span.End()
+
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotUser)
@@ -156,6 +160,9 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.create", "User", mg.GetName(), "create")
+	defer span.End()
+
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotUser)
@@ -195,6 +202,9 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	ctx, span := tracing.StartSpanWithAttrs(ctx, "user.update", "User", mg.GetName(), "update")
+	defer span.End()
+
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotUser)
@@ -237,6 +247,9 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
+	_, span := tracing.StartSpanWithAttrs(ctx, "user.delete", "User", mg.GetName(), "delete")
+	defer span.End()
+
 	cr, ok := mg.(*v1beta1.User)
 	if !ok {
 		return managed.ExternalDelete{}, errors.New(errNotUser)
