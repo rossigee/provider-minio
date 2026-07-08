@@ -9,7 +9,7 @@ PLATFORMS ?= linux_amd64 linux_arm64
 -include build/makelib/output.mk
 
 # Setup Go
-GO_REQUIRED_VERSION ?= 1.26.4.3
+GO_REQUIRED_VERSION ?= 1.26.4
 # Override golangci-lint version for Go 1.25 compatibility
 GOLANGCILINT_VERSION ?= 2.12.2
 NPROCS ?= 1

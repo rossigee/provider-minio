@@ -2,13 +2,11 @@ module github.com/rossigee/provider-minio
 
 go 1.26.4
 
-replace sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.24.1
-
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
-	github.com/crossplane/crossplane-runtime/v2 v2.3.2
+	github.com/crossplane/crossplane-runtime/v2 v2.4.0-rc.0
 	github.com/crossplane/crossplane-tools v0.0.0-20251017183449-dd4517244339
-	github.com/crossplane/crossplane/apis/v2 v2.3.1
+	github.com/crossplane/crossplane/apis/v2 v2.4.0-rc.0
 	github.com/go-logr/logr v1.4.3
 	github.com/minio/madmin-go/v3 v3.0.110
 	github.com/minio/minio-go/v7 v7.1.0
@@ -20,7 +18,7 @@ require (
 	k8s.io/apimachinery v0.36.1
 	k8s.io/client-go v0.36.1
 	sigs.k8s.io/controller-runtime v0.24.1
-	sigs.k8s.io/controller-tools v0.21.0
+	sigs.k8s.io/controller-tools v0.20.0
 )
 
 require (
@@ -123,9 +121,9 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiextensions-apiserver v0.36.1 // indirect
-	k8s.io/code-generator v0.36.1 // indirect
-	k8s.io/component-base v0.36.1 // indirect
+	k8s.io/apiextensions-apiserver v0.36.0 // indirect
+	k8s.io/code-generator v0.36.0 // indirect
+	k8s.io/component-base v0.36.0 // indirect
 	k8s.io/gengo/v2 v2.0.0-20260408192533-25e2208e0dc3 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260520065146-aa012df4f4af // indirect
@@ -140,4 +138,4 @@ exclude google.golang.org/genproto v0.0.0-20230303212802-e74f57abe488
 
 replace github.com/go-ini/ini => gopkg.in/ini.v1 v1.67.0
 
-replace github.com/crossplane/crossplane-runtime/v2 => github.com/rossigee/crossplane-runtime/v2 v2.4.0-rc.0.0.20260522024312-ccb404ad65f6
+replace github.com/crossplane/crossplane-runtime/v2 => github.com/rossigee/crossplane-runtime/v2 v2.4.0-rc.0.0.20260708064937-d99a640775a8
