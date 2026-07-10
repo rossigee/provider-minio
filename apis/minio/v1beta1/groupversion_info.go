@@ -28,8 +28,6 @@ var (
 
 func addKnownTypes(s *runtime.Scheme) error {
 	s.AddKnownTypes(SchemeGroupVersion,
-		&BucketClaim{},
-		&BucketClaimList{},
 		&User{},
 		&UserList{},
 		&Bucket{},

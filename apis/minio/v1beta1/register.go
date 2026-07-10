@@ -30,8 +30,6 @@ var (
 	BucketGroupVersionKind = SchemeGroupVersion.WithKind(BucketKind)
 )
 
-
-
 // User type metadata.
 var (
 	UserKind             = reflect.TypeOf(User{}).Name()
@@ -62,12 +60,4 @@ var (
 	PolicyGroupKind        = schema.GroupKind{Group: Group, Kind: PolicyKind}.String()
 	PolicyKindAPIVersion   = PolicyKind + "." + SchemeGroupVersion.String()
 	PolicyGroupVersionKind = SchemeGroupVersion.WithKind(PolicyKind)
-)
-
-// BucketClaim type metadata.
-var (
-	BucketClaimKind             = reflect.TypeOf(BucketClaim{}).Name()
-	BucketClaimGroupKind        = schema.GroupKind{Group: Group, Kind: BucketClaimKind}.String()
-	BucketClaimKindAPIVersion   = BucketClaimKind + "." + SchemeGroupVersion.String()
-	BucketClaimGroupVersionKind = SchemeGroupVersion.WithKind(BucketClaimKind)
 )

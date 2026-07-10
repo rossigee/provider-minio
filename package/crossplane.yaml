@@ -32,8 +32,6 @@ spec:
       resources:
       - buckets
       - buckets/status
-      - bucketclaims
-      - bucketclaims/status
       - policies
       - policies/status
       - serviceaccounts
@@ -57,4 +55,4 @@ spec:
       - patch
       - delete
   crossplane:
-    version: ">=v2.0.0"
+    version: ">=v2.0.0-0"

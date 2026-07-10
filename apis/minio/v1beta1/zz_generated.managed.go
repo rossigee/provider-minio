@@ -164,46 +164,6 @@ func (mg *User) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
-// GetCondition of this BucketClaim.
-func (mg *BucketClaim) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
-	return mg.Status.GetCondition(ct)
-}
-
-// GetManagementPolicies of this BucketClaim.
-func (mg *BucketClaim) GetManagementPolicies() xpv1.ManagementPolicies {
-	return mg.Spec.ManagementPolicies
-}
-
-// GetProviderConfigReference of this BucketClaim.
-func (mg *BucketClaim) GetProviderConfigReference() *xpv1.ProviderConfigReference {
-	return mg.Spec.ProviderConfigReference
-}
-
-// GetWriteConnectionSecretToReference of this BucketClaim.
-func (mg *BucketClaim) GetWriteConnectionSecretToReference() *xpv1.LocalSecretReference {
-	return mg.Spec.WriteConnectionSecretToReference
-}
-
-// SetConditions of this BucketClaim.
-func (mg *BucketClaim) SetConditions(c ...xpv1.Condition) {
-	mg.Status.SetConditions(c...)
-}
-
-// SetManagementPolicies of this BucketClaim.
-func (mg *BucketClaim) SetManagementPolicies(r xpv1.ManagementPolicies) {
-	mg.Spec.ManagementPolicies = r
-}
-
-// SetProviderConfigReference of this BucketClaim.
-func (mg *BucketClaim) SetProviderConfigReference(r *xpv1.ProviderConfigReference) {
-	mg.Spec.ProviderConfigReference = r
-}
-
-// SetWriteConnectionSecretToReference of this BucketClaim.
-func (mg *BucketClaim) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference) {
-	mg.Spec.WriteConnectionSecretToReference = r
-}
-
 // GetCondition of this NotificationConfiguration.
 func (mg *NotificationConfiguration) GetCondition(ct xpv1.ConditionType) xpv1.Condition {
 	return mg.Status.GetCondition(ct)

@@ -111,19 +111,3 @@ func GetConfigFromAPISecretRef(ctx context.Context, secretRef *xpv1.SecretRefere
 
 	return config, nil
 }
-
-// Example usage in XRD composition pipeline:
-// func (r *BucketClaimReconciler) reconcileXRDComposition(ctx context.Context, bc *v1beta1.BucketClaim) error {
-//     config, err := GetConfigFromAPISecretRef(ctx, bc.Spec.CredentialsSecretRef, r.Client)
-//     if err != nil {
-//         return err
-//     }
-//
-//     client, err := NewConsolidatedMinioClient(ctx, config)
-//     if err != nil {
-//         return err
-//     }
-//
-//     // Use client for MinIO operations
-//     return nil
-// }
