@@ -32,8 +32,6 @@ jobs:
         with:
           fetch-depth: 0
 
-        run: git submodule update --init --depth 1 build
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
