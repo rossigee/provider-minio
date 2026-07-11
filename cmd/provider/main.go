@@ -58,8 +58,8 @@ func main() {
 		LeaderElection:   *leaderElect,
 		LeaderElectionID: "crossplane-leader-election-provider-minio",
 		Cache: cache.Options{
-			SyncPeriod:                syncPeriod,
-			DefaultEnableWatchBookmarks: ptr.To(false),
+			SyncPeriod:                  syncPeriod,
+			DefaultEnableWatchBookmarks: ptr.To(true),
 		},
 		LeaderElectionResourceLock: resourcelock.LeasesResourceLock,
 		LeaseDuration:              func() *time.Duration { d := 60 * time.Second; return &d }(),
