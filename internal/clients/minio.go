@@ -33,14 +33,43 @@ type Config struct {
 func GetConfig(ctx context.Context, c client.Client, pc *v1.ProviderConfig) (*Config, error) {
 	switch pc.Spec.Credentials.Source {
 	case xpv1.CredentialsSourceSecret:
-		secretRef := &xpv1.SecretReference{
-			Name:      pc.Spec.Credentials.SecretRef.Name,
-			Namespace: pc.Spec.Credentials.SecretRef.Namespace,
+		// Support both apiSecretRef (standard Crossplane pattern) and secretRef (JSON key pattern)
+		if pc.Spec.Credentials.APISecretRef.Name != "" {
+			ref := &xpv1.SecretReference{
+				Name:      pc.Spec.Credentials.APISecretRef.Name,
+				Namespace: pc.Spec.Credentials.APISecretRef.Namespace,
+			}
+			return getConfigFromAPISecretRef(ctx, c, ref)
+		} else if pc.Spec.Credentials.SecretRef != nil {
+			ref := &xpv1.SecretReference{
+				Name:      pc.Spec.Credentials.SecretRef.Name,
+				Namespace: pc.Spec.Credentials.SecretRef.Namespace,
+			}
+			return getConfigFromSecret(ctx, c, ref, pc.Spec.Credentials.SecretRef.Key)
 		}
-		return getConfigFromSecret(ctx, c, secretRef, pc.Spec.Credentials.SecretRef.Key)
+		return nil, errors.New("no secret reference provided")
 	default:
 		return nil, errors.Errorf(errFmtUnsupportedCredSource, pc.Spec.Credentials.Source)
 	}
+}
+
+func getConfigFromAPISecretRef(ctx context.Context, c client.Client, ref *xpv1.SecretReference) (*Config, error) {
+	if ref == nil {
+		return nil, errors.New("no secret reference provided")
+	}
+
+	secret := &corev1.Secret{}
+	nn := types.NamespacedName{Namespace: ref.Namespace, Name: ref.Name}
+	if err := c.Get(ctx, nn, secret); err != nil {
+		return nil, errors.Wrap(err, errGetConnectionSecret)
+	}
+
+	cfg := &Config{
+		AccessKey: string(secret.Data["accessKey"]),
+		SecretKey: string(secret.Data["secretKey"]),
+	}
+
+	return cfg, nil
 }
 
 func getConfigFromSecret(ctx context.Context, c client.Client, ref *xpv1.SecretReference, key string) (*Config, error) {
