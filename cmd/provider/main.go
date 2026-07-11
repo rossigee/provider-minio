@@ -14,6 +14,8 @@ import (
 	"github.com/rossigee/provider-minio/apis"
 	"github.com/rossigee/provider-minio/internal/tracing"
 	"github.com/rossigee/provider-minio/operator"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,10 +53,17 @@ func main() {
 	cfg, err := ctrl.GetConfig()
 	kingpin.FatalIfError(err, "Cannot get API server rest config")
 
+	// Create a scheme with both k8s core types and custom minio types to avoid
+	// scheme conversion errors when the cache initializes informers.
+	// This ensures ListOptions and other k8s types can be properly converted.
+	s := runtime.NewScheme()
+	kingpin.FatalIfError(scheme.AddToScheme(s), "Cannot add k8s types to scheme")
+
 	// Use cert-manager issued certificate for webhook server
 	log.Info("Using cert-manager issued certificate for webhook server")
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:           s,
 		LeaderElection:   *leaderElect,
 		LeaderElectionID: "crossplane-leader-election-provider-minio",
 		Cache: cache.Options{
