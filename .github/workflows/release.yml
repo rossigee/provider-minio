@@ -56,7 +56,11 @@ jobs:
           cache: true
 
       - name: Build Crossplane CLI v2.4
-        run: go install github.com/crossplane/cli/cmd/crossplane@v2.4.0
+        env:
+          GOBIN: ${{ github.workspace }}/.cache/tools/linux_amd64
+        run: |
+          mkdir -p "$GOBIN"
+          go install github.com/crossplane/cli/v2/cmd/crossplane@v2.4.0
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v4
@@ -82,24 +86,16 @@ jobs:
 
       - name: Build Artifacts
         run: |
-          set -e  # Fail fast on any error
+          set -e
 
           go mod vendor
 
-          # Use the standardized build system to handle everything
           export VERSION="${{ steps.version.outputs.version }}"
-
-          echo "Repository: ${{ github.repository }}"
-          echo "Repository owner: ${{ github.repository_owner }}"
-          echo "Version: ${VERSION}"
-
-          # CRITICAL: Override BRANCH_NAME to bypass release branch filter
-          # When pushing tags, git is in detached HEAD state and branch detection fails.
-          # Without this, publish.artifacts becomes an empty target that silently succeeds.
-          # See: build/makelib/xpkg.mk:125-127 and build/makelib/common.mk:87
+          export PATH="$PATH:${{ github.workspace }}/.cache/tools/linux_amd64"
           export BRANCH_NAME="master"
+          export PLATFORMS=linux_amd64
 
-          # Build binary and artifacts for the current platform
+          make build.init
           make build.all build.artifacts
 
       - name: Upload XPKG Artifact
@@ -129,7 +125,11 @@ jobs:
           go-version: '1.26.4'
 
       - name: Build Crossplane CLI v2.4
-        run: go install github.com/crossplane/cli/cmd/crossplane@v2.4.0
+        env:
+          GOBIN: ${{ github.workspace }}/.cache/tools/linux_amd64
+        run: |
+          mkdir -p "$GOBIN"
+          go install github.com/crossplane/cli/v2/cmd/crossplane@v2.4.0
 
       - name: Vendor Dependencies
         run: go mod vendor
