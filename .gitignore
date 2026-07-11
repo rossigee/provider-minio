@@ -60,3 +60,8 @@ temp/
 *.tmp
 *.temp
 __debug*
+
+# Generated build artifacts
+crds/
+crossplane.yaml
+webhook
