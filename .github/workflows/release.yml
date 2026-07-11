@@ -91,7 +91,7 @@ jobs:
           go mod vendor
 
           export VERSION="${{ steps.version.outputs.version }}"
-          export PATH="$PATH:${{ github.workspace }}/.cache/tools/linux_amd64"
+          export PATH="$PATH:$(go env GOPATH)/bin"
           export BRANCH_NAME="master"
           export PLATFORMS=linux_amd64
 
