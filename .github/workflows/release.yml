@@ -56,12 +56,7 @@ jobs:
           cache: true
 
       - name: Build Crossplane CLI v2.4
-        run: |
-          go install github.com/crossplane/cli/v2/cmd/crossplane@v2.4.0
-          mkdir -p /home/runner/.cache/tools/linux_x86_64
-          curl -fsSLo /home/runner/.cache/tools/linux_x86_64/up-v0.28.0 \
-            "https://github.com/upbound/up/releases/download/v0.28.0/bin/linux_amd64/up" \
-            && chmod +x /home/runner/.cache/tools/linux_x86_64/up-v0.28.0
+        run: go install github.com/crossplane/cli/v2/cmd/crossplane@v2.4.0
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v4
@@ -95,6 +90,7 @@ jobs:
           export PATH="$PATH:/home/runner/go/bin"
           export BRANCH_NAME="master"
           export PLATFORMS=linux_amd64
+          export CROSSPLANE_CLI="/home/runner/go/bin/crossplane"
 
           make build.all build.artifacts
 
