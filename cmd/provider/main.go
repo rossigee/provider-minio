@@ -15,6 +15,7 @@ import (
 	"github.com/rossigee/provider-minio/internal/tracing"
 	"github.com/rossigee/provider-minio/operator"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -57,7 +58,8 @@ func main() {
 		LeaderElection:   *leaderElect,
 		LeaderElectionID: "crossplane-leader-election-provider-minio",
 		Cache: cache.Options{
-			SyncPeriod: syncPeriod,
+			SyncPeriod:                syncPeriod,
+			DefaultEnableWatchBookmarks: ptr.To(false),
 		},
 		LeaderElectionResourceLock: resourcelock.LeasesResourceLock,
 		LeaseDuration:              func() *time.Duration { d := 60 * time.Second; return &d }(),

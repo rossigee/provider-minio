@@ -90,6 +90,12 @@ jobs:
           export BRANCH_NAME="master"
           export PLATFORMS=linux_amd64
 
+          echo "=== DEBUG ==="
+          echo "CROSSPLANE_CLI=$(which crossplane 2>/dev/null || echo 'not found')"
+          echo "package.yaml: $(ls -la package/package.yaml 2>/dev/null || echo 'MISSING')"
+          echo "crossplane.yaml: $(ls -la package/crossplane.yaml 2>/dev/null || echo 'MISSING')"
+          echo "============="
+
           make CROSSPLANE_CLI=/home/runner/go/bin/crossplane build.all build.artifacts
 
       - name: Upload XPKG Artifact
