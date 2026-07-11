@@ -31,6 +31,8 @@ type Config struct {
 
 // GetConfig extracts the MinIO configuration from a ProviderConfig
 func GetConfig(ctx context.Context, c client.Client, pc *v1.ProviderConfig) (*Config, error) {
+	useSSL := pc.Spec.MinioURL != "" && pc.Spec.MinioURL[:8] == "https://"
+
 	switch pc.Spec.Credentials.Source {
 	case xpv1.CredentialsSourceSecret:
 		// Support both apiSecretRef (standard Crossplane pattern) and secretRef (JSON key pattern)
@@ -39,13 +41,13 @@ func GetConfig(ctx context.Context, c client.Client, pc *v1.ProviderConfig) (*Co
 				Name:      pc.Spec.Credentials.APISecretRef.Name,
 				Namespace: pc.Spec.Credentials.APISecretRef.Namespace,
 			}
-			return getConfigFromAPISecretRef(ctx, c, ref)
+			return getConfigFromAPISecretRef(ctx, c, ref, pc.Spec.MinioURL, useSSL)
 		} else if pc.Spec.Credentials.SecretRef != nil {
 			ref := &xpv1.SecretReference{
 				Name:      pc.Spec.Credentials.SecretRef.Name,
 				Namespace: pc.Spec.Credentials.SecretRef.Namespace,
 			}
-			return getConfigFromSecret(ctx, c, ref, pc.Spec.Credentials.SecretRef.Key)
+			return getConfigFromSecret(ctx, c, ref, pc.Spec.Credentials.SecretRef.Key, pc.Spec.MinioURL, useSSL)
 		}
 		return nil, errors.New("no secret reference provided")
 	default:
@@ -53,7 +55,7 @@ func GetConfig(ctx context.Context, c client.Client, pc *v1.ProviderConfig) (*Co
 	}
 }
 
-func getConfigFromAPISecretRef(ctx context.Context, c client.Client, ref *xpv1.SecretReference) (*Config, error) {
+func getConfigFromAPISecretRef(ctx context.Context, c client.Client, ref *xpv1.SecretReference, endpoint string, useSSL bool) (*Config, error) {
 	if ref == nil {
 		return nil, errors.New("no secret reference provided")
 	}
@@ -65,14 +67,16 @@ func getConfigFromAPISecretRef(ctx context.Context, c client.Client, ref *xpv1.S
 	}
 
 	cfg := &Config{
+		Endpoint:  endpoint,
 		AccessKey: string(secret.Data["accessKey"]),
 		SecretKey: string(secret.Data["secretKey"]),
+		UseSSL:    useSSL,
 	}
 
 	return cfg, nil
 }
 
-func getConfigFromSecret(ctx context.Context, c client.Client, ref *xpv1.SecretReference, key string) (*Config, error) {
+func getConfigFromSecret(ctx context.Context, c client.Client, ref *xpv1.SecretReference, key string, endpoint string, useSSL bool) (*Config, error) {
 	if ref == nil {
 		return nil, errors.New("no secret reference provided")
 	}
@@ -87,6 +91,9 @@ func getConfigFromSecret(ctx context.Context, c client.Client, ref *xpv1.SecretR
 	if err := json.Unmarshal(secret.Data[key], &cfg); err != nil {
 		return nil, errors.Wrap(err, errUnmarshalCredentials)
 	}
+
+	cfg.Endpoint = endpoint
+	cfg.UseSSL = useSSL
 
 	return &cfg, nil
 }

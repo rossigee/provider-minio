@@ -23,6 +23,7 @@ func TestGetConfigWithAPISecretRef(t *testing.T) {
 
 	pc := &v1.ProviderConfig{
 		Spec: v1.ProviderConfigSpec{
+			MinioURL: "https://minio.example.com:9000",
 			Credentials: v1.ProviderCredentials{
 				Source: xpv1.CredentialsSourceSecret,
 				APISecretRef: corev1.SecretReference{
@@ -39,8 +40,10 @@ func TestGetConfigWithAPISecretRef(t *testing.T) {
 
 	cfg, err := GetConfig(context.Background(), client, pc)
 	require.NoError(t, err)
+	require.Equal(t, "https://minio.example.com:9000", cfg.Endpoint)
 	require.Equal(t, "testadmin", cfg.AccessKey)
 	require.Equal(t, "testsecret123", cfg.SecretKey)
+	require.True(t, cfg.UseSSL)
 }
 
 func TestGetConfigWithSecretRef(t *testing.T) {
@@ -55,6 +58,7 @@ func TestGetConfigWithSecretRef(t *testing.T) {
 
 	pc := &v1.ProviderConfig{
 		Spec: v1.ProviderConfigSpec{
+			MinioURL: "http://minio.example.com:9000",
 			Credentials: v1.ProviderCredentials{
 				Source: xpv1.CredentialsSourceSecret,
 				CommonCredentialSelectors: xpv1.CommonCredentialSelectors{
@@ -76,8 +80,10 @@ func TestGetConfigWithSecretRef(t *testing.T) {
 
 	cfg, err := GetConfig(context.Background(), client, pc)
 	require.NoError(t, err)
+	require.Equal(t, "http://minio.example.com:9000", cfg.Endpoint)
 	require.Equal(t, "testadmin", cfg.AccessKey)
 	require.Equal(t, "testsecret123", cfg.SecretKey)
+	require.False(t, cfg.UseSSL)
 }
 
 func TestGetConfigNoSecretRef(t *testing.T) {
