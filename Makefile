@@ -27,6 +27,9 @@ UPTEST_VERSION = v0.11.1
 -include build/makelib/k8s_tools.mk
 
 # CROSSPLANE_CLI is now the crossplane CLI with xpkg support
+# Use the locally built CLI (from crossplane/cli repo) since v2.4.0 is not
+# published to releases.crossplane.io yet.
+CROSSPLANE_CLI := $(shell which crossplane)
 
 # Setup Images
 IMAGES = provider-minio
@@ -52,14 +55,24 @@ XPKG_REG_ORGS_NO_PROMOTE ?= ghcr.io/rossigee
 # Harbor publishing has been removed - using only ghcr.io/rossigee
 # To enable Upbound: export ENABLE_UPBOUND_PUBLISH=true make publish XPKG_REG_ORGS=xpkg.upbound.io/crossplane-contrib
 XPKGS = provider-minio
+XPKG_IGNORE := crossplane.yaml
 -include build/makelib/xpkg.mk
+
+# Crossplane v2.4+ expects package.yaml at the package root (not crossplane.yaml).
+# crossplane.yaml is kept for Docker image compatibility but excluded from xpkg
+# via XPKG_IGNORE above. Generate package.yaml from the source metadata.
+package/package.yaml: package/crossplane.yaml
+	@mkdir -p package
+	@cp package/crossplane.yaml package/package.yaml
+
+xpkg.build.provider-minio: package/package.yaml
 
 # NOTE: we force image building to happen prior to xpkg build so that we ensure
 # image is present in daemon.
 xpkg.build.provider-minio: do.build.images
 
 # Setup Package Metadata
-CROSSPLANE_VERSION = 2.0.2
+CROSSPLANE_VERSION = 2.4.0
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk
 

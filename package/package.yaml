@@ -1,0 +1,58 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-minio
+  annotations:
+    meta.crossplane.io/maintainer: VSHN <info@vshn.ch>
+    meta.crossplane.io/source: github.com/rossigee/provider-minio
+    meta.crossplane.io/license: Apache-2
+    meta.crossplane.io/description: |
+      VSHN's Crossplane provider to manage minio services in Kubernetes.
+    meta.crossplane.io/readme: |
+      `provider-minio` is the Crossplane infrastructure provider for
+      [minio](https://www.min.io/), provided by [VSHN](https://www.vshn.ch/).
+      Available resources and their fields can be found in the
+      [CRD Docs](https://marketplace.upbound.io/providers/vshn/provider-minio/latest/crds).
+      If you encounter an issue please create an issue in the
+      [rossigee/provider-minio](https://github.com/rossigee/provider-minio/issues) repo.
+spec:
+  controller:
+    permissionRequests:
+    - apiGroups:
+      - minio.crossplane.io
+      resources:
+      - providerconfigs
+      - providerconfigs/status
+      - providerconfigusages
+      - providerconfigusages/status
+      verbs:
+      - "*"
+    - apiGroups:
+      - minio.m.crossplane.io
+      resources:
+      - buckets
+      - buckets/status
+      - policies
+      - policies/status
+      - serviceaccounts
+      - serviceaccounts/status
+      - users
+      - users/status
+      - notificationconfigurations
+      - notificationconfigurations/status
+      verbs:
+      - "*"
+    - apiGroups:
+      - ""
+      resources:
+      - secrets
+      verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  crossplane:
+    version: ">=v2.0.0-0"

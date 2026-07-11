@@ -55,6 +55,9 @@ jobs:
           go-version: '1.26.4'
           cache: true
 
+      - name: Build Crossplane CLI v2.4
+        run: go install github.com/crossplane/cli/cmd/crossplane@v2.4.0
+
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v4
         with:
@@ -80,6 +83,8 @@ jobs:
       - name: Build Artifacts
         run: |
           set -e  # Fail fast on any error
+
+          go mod vendor
 
           # Use the standardized build system to handle everything
           export VERSION="${{ steps.version.outputs.version }}"
@@ -122,6 +127,9 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.26.4'
+
+      - name: Build Crossplane CLI v2.4
+        run: go install github.com/crossplane/cli/cmd/crossplane@v2.4.0
 
       - name: Vendor Dependencies
         run: go mod vendor
