@@ -58,6 +58,9 @@ func main() {
 	// This ensures ListOptions and other k8s types can be properly converted.
 	s := runtime.NewScheme()
 	kingpin.FatalIfError(scheme.AddToScheme(s), "Cannot add k8s types to scheme")
+	// IMPORTANT: Add custom APIs to the scheme BEFORE creating the manager,
+	// so the cache initializes with all necessary types registered.
+	kingpin.FatalIfError(apis.AddToScheme(s), "Cannot add MinIO APIs to scheme")
 
 	// Use cert-manager issued certificate for webhook server
 	log.Info("Using cert-manager issued certificate for webhook server")
@@ -93,7 +96,6 @@ func main() {
 		log.Info("Beta feature enabled", "flag", feature.EnableBetaManagementPolicies)
 	}
 
-	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add MinIO APIs to scheme")
 	kingpin.FatalIfError(operator.SetupControllers(mgr), "Cannot setup MinIO controllers")
 	kingpin.FatalIfError(operator.SetupWebhooks(mgr), "Cannot setup MinIO webhooks")
 
