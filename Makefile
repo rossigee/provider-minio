@@ -29,7 +29,6 @@ UPTEST_VERSION = v0.11.1
 # CROSSPLANE_CLI is now the crossplane CLI with xpkg support
 # Use the locally built CLI (from crossplane/cli repo) since v2.4.0 is not
 # published to releases.crossplane.io yet.
-CROSSPLANE_CLI := $(shell which crossplane)
 
 # Setup Images
 IMAGES = provider-minio

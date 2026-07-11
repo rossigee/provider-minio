@@ -56,7 +56,11 @@ jobs:
           cache: true
 
       - name: Build Crossplane CLI v2.4
-        run: go install github.com/crossplane/cli/v2/cmd/crossplane@v2.4.0
+        run: |
+          go install github.com/crossplane/cli/v2/cmd/crossplane@v2.4.0
+          mkdir -p /home/runner/.cache/tools/linux_x86_64
+          ln -sf /home/runner/go/bin/crossplane \
+            /home/runner/.cache/tools/linux_x86_64/crossplane-cli-v2.3.3
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v4
@@ -87,10 +91,8 @@ jobs:
           go mod vendor
 
           export VERSION="${{ steps.version.outputs.version }}"
-          export PATH="$PATH:/home/runner/go/bin"
           export BRANCH_NAME="master"
           export PLATFORMS=linux_amd64
-          export CROSSPLANE_CLI="/home/runner/go/bin/crossplane"
 
           make build.all build.artifacts
 
