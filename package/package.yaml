@@ -16,8 +16,7 @@ metadata:
       If you encounter an issue please create an issue in the
       [rossigee/provider-minio](https://github.com/rossigee/provider-minio/issues) repo.
 spec:
-  controller:
-    permissionRequests:
+  permissionRequests:
     - apiGroups:
       - minio.crossplane.io
       resources:
@@ -54,5 +53,6 @@ spec:
       - update
       - patch
       - delete
+  controller: {}
   crossplane:
     version: ">=v2.0.0-0"
