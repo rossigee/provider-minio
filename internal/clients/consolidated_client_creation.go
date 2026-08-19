@@ -44,7 +44,7 @@ func NewConsolidatedMinioClient(ctx context.Context, config *ConsolidatedConfig)
 		transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates:       []tls.Certificate{cert},
-				InsecureSkipVerify: config.InsecureSkipVerify,
+				InsecureSkipVerify: config.InsecureSkipVerify, // #nosec G402 -- gated by ConsolidatedConfig from provider config
 			},
 		}
 

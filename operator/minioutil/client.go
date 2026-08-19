@@ -71,7 +71,7 @@ func buildTLSConfig(ctx context.Context, c client.Client, tlsConfig *common.TLSC
 	}
 
 	config := &tls.Config{
-		InsecureSkipVerify: tlsConfig.InsecureSkipVerify,
+		InsecureSkipVerify: tlsConfig.InsecureSkipVerify, // #nosec G402 -- gated by common.TLSConfig from ProviderConfig
 	}
 
 	// Handle CA certificate
