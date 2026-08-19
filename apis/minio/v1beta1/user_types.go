@@ -5,7 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
@@ -29,13 +28,13 @@ type User struct {
 // UserSpec defines the desired state of a User
 type UserSpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
-	ForProvider       UserParameters `json:"forProvider,omitempty"`
+	ForProvider              UserParameters `json:"forProvider,omitempty"`
 }
 
 // UserStatus defines the observed state of a User
 type UserStatus struct {
 	xpv1.ConditionedStatus `json:",inline"`
-	AtProvider          UserProviderStatus `json:"atProvider,omitempty"`
+	AtProvider             UserProviderStatus `json:"atProvider,omitempty"`
 }
 
 // UserProviderStatus defines the observed state of a User from the provider

@@ -5,7 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
@@ -30,13 +29,13 @@ type ServiceAccount struct {
 // ServiceAccountSpec defines the desired state of a ServiceAccount
 type ServiceAccountSpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
-	ForProvider       ServiceAccountParameters `json:"forProvider,omitempty"`
+	ForProvider              ServiceAccountParameters `json:"forProvider,omitempty"`
 }
 
 // ServiceAccountStatus defines the observed state of a ServiceAccount
 type ServiceAccountStatus struct {
 	xpv1.ConditionedStatus `json:",inline"`
-	AtProvider          ServiceAccountProviderStatus `json:"atProvider,omitempty"`
+	AtProvider             ServiceAccountProviderStatus `json:"atProvider,omitempty"`
 }
 
 // ServiceAccountProviderStatus defines the observed state of a ServiceAccount from the provider
@@ -96,7 +95,6 @@ type ServiceAccountParameters struct {
 	// and connection details would be published to both without affecting
 	// each other.
 	WriteConnectionSecretsToRef *xpv1.SecretReference `json:"writeConnectionSecretsToRef,omitempty"`
-
 }
 
 // +kubebuilder:object:root=true

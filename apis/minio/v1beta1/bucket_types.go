@@ -5,7 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 const (
 	// DeleteIfEmpty only deletes the bucket if the bucket is empty.
 	DeleteIfEmpty BucketDeletionPolicy = "DeleteIfEmpty"
@@ -100,8 +99,6 @@ type BucketList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Bucket `json:"items"`
 }
-
-
 
 // GetBucketName returns the spec.forProvider.bucketName if given, otherwise defaults to metadata.name.
 func (in *Bucket) GetBucketName() string {

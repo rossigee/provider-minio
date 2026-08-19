@@ -25,4 +25,5 @@ func Disabled() xpv1.Condition {
 		Reason:             "Disabled",
 		Message:            "The service is disabled",
 		LastTransitionTime: metav1.Now(),
-	}}
+	}
+}

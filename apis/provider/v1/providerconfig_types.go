@@ -28,7 +28,7 @@ type ProviderCredentials struct {
 	// Source represents location of the cluster token.
 	Source xpv1.CredentialsSource `json:"source,omitempty"`
 	// APISecretRef is the reference to the secret with the minio API Key and Secret.
-	APISecretRef corev1.SecretReference `json:"apiSecretRef,omitempty"`
+	APISecretRef                   corev1.SecretReference `json:"apiSecretRef,omitempty"`
 	xpv1.CommonCredentialSelectors `json:",inline"`
 }
 
@@ -46,8 +46,8 @@ type ProviderConfigStatus struct {
 type ProviderConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec   ProviderConfigSpec   `json:"spec"`
-	Status ProviderConfigStatus `json:"status,omitempty"`
+	Spec              ProviderConfigSpec   `json:"spec"`
+	Status            ProviderConfigStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

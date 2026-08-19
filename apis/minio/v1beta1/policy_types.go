@@ -5,7 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
@@ -28,13 +27,13 @@ type Policy struct {
 // PolicySpec defines the desired state of a Policy
 type PolicySpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
-	ForProvider       PolicyParameters `json:"forProvider,omitempty"`
+	ForProvider              PolicyParameters `json:"forProvider,omitempty"`
 }
 
 // PolicyStatus defines the observed state of a Policy
 type PolicyStatus struct {
 	xpv1.ConditionedStatus `json:",inline"`
-	AtProvider          PolicyProviderStatus `json:"atProvider,omitempty"`
+	AtProvider             PolicyProviderStatus `json:"atProvider,omitempty"`
 }
 
 // PolicyProviderStatus defines the observed state of a Policy from the provider

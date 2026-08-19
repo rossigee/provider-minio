@@ -14,13 +14,13 @@ import (
 	"github.com/rossigee/provider-minio/apis"
 	"github.com/rossigee/provider-minio/internal/tracing"
 	"github.com/rossigee/provider-minio/operator"
-	"k8s.io/apimachinery/pkg/runtime"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/utils/ptr"
-	rbacv1 "k8s.io/api/rbac/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -133,7 +133,7 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 
 	system := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "crossplane:provider:provider-minio:system",
+			Name:   "crossplane:provider:provider-minio:system",
 			Labels: map[string]string{"rbac.crossplane.io/system": "provider-minio"},
 		},
 		Rules: rules,
@@ -147,8 +147,8 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "crossplane:provider:provider-minio:system"},
-		RoleRef: rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole", Name: "crossplane:provider:provider-minio:system"},
-		Subjects: []rbacv1.Subject{{Kind: "ServiceAccount", Name: "provider-minio", Namespace: "crossplane-system"}},
+		RoleRef:    rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole", Name: "crossplane:provider:provider-minio:system"},
+		Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: "provider-minio", Namespace: "crossplane-system"}},
 	}
 	if err := c.Create(ctx, binding); err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -174,7 +174,7 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 
 	view := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "crossplane:provider:provider-minio:aggregate-to-view",
+			Name:   "crossplane:provider:provider-minio:aggregate-to-view",
 			Labels: map[string]string{"rbac.crossplane.io/aggregate-to-view": "true", "rbac.crossplane.io/system": "provider-minio"},
 		},
 		Rules: withVerbs(rules, []string{"get", "list", "watch"}),

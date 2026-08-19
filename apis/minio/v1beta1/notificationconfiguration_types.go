@@ -5,7 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
@@ -29,13 +28,13 @@ type NotificationConfiguration struct {
 // NotificationConfigurationSpec defines the desired state of a NotificationConfiguration
 type NotificationConfigurationSpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
-	ForProvider       NotificationConfigurationParameters `json:"forProvider,omitempty"`
+	ForProvider              NotificationConfigurationParameters `json:"forProvider,omitempty"`
 }
 
 // NotificationConfigurationStatus defines the observed state of a NotificationConfiguration
 type NotificationConfigurationStatus struct {
 	xpv1.ConditionedStatus `json:",inline"`
-	AtProvider          NotificationConfigurationProviderStatus `json:"atProvider,omitempty"`
+	AtProvider             NotificationConfigurationProviderStatus `json:"atProvider,omitempty"`
 }
 
 // NotificationConfigurationParameters define the desired state of a MinIO notification configuration

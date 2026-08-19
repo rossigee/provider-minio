@@ -16,8 +16,8 @@ import (
 // +kubebuilder:printcolumn:name="Resource-Name",type="string",JSONPath=".resourceRef.name"
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,provider,minio}
 type ProviderConfigUsage struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta               `json:",inline"`
+	metav1.ObjectMeta             `json:"metadata,omitempty"`
 	xpv1.TypedProviderConfigUsage `json:",inline"`
 }
 
@@ -31,10 +31,10 @@ type ProviderConfigUsageList struct {
 
 // ProviderConfigUsage type metadata.
 var (
-	ProviderConfigUsageKind             = reflect.TypeOf(ProviderConfigUsage{}).Name()
-	ProviderConfigUsageGroupKind        = schema.GroupKind{Group: Group, Kind: ProviderConfigUsageKind}.String()
-	ProviderConfigUsageKindAPIVersion   = ProviderConfigUsageKind + "." + SchemeGroupVersion.String()
-	ProviderConfigUsageGroupVersionKind = SchemeGroupVersion.WithKind(ProviderConfigUsageKind)
+	ProviderConfigUsageKind                 = reflect.TypeOf(ProviderConfigUsage{}).Name()
+	ProviderConfigUsageGroupKind            = schema.GroupKind{Group: Group, Kind: ProviderConfigUsageKind}.String()
+	ProviderConfigUsageKindAPIVersion       = ProviderConfigUsageKind + "." + SchemeGroupVersion.String()
+	ProviderConfigUsageGroupVersionKind     = SchemeGroupVersion.WithKind(ProviderConfigUsageKind)
 	ProviderConfigUsageListKind             = reflect.TypeOf(ProviderConfigUsageList{}).Name()
 	ProviderConfigUsageListGroupKind        = schema.GroupKind{Group: Group, Kind: ProviderConfigUsageListKind}.String()
 	ProviderConfigUsageListKindAPIVersion   = ProviderConfigUsageListKind + "." + SchemeGroupVersion.String()
