@@ -98,7 +98,7 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 }
 
 func (u *userClient) equalPolicies(minioUser madmin.UserInfo, user *miniov1beta1.User) bool {
-	// policyName contains a string with all applied policies seperated by comma
+	// policyName contains a string with all applied policies separated by comma
 	minioPolicies := strings.Split(minioUser.PolicyName, ",")
 
 	// if policyName is an empty string, then string.Split() will create an array with just one empty string
