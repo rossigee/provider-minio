@@ -5,7 +5,7 @@
 * `docker`, `go` (`GO_REQUIRED_VERSION ?= 1.26.6` in `Makefile:12`), `helm`, `kubectl`, `yq`, `sed`/`gsed`
 * `pre-commit` (optional) — see `README.md:185`
 
-Kind and other tools are compiled on demand into `.kind`/` .work/`.
+Kind and other tools are compiled on demand into `.kind`/`.work/`.
 
 ## Quick Start
 
