@@ -12,7 +12,7 @@ Crossplane provider for managing MinIO object storage resources including bucket
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.17.4`
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.19.9`
 
 ## Getting Started
 
@@ -27,33 +27,35 @@ Crossplane provider for managing MinIO object storage resources including bucket
 Install the provider:
 
 ```bash
-kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.17.4
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.19.9
 ```
 
 Create a secret with your MinIO credentials:
 
 ```bash
 kubectl create secret generic minio-credentials \
-  --from-literal=credentials='{"accessKeyId":"YOUR_ACCESS_KEY","secretAccessKey":"YOUR_SECRET_KEY"}' \
+  --from-literal=AWS_ACCESS_KEY_ID=minioadmin \
+  --from-literal=AWS_SECRET_ACCESS_KEY=minioadmin \
   -n crossplane-system
 ```
 
-Configure the provider:
+Configure the provider (cluster-scoped):
 
 ```yaml
-apiVersion: minio.m.crossplane.io/v1beta1
+apiVersion: minio.crossplane.io/v1
 kind: ProviderConfig
 metadata:
   name: default
 spec:
-  endpoint: http://localhost:9000
+  minioURL: http://localhost:9000
   credentials:
     source: Secret
-    secretRef:
+    apiSecretRef:
       name: minio-credentials
       namespace: crossplane-system
-      key: credentials
 ```
+
+See `docs/CONFIGURATION.md` for TLS, `spec.tls`, and alternative credential sources.
 
 ## Usage
 
@@ -76,25 +78,32 @@ spec:
 
 ## Resource Types
 
+All managed resources are `minio.m.crossplane.io/v1beta1` **namespaced**; `ProviderConfig` is `minio.crossplane.io/v1` **cluster-scoped**.
+
 ### Bucket
 
 - **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
-- Create and manage MinIO buckets
+- Create and manage MinIO buckets — see `docs/API.md#bucket`
 
 ### User
 
 - **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
-- Manage user accounts and access
+- Manage user accounts and access — see `docs/API.md#user`
 
 ### Policy
 
 - **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
-- Define fine-grained access control policies
+- Define fine-grained access control policies — see `docs/API.md#policy`
 
 ### ServiceAccount
 
 - **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
-- Create service accounts for programmatic access
+- Create service accounts for programmatic access — see `docs/ServiceAccount.md`
+
+### NotificationConfiguration
+
+- **v1beta1** (namespaced): `minio.m.crossplane.io/v1beta1`
+- Configure bucket notifications (webhook/SQS/SNS) — see `docs/API.md#notificationconfiguration`
 
 ## ⚡ **BREAKING CHANGE: v1→v2 API Migration**
 
@@ -152,9 +161,16 @@ metadata:
 | < v0.16.5 | ✅ | ❌ | v1.x |
 | v0.16.5+ | ❌ | ✅ | v2.x |
 
-**Note**: This is a **breaking change**. v1 and v1beta1 APIs cannot coexist.
+**Note**: This is a **breaking change**. v1 and v1beta1 managed APIs cannot coexist. `ProviderConfig` remains `minio.crossplane.io/v1` cluster-scoped in both.
 
-Documentation: <https://vshn.github.io/provider-minio/provider-minio/>
+## Documentation
+
+* `docs/API.md` — CRD reference
+* `docs/CONFIGURATION.md` — ProviderConfig & TLS
+* `docs/INSTALLATION.md` / `docs/GETTING_STARTED.md` — install & first bucket
+* `docs/ServiceAccount.md` — service accounts
+* `docs/TLS_CONFIGURATION.md` — TLS details
+* `docs/DEVELOPMENT.md` — development & tests
 
 ## Local Development
 
@@ -243,8 +259,7 @@ To test and troubleshoot the webhooks on the cluster, simply apply your changes 
 
 ### Crossplane Provider Mechanics
 
-For detailed information on how Crossplane Provider works from a development perspective check
-[provider mechanics documentation page](https://kb.vshn.ch/app-catalog/explanations/crossplane_provider_mechanics.html).
+For development background on Crossplane provider mechanics, see the upstream Crossplane documentation — e.g. <https://docs.crossplane.io/latest/concepts/managed-resources/>.
 
 ### e2e testing with kuttl
 

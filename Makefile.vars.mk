@@ -2,7 +2,7 @@
 
 PROJECT_ROOT_DIR = .
 PROJECT_NAME ?= provider-minio
-PROJECT_OWNER ?= vshn
+PROJECT_OWNER ?= rossigee
 
 WORK_DIR = $(PWD)/.work
 
