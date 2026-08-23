@@ -33,12 +33,6 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          prerelease: false
-
       - name: Determine Version
         id: version
         run: |
@@ -132,9 +126,16 @@ jobs:
         run: make build.init
 
       - name: Determine Version
+        id: version
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "Detected version: $VERSION"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
@@ -148,7 +149,7 @@ jobs:
           BRANCH_NAME: master   # override: tag-based builds are in detached HEAD state
         run: |
           set -e
-          echo "Building version ${VERSION}"
+          echo "Building version ${{ steps.version.outputs.version }}"
           make publish.artifacts \
             REGISTRY_ORGS="ghcr.io/${{ github.repository_owner }}" \
             XPKG_REG_ORGS="ghcr.io/${{ github.repository_owner }}" \
@@ -157,7 +158,7 @@ jobs:
       - name: Verify Publication
         run: |
           set -e
-          VERSION="${GITHUB_REF#refs/tags/}"
+          VERSION="${{ steps.version.outputs.version }}"
           REGISTRY_PATH="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
 
           echo "Verifying publication to ${REGISTRY_PATH}:${VERSION}"
@@ -172,6 +173,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.version }}
           name: Release ${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
