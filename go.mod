@@ -149,4 +149,6 @@ exclude google.golang.org/genproto v0.0.0-20230303212802-e74f57abe488
 
 replace github.com/go-ini/ini => gopkg.in/ini.v1 v1.67.0
 
-replace github.com/crossplane/crossplane-runtime/v2 => github.com/rossigee/crossplane-runtime/v2 v2.4.0-rc.0.0.20260708064937-d99a640775a8
+replace github.com/crossplane/crossplane-runtime/v2 => github.com/rossigee/crossplane-runtime/v2 v2.4.0-rc.0.0.20260823000123-e0887c52b0b9
+
+replace github.com/crossplane/crossplane/apis/v2 => github.com/rossigee/crossplane/apis/v2 v2.0.0-20260823052155-23396e2cece7
