@@ -50,7 +50,7 @@ jobs:
           go-version: '1.26.6'
           cache: true
 
-      - name: Build Crossplane CLI v2.4
+      - name: Build Crossplane CLI
         run: go install github.com/crossplane/cli/v2/cmd/crossplane@v2.5.0
 
       - name: Setup QEMU
@@ -116,7 +116,7 @@ jobs:
         with:
           go-version: '1.26.6'
 
-      - name: Build Crossplane CLI v2.4
+      - name: Build Crossplane CLI
         run: go install github.com/crossplane/cli/v2/cmd/crossplane@v2.5.0
 
       - name: Vendor Dependencies
