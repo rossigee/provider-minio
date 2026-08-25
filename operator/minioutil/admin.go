@@ -2,6 +2,7 @@ package minioutil
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -41,8 +42,28 @@ func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.Prov
 		return nil, err
 	}
 
+	// Determine which format we're using and extract credentials
+	var accessKey, secretKeyValue string
+	if config.Spec.Credentials.SecretRef != nil && config.Spec.Credentials.SecretRef.Key != "" {
+		// Using SecretRef with JSON data
+		data, exists := secret.Data[config.Spec.Credentials.SecretRef.Key]
+		if !exists {
+			return nil, fmt.Errorf("secret key %q not found in secret %s", config.Spec.Credentials.SecretRef.Key, key)
+		}
+		var creds map[string]string
+		if err := json.Unmarshal(data, &creds); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal secret data: %w", err)
+		}
+		accessKey = creds["accessKey"]
+		secretKeyValue = creds["secretKey"]
+	} else {
+		// Using APISecretRef with direct keys
+		accessKey = string(secret.Data[MinioIDKey])
+		secretKeyValue = string(secret.Data[MinioSecretKey])
+	}
+
 	adminClient, err := madmin.NewWithOptions(parsed.Host, &madmin.Options{
-		Creds:  credentials.NewStaticV4(string(secret.Data[MinioIDKey]), string(secret.Data[MinioSecretKey]), ""),
+		Creds:  credentials.NewStaticV4(accessKey, secretKeyValue, ""),
 		Secure: IsTLSEnabled(parsed),
 	})
 	if err != nil {
