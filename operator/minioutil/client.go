@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,11 +25,21 @@ const (
 
 // NewMinioClient returns a new minio client according to the given provider config.
 func NewMinioClient(ctx context.Context, c client.Client, config *providerv1.ProviderConfig) (*minio.Client, error) {
-	if config.Spec.Credentials.APISecretRef.Name == "" {
-		return nil, fmt.Errorf("credentials APISecretRef name must not be empty")
-	}
 	secret := &corev1.Secret{}
-	key := client.ObjectKey{Name: config.Spec.Credentials.APISecretRef.Name, Namespace: config.Spec.Credentials.APISecretRef.Namespace}
+	var key client.ObjectKey
+	var secretKey string
+
+	// Use APISecretRef if available, otherwise fallback to SecretRef
+	if config.Spec.Credentials.APISecretRef.Name != "" {
+		key = client.ObjectKey{Name: config.Spec.Credentials.APISecretRef.Name, Namespace: config.Spec.Credentials.APISecretRef.Namespace}
+		secretKey = ""  // APISecretRef uses MinioIDKey and MinioSecretKey
+	} else if config.Spec.Credentials.SecretRef != nil && config.Spec.Credentials.SecretRef.Name != "" {
+		key = client.ObjectKey{Name: config.Spec.Credentials.SecretRef.Name, Namespace: config.Spec.Credentials.SecretRef.Namespace}
+		secretKey = config.Spec.Credentials.SecretRef.Key
+	} else {
+		return nil, fmt.Errorf("no valid credentials reference found: APISecretRef or SecretRef must be provided with non-empty name")
+	}
+
 	err := c.Get(ctx, key, secret)
 	if err != nil {
 		return nil, err
@@ -39,8 +50,27 @@ func NewMinioClient(ctx context.Context, c client.Client, config *providerv1.Pro
 		return nil, err
 	}
 
+	var accessKey, secretKeyValue string
+	if secretKey != "" {
+		// Using SecretRef with JSON data
+		data, exists := secret.Data[secretKey]
+		if !exists {
+			return nil, fmt.Errorf("secret key %q not found in secret %s", secretKey, key)
+		}
+		var creds map[string]string
+		if err := json.Unmarshal(data, &creds); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal secret data: %w", err)
+		}
+		accessKey = creds["accessKey"]
+		secretKeyValue = creds["secretKey"]
+	} else {
+		// Using APISecretRef with direct keys
+		accessKey = string(secret.Data[MinioIDKey])
+		secretKeyValue = string(secret.Data[MinioSecretKey])
+	}
+
 	options := &minio.Options{
-		Creds:  credentials.NewStaticV4(string(secret.Data[MinioIDKey]), string(secret.Data[MinioSecretKey]), ""),
+		Creds:  credentials.NewStaticV4(accessKey, secretKeyValue, ""),
 		Secure: IsTLSEnabled(parsed),
 	}
 
