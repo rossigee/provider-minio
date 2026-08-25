@@ -23,7 +23,7 @@ func (b *bucketClient) Create(ctx context.Context, mg resource.Managed) (managed
 
 	log.V(1).Info("Creating bucket", "name", bucket.Name)
 
-	err := b.createS3Bucket(ctx, bucket)
+	isAdopted, err := b.createS3Bucket(ctx, bucket)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -47,13 +47,17 @@ func (b *bucketClient) Create(ctx context.Context, mg resource.Managed) (managed
 	}
 
 	b.setLock(bucket)
+	if isAdopted {
+		return managed.ExternalCreation{}, b.emitAdoptionEvent(bucket)
+	}
 	return managed.ExternalCreation{}, b.emitCreationEvent(bucket)
 }
 
 // createS3Bucket creates a new bucket and sets the name in the status.
 // If the bucket already exists, and we have permissions to access it, no error is returned and the name is set in the status.
 // If the bucket exists, but we don't own it, an error is returned.
-func (b *bucketClient) createS3Bucket(ctx context.Context, bucket *miniov1beta1.Bucket) error {
+// Returns (isAdopted, error) - isAdopted is true when an existing bucket was adopted rather than created new.
+func (b *bucketClient) createS3Bucket(ctx context.Context, bucket *miniov1beta1.Bucket) (bool, error) {
 	bucketName := bucket.GetBucketName()
 	err := b.mc.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: bucket.Spec.ForProvider.Region})
 
@@ -61,13 +65,13 @@ func (b *bucketClient) createS3Bucket(ctx context.Context, bucket *miniov1beta1.
 		// Check to see if we already own this bucket (which happens if we run this twice)
 		exists, errBucketExists := b.mc.BucketExists(ctx, bucketName)
 		if errBucketExists == nil && exists {
-			return nil
+			return true, nil // adopted existing bucket
 		}
 		// someone else might have created the bucket
-		return err
+		return false, err
 
 	}
-	return nil
+	return false, nil // created new bucket
 }
 
 // setLock sets an annotation that tells the Observe func that we have successfully created the bucket.
@@ -84,6 +88,15 @@ func (b *bucketClient) emitCreationEvent(bucket *miniov1beta1.Bucket) error {
 		Type:    event.TypeNormal,
 		Reason:  "Created",
 		Message: "Bucket successfully created",
+	})
+	return nil
+}
+
+func (b *bucketClient) emitAdoptionEvent(bucket *miniov1beta1.Bucket) error {
+	b.recorder.Event(bucket, event.Event{
+		Type:    event.TypeNormal,
+		Reason:  "Adopted",
+		Message: "Existing bucket successfully adopted",
 	})
 	return nil
 }
