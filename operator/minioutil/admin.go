@@ -43,12 +43,21 @@ func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.Prov
 	}
 
 	// Determine which format we're using and extract credentials
+	var secretKey string
 	var accessKey, secretKeyValue string
-	if config.Spec.Credentials.SecretRef != nil && config.Spec.Credentials.SecretRef.Key != "" {
+
+	// Use APISecretRef if available, otherwise fallback to SecretRef
+	if config.Spec.Credentials.APISecretRef.Name != "" {
+		secretKey = ""  // APISecretRef uses MinioIDKey and MinioSecretKey
+	} else if config.Spec.Credentials.SecretRef != nil && config.Spec.Credentials.SecretRef.Name != "" {
+		secretKey = config.Spec.Credentials.SecretRef.Key
+	}
+
+	if secretKey != "" {
 		// Using SecretRef with JSON data
-		data, exists := secret.Data[config.Spec.Credentials.SecretRef.Key]
+		data, exists := secret.Data[secretKey]
 		if !exists {
-			return nil, fmt.Errorf("secret key %q not found in secret %s", config.Spec.Credentials.SecretRef.Key, key)
+			return nil, fmt.Errorf("secret key %q not found in secret %s", secretKey, key)
 		}
 		var creds map[string]string
 		if err := json.Unmarshal(data, &creds); err != nil {
