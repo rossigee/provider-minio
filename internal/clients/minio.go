@@ -36,20 +36,21 @@ func GetConfig(ctx context.Context, c client.Client, pc *v1.ProviderConfig) (*Co
 	switch pc.Spec.Credentials.Source {
 	case xpv1.CredentialsSourceSecret:
 		// Support both apiSecretRef (standard Crossplane pattern) and secretRef (JSON key pattern)
+		// Prefer apiSecretRef as it's the standard Crossplane pattern
 		if pc.Spec.Credentials.APISecretRef.Name != "" {
 			ref := &xpv1.SecretReference{
 				Name:      pc.Spec.Credentials.APISecretRef.Name,
 				Namespace: pc.Spec.Credentials.APISecretRef.Namespace,
 			}
 			return getConfigFromAPISecretRef(ctx, c, ref, pc.Spec.MinioURL, useSSL)
-		} else if pc.Spec.Credentials.SecretRef != nil {
+		} else if pc.Spec.Credentials.SecretRef != nil && pc.Spec.Credentials.SecretRef.Name != "" {
 			ref := &xpv1.SecretReference{
 				Name:      pc.Spec.Credentials.SecretRef.Name,
 				Namespace: pc.Spec.Credentials.SecretRef.Namespace,
 			}
 			return getConfigFromSecret(ctx, c, ref, pc.Spec.Credentials.SecretRef.Key, pc.Spec.MinioURL, useSSL)
 		}
-		return nil, errors.New("no secret reference provided")
+		return nil, errors.New("no secret reference provided: either apiSecretRef.name or secretRef.name must be specified")
 	default:
 		return nil, errors.Errorf(errFmtUnsupportedCredSource, pc.Spec.Credentials.Source)
 	}
@@ -80,6 +81,12 @@ func getConfigFromSecret(ctx context.Context, c client.Client, ref *xpv1.SecretR
 	if ref == nil {
 		return nil, errors.New("no secret reference provided")
 	}
+	if ref.Name == "" {
+		return nil, errors.New("secret reference name must not be empty")
+	}
+	if key == "" {
+		return nil, errors.New("secret reference key must not be empty")
+	}
 
 	secret := &corev1.Secret{}
 	nn := types.NamespacedName{Namespace: ref.Namespace, Name: ref.Name}
@@ -87,8 +94,13 @@ func getConfigFromSecret(ctx context.Context, c client.Client, ref *xpv1.SecretR
 		return nil, errors.Wrap(err, errGetConnectionSecret)
 	}
 
+	data, exists := secret.Data[key]
+	if !exists {
+		return nil, errors.Errorf("secret %q does not contain key %q", nn, key)
+	}
+
 	var cfg Config
-	if err := json.Unmarshal(secret.Data[key], &cfg); err != nil {
+	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, errors.Wrap(err, errUnmarshalCredentials)
 	}
 

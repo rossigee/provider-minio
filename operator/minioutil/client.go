@@ -24,6 +24,9 @@ const (
 
 // NewMinioClient returns a new minio client according to the given provider config.
 func NewMinioClient(ctx context.Context, c client.Client, config *providerv1.ProviderConfig) (*minio.Client, error) {
+	if config.Spec.Credentials.APISecretRef.Name == "" {
+		return nil, fmt.Errorf("credentials APISecretRef name must not be empty")
+	}
 	secret := &corev1.Secret{}
 	key := client.ObjectKey{Name: config.Spec.Credentials.APISecretRef.Name, Namespace: config.Spec.Credentials.APISecretRef.Namespace}
 	err := c.Get(ctx, key, secret)
