@@ -17,7 +17,20 @@ import (
 // It can be used to assign a policy to a user.
 func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.ProviderConfig) (*madmin.AdminClient, error) {
 	secret := &corev1.Secret{}
-	key := client.ObjectKey{Name: config.Spec.Credentials.APISecretRef.Name, Namespace: config.Spec.Credentials.APISecretRef.Namespace}
+	var key client.ObjectKey
+	var tlsNamespace string
+
+	// Use APISecretRef if available, otherwise fallback to SecretRef
+	if config.Spec.Credentials.APISecretRef.Name != "" {
+		key = client.ObjectKey{Name: config.Spec.Credentials.APISecretRef.Name, Namespace: config.Spec.Credentials.APISecretRef.Namespace}
+		tlsNamespace = config.Spec.Credentials.APISecretRef.Namespace
+	} else if config.Spec.Credentials.SecretRef != nil && config.Spec.Credentials.SecretRef.Name != "" {
+		key = client.ObjectKey{Name: config.Spec.Credentials.SecretRef.Name, Namespace: config.Spec.Credentials.SecretRef.Namespace}
+		tlsNamespace = config.Spec.Credentials.SecretRef.Namespace
+	} else {
+		return nil, fmt.Errorf("no valid credentials reference found: APISecretRef or SecretRef must be provided with non-empty name")
+	}
+
 	err := c.Get(ctx, key, secret)
 	if err != nil {
 		return nil, err
@@ -38,7 +51,7 @@ func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.Prov
 
 	// Apply custom TLS configuration if provided
 	if config.Spec.TLS != nil {
-		tlsConfig, err := buildTLSConfig(ctx, c, config.Spec.TLS, config.Spec.Credentials.APISecretRef.Namespace)
+		tlsConfig, err := buildTLSConfig(ctx, c, config.Spec.TLS, tlsNamespace)
 		if err != nil {
 			return nil, fmt.Errorf("failed to build TLS configuration: %w", err)
 		}
