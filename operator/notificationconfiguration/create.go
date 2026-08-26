@@ -169,10 +169,23 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 		config.TopicConfigs = append(config.TopicConfigs, topicCfg)
 	}
 
-	err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
-	if err != nil {
-		cr.SetConditions(xpv1.ReconcileError(err))
-		return managed.ExternalCreation{}, err
+	// Only set notification if we have at least one notification configured
+	hasNotifications := len(config.LambdaConfigs) > 0 || len(config.QueueConfigs) > 0 || len(config.TopicConfigs) > 0
+	if hasNotifications {
+		err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
+		if err != nil {
+			// Try with just webhooks if the full config fails
+			if webhookConfig != nil && (len(config.QueueConfigs) > 0 || len(config.TopicConfigs) > 0) {
+				log.V(1).Info("full notification config failed, retrying with webhooks only", "error", err)
+				config.QueueConfigs = nil
+				config.TopicConfigs = nil
+				err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
+			}
+			if err != nil {
+				cr.SetConditions(xpv1.ReconcileError(err))
+				return managed.ExternalCreation{}, err
+			}
+		}
 	}
 
 	cr.SetConditions(xpv1.Available())
