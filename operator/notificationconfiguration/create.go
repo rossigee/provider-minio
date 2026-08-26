@@ -66,7 +66,7 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 		}
 
 		lambdaConfig.Config = notification.NewConfig(
-			notification.NewArn("minio", "sqs", "", webhookConfig.ID, "webhook"),
+			notification.NewArn("minio", "lambda", "", webhookConfig.ID, "webhook"),
 		)
 
 		// Add events
