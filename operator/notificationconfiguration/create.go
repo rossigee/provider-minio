@@ -174,17 +174,23 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	if hasNotifications {
 		err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
 		if err != nil {
-			// Try with just webhooks if the full config fails
-			if webhookConfig != nil && (len(config.QueueConfigs) > 0 || len(config.TopicConfigs) > 0) {
+			// If full config failed but we have webhooks, try webhook-only as fallback
+			if webhookConfig != nil && len(config.LambdaConfigs) > 0 && (len(config.QueueConfigs) > 0 || len(config.TopicConfigs) > 0) {
 				log.V(1).Info("full notification config failed, retrying with webhooks only", "error", err)
 				config.QueueConfigs = nil
 				config.TopicConfigs = nil
-				err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
+				retryErr := nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
+				if retryErr == nil {
+					// Webhook-only succeeded, log success and continue
+					log.V(1).Info("webhook-only notification config succeeded after full config failed")
+					cr.SetConditions(xpv1.Available())
+					nc.emitCreationEvent(cr)
+					return managed.ExternalCreation{}, nil
+				}
+				// Webhook-only also failed, use the original error
 			}
-			if err != nil {
-				cr.SetConditions(xpv1.ReconcileError(err))
-				return managed.ExternalCreation{}, err
-			}
+			cr.SetConditions(xpv1.ReconcileError(err))
+			return managed.ExternalCreation{}, err
 		}
 	}
 
