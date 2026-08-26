@@ -80,6 +80,7 @@ jobs:
           set -e
 
           go mod vendor
+          make generate
 
           export VERSION="${{ steps.version.outputs.version }}"
           export BRANCH_NAME="master"
