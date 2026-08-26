@@ -68,17 +68,14 @@ func TestProvisioningPipeline_Observe(t *testing.T) {
 			expectedResult: managed.ExternalObservation{},
 			expectedError:  "permission denied, please check the provider-config: Access Denied",
 		},
-		"BucketAlreadyExistsOnMinio_WithAccess_PreventAdoption": {
-			// this is a case where we should avoid adopting an existing bucket even if we have access.
-			// Otherwise, there could be multiple K8s resources that manage the same bucket.
+		"BucketAlreadyExistsOnMinio_WithAccess_AllowAdoption": {
 			givenBucket: &miniov1beta1.Bucket{
 				Spec: miniov1beta1.BucketSpec{ForProvider: miniov1beta1.BucketParameters{
 					BucketName: "my-bucket"}},
-				// no bucket name in status here.
 			},
 			bucketExists:   true,
-			expectedResult: managed.ExternalObservation{},
-			expectedError:  "bucket already exists, try changing bucket name: my-bucket",
+			expectedResult: managed.ExternalObservation{ResourceExists: false},
+			expectedError:  "",
 		},
 		"BucketAlreadyExistsOnMinio_InAnotherZone": {
 			givenBucket: &miniov1beta1.Bucket{

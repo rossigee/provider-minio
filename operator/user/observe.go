@@ -32,8 +32,13 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 
 	_, ok = user.GetAnnotations()[UserCreatedAnnotationKey]
 	if !ok && user.Status.AtProvider.UserName == "" {
-		// The user has not yet been create, let's do it then
-		return managed.ExternalObservation{}, nil
+		// Check if UserName is specified in spec (adoption case)
+		userName := user.GetUserName()
+		if userName == "" {
+			// The user has not yet been created, let's do it then
+			return managed.ExternalObservation{}, nil
+		}
+		// Fall through to observe the user (adoption)
 	}
 
 	user.Status.AtProvider.UserName = user.GetUserName()

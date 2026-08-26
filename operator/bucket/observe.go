@@ -2,7 +2,6 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"reflect"
 
@@ -96,7 +95,7 @@ func (d *bucketClient) observeBucket(ctx context.Context, bucket *miniov1beta1.B
 
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: isLatest}, nil
 	} else if exists {
-		return managed.ExternalObservation{}, fmt.Errorf("bucket already exists, try changing bucket name: %s", bucketName)
+		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
 	return managed.ExternalObservation{}, nil

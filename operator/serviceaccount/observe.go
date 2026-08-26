@@ -34,8 +34,14 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 	// UpdateCriticalAnnotations mechanism, which survives status-write failures.
 	accessKey := meta.GetExternalName(serviceAccount)
 	if accessKey == "" {
-		// Resource has not yet been created (no external-name set)
-		return managed.ExternalObservation{}, nil
+		// If external-name not set, check if AccessKey is specified in spec (adoption case)
+		if serviceAccount.Spec.ForProvider.AccessKey != "" {
+			accessKey = serviceAccount.Spec.ForProvider.AccessKey
+			// Fall through to check if this AccessKey exists in MinIO for adoption
+		} else {
+			// Resource has not yet been created (no external-name or AccessKey set)
+			return managed.ExternalObservation{}, nil
+		}
 	}
 
 	// Check if the service account exists in MinIO

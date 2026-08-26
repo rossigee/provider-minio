@@ -22,10 +22,10 @@ func (p *policyClient) Observe(ctx context.Context, mg resource.Managed) (manage
 		return managed.ExternalObservation{}, errNotPolicy
 	}
 
-	_, ok = policy.GetAnnotations()[PolicyCreatedAnnotationKey]
-	if !ok {
-		// The policy has not yet been create, let's do it then
-		return managed.ExternalObservation{}, nil
+	// Check if annotation is present (marks as managed by this controller)
+	hasAnnotation := false
+	if _, ok := policy.GetAnnotations()[PolicyCreatedAnnotationKey]; ok {
+		hasAnnotation = true
 	}
 
 	policies, err := p.ma.ListCannedPolicies(ctx)
@@ -35,9 +35,16 @@ func (p *policyClient) Observe(ctx context.Context, mg resource.Managed) (manage
 
 	observedPolicy, ok := policies[policy.GetName()]
 	if !ok {
-		// The policy hasn't yet been created it seems
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		// Policy doesn't exist in MinIO
+		if hasAnnotation {
+			// We previously claimed ownership but it's gone - error
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		// No annotation and doesn't exist - trigger creation
+		return managed.ExternalObservation{}, nil
 	}
+
+	// Policy exists in MinIO - continue to observe and adopt if not yet claimed
 
 	if policy.Spec.ForProvider.AllowBucket != "" {
 		bucketPolicy, err := p.getAllowBucketPolicy(policy.Spec.ForProvider.AllowBucket)
