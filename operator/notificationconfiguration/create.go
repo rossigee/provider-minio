@@ -25,11 +25,9 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	cr.SetConditions(xpv1.Creating())
 
 	webhookConfig := cr.Spec.ForProvider.WebhookConfiguration
-	queueConfig := cr.Spec.ForProvider.QueueConfiguration
-	topicConfig := cr.Spec.ForProvider.TopicConfiguration
 
-	if webhookConfig == nil && queueConfig == nil && topicConfig == nil {
-		err := fmt.Errorf("at least one notification configuration (webhook, queue, or topic) is required")
+	if webhookConfig == nil {
+		err := fmt.Errorf("webhook configuration is required")
 		cr.SetConditions(xpv1.ReconcileError(err))
 		return managed.ExternalCreation{}, err
 	}
@@ -97,105 +95,10 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 		config.LambdaConfigs = append(config.LambdaConfigs, lambdaConfig)
 	}
 
-	// Handle Queue configuration
-	if queueConfig != nil {
-		queueCfg := notification.QueueConfig{}
-		arn, err := notification.NewArnFromString(queueConfig.QueueArn)
-		if err != nil {
-			cr.SetConditions(xpv1.ReconcileError(err))
-			return managed.ExternalCreation{}, err
-		}
-		queueCfg.Config = notification.NewConfig(arn)
-
-		// Add events
-		for _, event := range cr.Spec.ForProvider.Events {
-			queueCfg.Events = append(queueCfg.Events, notification.EventType(event))
-		}
-
-		// Add filter
-		if filter := cr.Spec.ForProvider.Filter; filter != nil && filter.Key != nil {
-			queueCfg.Filter = &notification.Filter{
-				S3Key: notification.S3Key{
-					FilterRules: []notification.FilterRule{},
-				},
-			}
-			for _, rule := range filter.Key.FilterRules {
-				queueCfg.Filter.S3Key.FilterRules = append(
-					queueCfg.Filter.S3Key.FilterRules,
-					notification.FilterRule{
-						Name:  rule.Name,
-						Value: rule.Value,
-					},
-				)
-			}
-		}
-
-		config.QueueConfigs = append(config.QueueConfigs, queueCfg)
-	}
-
-	// Handle Topic configuration
-	if topicConfig != nil {
-		topicCfg := notification.TopicConfig{}
-		arn, err := notification.NewArnFromString(topicConfig.TopicArn)
-		if err != nil {
-			cr.SetConditions(xpv1.ReconcileError(err))
-			return managed.ExternalCreation{}, err
-		}
-		topicCfg.Config = notification.NewConfig(arn)
-
-		// Add events
-		for _, event := range cr.Spec.ForProvider.Events {
-			topicCfg.Events = append(topicCfg.Events, notification.EventType(event))
-		}
-
-		// Add filter
-		if filter := cr.Spec.ForProvider.Filter; filter != nil && filter.Key != nil {
-			topicCfg.Filter = &notification.Filter{
-				S3Key: notification.S3Key{
-					FilterRules: []notification.FilterRule{},
-				},
-			}
-			for _, rule := range filter.Key.FilterRules {
-				topicCfg.Filter.S3Key.FilterRules = append(
-					topicCfg.Filter.S3Key.FilterRules,
-					notification.FilterRule{
-						Name:  rule.Name,
-						Value: rule.Value,
-					},
-				)
-			}
-		}
-
-		config.TopicConfigs = append(config.TopicConfigs, topicCfg)
-	}
-
-	// Only set notification if we have at least one notification configured
-	hasNotifications := len(config.LambdaConfigs) > 0 || len(config.QueueConfigs) > 0 || len(config.TopicConfigs) > 0
-	if hasNotifications {
-		log.V(1).Info("setting bucket notification", "lambdaConfigs", len(config.LambdaConfigs), "queueConfigs", len(config.QueueConfigs), "topicConfigs", len(config.TopicConfigs))
+	// Set webhook notification configuration
+	if len(config.LambdaConfigs) > 0 {
 		err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
 		if err != nil {
-			log.V(1).Info("bucket notification failed", "error", err.Error())
-			// If full config failed but we have webhooks, try webhook-only as fallback
-			hasQueue := len(config.QueueConfigs) > 0
-			hasTopic := len(config.TopicConfigs) > 0
-			hasWebhook := len(config.LambdaConfigs) > 0
-			shouldFallback := webhookConfig != nil && hasWebhook && (hasQueue || hasTopic)
-			log.V(1).Info("fallback check", "webhookConfigExists", webhookConfig != nil, "hasWebhook", hasWebhook, "hasQueue", hasQueue, "hasTopic", hasTopic, "shouldFallback", shouldFallback)
-
-			if shouldFallback {
-				log.V(1).Info("attempting webhook-only fallback", "error", err.Error())
-				config.QueueConfigs = nil
-				config.TopicConfigs = nil
-				retryErr := nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
-				if retryErr == nil {
-					log.V(1).Info("webhook-only notification config succeeded after full config failed")
-					cr.SetConditions(xpv1.Available())
-					nc.emitCreationEvent(cr)
-					return managed.ExternalCreation{}, nil
-				}
-				log.V(1).Info("webhook-only fallback also failed", "error", retryErr.Error())
-			}
 			cr.SetConditions(xpv1.ReconcileError(err))
 			return managed.ExternalCreation{}, err
 		}
