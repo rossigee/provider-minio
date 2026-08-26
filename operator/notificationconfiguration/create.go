@@ -172,22 +172,29 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	// Only set notification if we have at least one notification configured
 	hasNotifications := len(config.LambdaConfigs) > 0 || len(config.QueueConfigs) > 0 || len(config.TopicConfigs) > 0
 	if hasNotifications {
+		log.V(1).Info("setting bucket notification", "lambdaConfigs", len(config.LambdaConfigs), "queueConfigs", len(config.QueueConfigs), "topicConfigs", len(config.TopicConfigs))
 		err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
 		if err != nil {
+			log.V(1).Info("bucket notification failed", "error", err.Error())
 			// If full config failed but we have webhooks, try webhook-only as fallback
-			if webhookConfig != nil && len(config.LambdaConfigs) > 0 && (len(config.QueueConfigs) > 0 || len(config.TopicConfigs) > 0) {
-				log.V(1).Info("full notification config failed, retrying with webhooks only", "error", err)
+			hasQueue := len(config.QueueConfigs) > 0
+			hasTopic := len(config.TopicConfigs) > 0
+			hasWebhook := len(config.LambdaConfigs) > 0
+			shouldFallback := webhookConfig != nil && hasWebhook && (hasQueue || hasTopic)
+			log.V(1).Info("fallback check", "webhookConfigExists", webhookConfig != nil, "hasWebhook", hasWebhook, "hasQueue", hasQueue, "hasTopic", hasTopic, "shouldFallback", shouldFallback)
+
+			if shouldFallback {
+				log.V(1).Info("attempting webhook-only fallback", "error", err.Error())
 				config.QueueConfigs = nil
 				config.TopicConfigs = nil
 				retryErr := nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
 				if retryErr == nil {
-					// Webhook-only succeeded, log success and continue
 					log.V(1).Info("webhook-only notification config succeeded after full config failed")
 					cr.SetConditions(xpv1.Available())
 					nc.emitCreationEvent(cr)
 					return managed.ExternalCreation{}, nil
 				}
-				// Webhook-only also failed, use the original error
+				log.V(1).Info("webhook-only fallback also failed", "error", retryErr.Error())
 			}
 			cr.SetConditions(xpv1.ReconcileError(err))
 			return managed.ExternalCreation{}, err
