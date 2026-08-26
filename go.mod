@@ -5,6 +5,7 @@ go 1.26.6
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/crossplane/crossplane-runtime/v2 v2.5.0-rc.0
+	github.com/crossplane/crossplane-tools v0.0.0-20260719180100-659f1dc036c5
 	github.com/crossplane/crossplane/apis/v2 v2.5.0-rc.0
 	github.com/go-logr/logr v1.4.4
 	github.com/minio/madmin-go/v3 v3.0.110
@@ -17,16 +18,17 @@ require (
 	k8s.io/apimachinery v0.36.3
 	k8s.io/client-go v0.36.3
 	sigs.k8s.io/controller-runtime v0.24.1
+	sigs.k8s.io/controller-tools v0.21.0
 )
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
+	github.com/dave/jennifer v1.7.1 // indirect
 	github.com/go-openapi/swag/pools v0.29.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect
-	sigs.k8s.io/controller-tools v0.21.0 // indirect
 )
 
 require (
