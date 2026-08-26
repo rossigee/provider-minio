@@ -65,10 +65,10 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	}
 
 	// Create the base Config for the notification.
-	// ARN format: arn:minio:sqs::<webhook-id>:webhook
-	// This format identifies the webhook uniquely in the bucket's notification configuration.
+	// ARN format: arn:minio:lambda::<webhook-id>:webhook
+	// Use 'lambda' service type for webhook notifications to avoid Topic/CloudFunction conflicts
 	lambdaConfig.Config = notification.NewConfig(
-		notification.NewArn("minio", "sqs", "", webhookConfig.ID, "webhook"),
+		notification.NewArn("minio", "lambda", "", webhookConfig.ID, "webhook"),
 	)
 
 	// Add events
