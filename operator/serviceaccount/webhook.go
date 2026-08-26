@@ -51,6 +51,11 @@ func (v *Validator) ValidateCreate(ctx context.Context, serviceAccount *miniov1b
 		}
 	}
 
+	// Validate that credentialsSecretRef and literal secretKey are not both set (ambiguous)
+	if serviceAccount.Spec.ForProvider.CredentialsSecretRef != nil && serviceAccount.Spec.ForProvider.SecretKey != "" {
+		return nil, field.Invalid(field.NewPath("spec", "forProvider"), "ambiguous credentials", "credentialsSecretRef and secretKey cannot both be set")
+	}
+
 	return nil, nil
 }
 

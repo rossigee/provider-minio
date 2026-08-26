@@ -570,6 +570,11 @@ func (in *ServiceAccountParameters) DeepCopyInto(out *ServiceAccountParameters) 
 		in, out := &in.Expiration, &out.Expiration
 		*out = (*in).DeepCopy()
 	}
+	if in.CredentialsSecretRef != nil {
+		in, out := &in.CredentialsSecretRef, &out.CredentialsSecretRef
+		*out = new(v2.SecretReference)
+		**out = **in
+	}
 	if in.WriteConnectionSecretsToRef != nil {
 		in, out := &in.WriteConnectionSecretsToRef, &out.WriteConnectionSecretsToRef
 		*out = new(v2.SecretReference)
@@ -726,6 +731,11 @@ func (in *UserParameters) DeepCopyInto(out *UserParameters) {
 		in, out := &in.Policies, &out.Policies
 		*out = make([]string, len(*in))
 		copy(*out, *in)
+	}
+	if in.CredentialsSecretRef != nil {
+		in, out := &in.CredentialsSecretRef, &out.CredentialsSecretRef
+		*out = new(v2.SecretReference)
+		**out = **in
 	}
 }
 

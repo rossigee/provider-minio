@@ -10,11 +10,13 @@ import (
 	"net/url"
 	"strings"
 
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rossigee/provider-minio/apis/common"
 	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -180,4 +182,30 @@ func getTLSData(ctx context.Context, c client.Client, namespace string, inlineDa
 	}
 
 	return "", nil
+}
+
+// ResolveCredentialsSecret extracts AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from
+// a Kubernetes Secret referenced by the given xpv1.SecretReference, resolved in the provided namespace.
+func ResolveCredentialsSecret(ctx context.Context, c client.Client, namespace string, ref *xpv1.SecretReference) (string, string, error) {
+	if ref == nil {
+		return "", "", fmt.Errorf("credentials secret reference is nil")
+	}
+
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{Name: ref.Name, Namespace: namespace}
+	if err := c.Get(ctx, key, secret); err != nil {
+		return "", "", fmt.Errorf("failed to get credentials secret %s/%s: %w", namespace, ref.Name, err)
+	}
+
+	accessKey, ok := secret.Data[MinioIDKey]
+	if !ok {
+		return "", "", fmt.Errorf("key %q not found in secret %s/%s", MinioIDKey, namespace, ref.Name)
+	}
+
+	secretKey, ok := secret.Data[MinioSecretKey]
+	if !ok {
+		return "", "", fmt.Errorf("key %q not found in secret %s/%s", MinioSecretKey, namespace, ref.Name)
+	}
+
+	return string(accessKey), string(secretKey), nil
 }

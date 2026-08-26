@@ -102,6 +102,13 @@ type ServiceAccountParameters struct {
 	// If not specified, the service account will not expire.
 	Expiration *metav1.Time `json:"expiration,omitempty"`
 
+	// CredentialsSecretRef references a Kubernetes Secret containing predetermined
+	// credentials for this service account. The secret must contain 'AWS_ACCESS_KEY_ID'
+	// and 'AWS_SECRET_ACCESS_KEY' keys. When set, these credentials will be used instead
+	// of generating new ones. Mutually exclusive with explicit AccessKey and SecretKey.
+	// +kubebuilder:validation:Optional
+	CredentialsSecretRef *xpv1.SecretReference `json:"credentialsSecretRef,omitempty"`
+
 	// WriteConnectionSecretsToRef specifies the namespace and name of a
 	// Secret to which any connection details for this managed resource should
 	// be written. Connection details frequently include the endpoint, username,

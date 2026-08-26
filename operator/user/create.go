@@ -9,6 +9,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
+	"github.com/rossigee/provider-minio/operator/minioutil"
 	"github.com/sethvargo/go-password/password"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -29,9 +30,27 @@ func (u *userClient) Create(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalCreation{}, errNotUser
 	}
 
-	secretKey, err := password.Generate(64, 5, 0, false, true)
-	if err != nil {
-		return managed.ExternalCreation{}, err
+	var secretKey string
+
+	// If CredentialsSecretRef is set, resolve it
+	if user.Spec.ForProvider.CredentialsSecretRef != nil {
+		_, resolvedSecretKey, err := minioutil.ResolveCredentialsSecret(ctx, u.kube, user.GetNamespace(), user.Spec.ForProvider.CredentialsSecretRef)
+		if err != nil {
+			u.recorder.Event(user, event.Event{
+				Type:    event.TypeWarning,
+				Reason:  "CannotResolveCredentials",
+				Message: fmt.Sprintf("Failed to resolve credentials secret: %s", err),
+			})
+			return managed.ExternalCreation{}, err
+		}
+		secretKey = resolvedSecretKey
+	} else {
+		// Generate a new password
+		var err error
+		secretKey, err = password.Generate(64, 5, 0, false, true)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
 	}
 
 	// The minioAdmin doesn't return an error if the user already exists, it just overrides it...

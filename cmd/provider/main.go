@@ -11,7 +11,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/feature"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/ratelimiter"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/statemetrics"
 	"github.com/rossigee/provider-minio/apis"
+	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/rossigee/provider-minio/internal/tracing"
 	"github.com/rossigee/provider-minio/operator"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -26,6 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
+	metricserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -38,6 +42,8 @@ func main() {
 		leaderElect              = app.Flag("leader-elect", "Use leader election for the controller manager.").Short('l').Default("false").Bool()
 		maxReconcileRate         = app.Flag("max-reconcile-rate", "The global maximum rate per second at which resources may checked for drift from the desired state.").Default("10").Int()
 		enableManagementPolicies = app.Flag("enable-management-policies", "Enable support for Management Policies.").Default("false").Bool()
+		pollStateMetricInterval  = app.Flag("poll-state-metric", "State metric recording interval").Default("5s").Duration()
+		metricsBindAddress       = app.Flag("metrics-bind-address", "The address the metrics endpoint binds to.").Default(":8080").String()
 	)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
@@ -80,6 +86,9 @@ func main() {
 		LeaderElectionResourceLock: resourcelock.LeasesResourceLock,
 		LeaseDuration:              func() *time.Duration { d := 60 * time.Second; return &d }(),
 		RenewDeadline:              func() *time.Duration { d := 50 * time.Second; return &d }(),
+		Metrics: metricserver.Options{
+			BindAddress: *metricsBindAddress,
+		},
 		WebhookServer: &webhook.DefaultServer{Options: webhook.Options{
 			Port:    9443,
 			CertDir: os.Getenv("WEBHOOK_TLS_CERT_DIR"),
@@ -91,12 +100,21 @@ func main() {
 		log.Info("RBAC setup warning (may be transient)", "error", err)
 	}
 
+	mrStateMetrics := statemetrics.NewMRStateMetrics()
+	metrics.Registry.MustRegister(mrStateMetrics)
+
+	mo := controller.MetricOptions{
+		PollStateMetricInterval: *pollStateMetricInterval,
+		MRStateMetrics:          mrStateMetrics,
+	}
+
 	o := controller.Options{
 		Logger:                  log,
 		MaxConcurrentReconciles: *maxReconcileRate,
 		PollInterval:            *pollInt,
 		GlobalRateLimiter:       ratelimiter.NewGlobal(*maxReconcileRate),
 		Features:                &feature.Flags{},
+		MetricOptions:           &mo,
 	}
 
 	if *enableManagementPolicies {
@@ -106,6 +124,13 @@ func main() {
 
 	kingpin.FatalIfError(operator.SetupControllers(mgr), "Cannot setup MinIO controllers")
 	kingpin.FatalIfError(operator.SetupWebhooks(mgr), "Cannot setup MinIO webhooks")
+
+	// Register state metrics for managed resources
+	kingpin.FatalIfError(mgr.Add(statemetrics.NewMRStateRecorder(mgr.GetClient(), o.Logger, o.MetricOptions.MRStateMetrics, &miniov1beta1.BucketList{}, o.MetricOptions.PollStateMetricInterval)), "Cannot register state metrics for Bucket")
+	kingpin.FatalIfError(mgr.Add(statemetrics.NewMRStateRecorder(mgr.GetClient(), o.Logger, o.MetricOptions.MRStateMetrics, &miniov1beta1.UserList{}, o.MetricOptions.PollStateMetricInterval)), "Cannot register state metrics for User")
+	kingpin.FatalIfError(mgr.Add(statemetrics.NewMRStateRecorder(mgr.GetClient(), o.Logger, o.MetricOptions.MRStateMetrics, &miniov1beta1.PolicyList{}, o.MetricOptions.PollStateMetricInterval)), "Cannot register state metrics for Policy")
+	kingpin.FatalIfError(mgr.Add(statemetrics.NewMRStateRecorder(mgr.GetClient(), o.Logger, o.MetricOptions.MRStateMetrics, &miniov1beta1.ServiceAccountList{}, o.MetricOptions.PollStateMetricInterval)), "Cannot register state metrics for ServiceAccount")
+	kingpin.FatalIfError(mgr.Add(statemetrics.NewMRStateRecorder(mgr.GetClient(), o.Logger, o.MetricOptions.MRStateMetrics, &miniov1beta1.NotificationConfigurationList{}, o.MetricOptions.PollStateMetricInterval)), "Cannot register state metrics for NotificationConfiguration")
 
 	kingpin.FatalIfError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Cannot add health check")
 	kingpin.FatalIfError(mgr.AddReadyzCheck("readyz", healthz.Ping), "Cannot add ready check")

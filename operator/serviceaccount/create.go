@@ -12,6 +12,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
+	"github.com/rossigee/provider-minio/operator/minioutil"
 	"github.com/sethvargo/go-password/password"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -36,6 +37,21 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 	accessKey := serviceAccount.Spec.ForProvider.AccessKey
 	secretKey := serviceAccount.Spec.ForProvider.SecretKey
 	name := serviceAccount.Spec.ForProvider.Name
+
+	// If CredentialsSecretRef is set, resolve it
+	if serviceAccount.Spec.ForProvider.CredentialsSecretRef != nil {
+		resolvedAccessKey, resolvedSecretKey, err := minioutil.ResolveCredentialsSecret(ctx, s.kube, serviceAccount.GetNamespace(), serviceAccount.Spec.ForProvider.CredentialsSecretRef)
+		if err != nil {
+			s.recorder.Event(serviceAccount, event.Event{
+				Type:    event.TypeWarning,
+				Reason:  "CannotResolveCredentials",
+				Message: fmt.Sprintf("Failed to resolve credentials secret: %s", err),
+			})
+			return managed.ExternalCreation{}, err
+		}
+		accessKey = resolvedAccessKey
+		secretKey = resolvedSecretKey
+	}
 
 	// For adoption: check if service account already exists by AccessKey or Name
 	adoptionKey := accessKey
