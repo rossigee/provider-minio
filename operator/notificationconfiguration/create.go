@@ -48,50 +48,43 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	}
 
 	// Handle webhook configuration if specified
+	// Webhooks on this MinIO server use SQS-type ARN format: arn:minio:sqs:us-east-1:_:webhook
 	if webhookConfig != nil {
-		expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookConfig.ID)
+		webhookARN := "arn:minio:sqs:us-east-1:_:webhook"
 		webhookExists := false
-		for _, lambda := range config.LambdaConfigs {
-			if lambda.Arn.String() == expectedARN {
+		for _, queue := range config.QueueConfigs {
+			if queue.Arn.String() == webhookARN {
 				webhookExists = true
-				// Webhook exists - either exact match or adoption
-				if lambda.Lambda == webhookConfig.Endpoint {
-					// Exact match
-					log.V(1).Info("webhook configuration already exists")
-				} else {
-					// Different endpoint - adopt it anyway
-					log.V(1).Info("adopting existing webhook configuration with different endpoint")
-					nc.emitAdoptionEvent(cr)
-				}
+				log.V(1).Info("webhook configuration already exists")
 				break
 			}
 		}
 
 		if !webhookExists {
-			// Create webhook configuration using LambdaConfig
-			lambdaConfig := notification.LambdaConfig{
-				Lambda: webhookConfig.Endpoint,
+			// Create webhook configuration using QueueConfig with webhook backend ARN
+			webhookQueueConfig := notification.QueueConfig{
+				Queue: "webhook",
 			}
 
-			lambdaConfig.Config = notification.NewConfig(
-				notification.NewArn("minio", "lambda", "", webhookConfig.ID, "webhook"),
+			webhookQueueConfig.Config = notification.NewConfig(
+				notification.NewArn("minio", "sqs", "us-east-1", "", "webhook"),
 			)
 
 			// Add events
 			for _, event := range cr.Spec.ForProvider.Events {
-				lambdaConfig.Events = append(lambdaConfig.Events, notification.EventType(event))
+				webhookQueueConfig.Events = append(webhookQueueConfig.Events, notification.EventType(event))
 			}
 
 			// Add filter
 			if filter := cr.Spec.ForProvider.Filter; filter != nil && filter.Key != nil {
-				lambdaConfig.Filter = &notification.Filter{
+				webhookQueueConfig.Filter = &notification.Filter{
 					S3Key: notification.S3Key{
 						FilterRules: []notification.FilterRule{},
 					},
 				}
 				for _, rule := range filter.Key.FilterRules {
-					lambdaConfig.Filter.S3Key.FilterRules = append(
-						lambdaConfig.Filter.S3Key.FilterRules,
+					webhookQueueConfig.Filter.S3Key.FilterRules = append(
+						webhookQueueConfig.Filter.S3Key.FilterRules,
 						notification.FilterRule{
 							Name:  rule.Name,
 							Value: rule.Value,
@@ -100,7 +93,7 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 				}
 			}
 
-			config.LambdaConfigs = append(config.LambdaConfigs, lambdaConfig)
+			config.QueueConfigs = append(config.QueueConfigs, webhookQueueConfig)
 		}
 	}
 
