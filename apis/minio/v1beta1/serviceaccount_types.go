@@ -33,6 +33,7 @@ type ServiceAccountSpec struct {
 	// WriteConnectionSecretToRef specifies the namespace and name of a Secret to which
 	// any connection details for this managed resource should be written.
 	// This overrides the inherited field to support namespace specification.
+	// +kubebuilder:validation:Optional
 	WriteConnectionSecretToRef *xpv1.SecretReference `json:"writeConnectionSecretToRef,omitempty"`
 }
 
