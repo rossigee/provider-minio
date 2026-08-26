@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
@@ -37,13 +38,23 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 		config = notification.Configuration{}
 	}
 
-	// Check if webhook configuration already exists (idempotency)
+	// Check if webhook configuration already exists (idempotency and adoption)
 	expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookConfig.ID)
 	for _, lambda := range config.LambdaConfigs {
-		if lambda.Arn.String() == expectedARN && lambda.Lambda == webhookConfig.Endpoint {
-			// Configuration already exists, nothing to do
-			cr.SetConditions(xpv1.Available())
-			return managed.ExternalCreation{}, nil
+		if lambda.Arn.String() == expectedARN {
+			// Webhook exists - either exact match or adoption
+			if lambda.Lambda == webhookConfig.Endpoint {
+				// Exact match
+				log.V(1).Info("webhook configuration already exists")
+				cr.SetConditions(xpv1.Available())
+				return managed.ExternalCreation{}, nil
+			} else {
+				// Different endpoint - adopt it anyway
+				log.V(1).Info("adopting existing webhook configuration with different endpoint")
+				nc.emitAdoptionEvent(cr)
+				cr.SetConditions(xpv1.Available())
+				return managed.ExternalCreation{}, nil
+			}
 		}
 	}
 
@@ -97,4 +108,12 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	nc.emitCreationEvent(cr)
 
 	return managed.ExternalCreation{}, nil
+}
+
+func (nc *notificationClient) emitAdoptionEvent(cr *miniov1beta1.NotificationConfiguration) {
+	nc.recorder.Event(cr, event.Event{
+		Type:    event.TypeNormal,
+		Reason:  "Adopted",
+		Message: fmt.Sprintf("Adopted existing notification configuration for bucket %s", cr.Spec.ForProvider.BucketName),
+	})
 }

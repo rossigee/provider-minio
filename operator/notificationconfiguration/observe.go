@@ -37,8 +37,20 @@ func (nc *notificationClient) Observe(ctx context.Context, mg resource.Managed) 
 	// Check if our webhook configuration exists and is up-to-date
 	lambdaConfig, found := nc.findWebhookConfiguration(cr, &config)
 	if !found {
-		cr.SetConditions(xpv1.Creating())
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		// For adoption: if ANY webhook exists for this bucket ID, assume it's the one we want to adopt
+		if cr.Spec.ForProvider.WebhookConfiguration != nil {
+			adoptedConfig := nc.findWebhookByID(cr, &config)
+			if adoptedConfig != nil {
+				// Webhook exists but not matching our spec - adopt it anyway
+				log.V(1).Info("adopting existing webhook configuration")
+				lambdaConfig = adoptedConfig
+				found = true
+			}
+		}
+		if !found {
+			cr.SetConditions(xpv1.Creating())
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
 	}
 
 	upToDate := nc.isConfigurationUpToDate(cr, lambdaConfig)
@@ -76,6 +88,24 @@ func (nc *notificationClient) findWebhookConfiguration(cr *miniov1beta1.Notifica
 	}
 
 	return nil, false
+}
+
+// findWebhookByID finds any webhook with matching ID for adoption purposes
+func (nc *notificationClient) findWebhookByID(cr *miniov1beta1.NotificationConfiguration, config *notification.Configuration) *notification.LambdaConfig {
+	if cr.Spec.ForProvider.WebhookConfiguration == nil {
+		return nil
+	}
+
+	webhookID := cr.Spec.ForProvider.WebhookConfiguration.ID
+	expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookID)
+
+	for i, lambda := range config.LambdaConfigs {
+		if lambda.Arn.String() == expectedARN {
+			return &config.LambdaConfigs[i]
+		}
+	}
+
+	return nil
 }
 
 func (nc *notificationClient) isConfigurationUpToDate(cr *miniov1beta1.NotificationConfiguration, lambdaConfig *notification.LambdaConfig) bool {
