@@ -79,7 +79,7 @@ func (nc *notificationClient) findWebhookConfiguration(cr *miniov1beta1.Notifica
 
 	webhookID := cr.Spec.ForProvider.WebhookConfiguration.ID
 	endpoint := cr.Spec.ForProvider.WebhookConfiguration.Endpoint
-	expectedARN := fmt.Sprintf("arn:minio:lambda::%s:webhook", webhookID)
+	expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookID)
 
 	for i, lambda := range config.LambdaConfigs {
 		if lambda.Arn.String() == expectedARN && lambda.Lambda == endpoint {
@@ -97,7 +97,7 @@ func (nc *notificationClient) findWebhookByID(cr *miniov1beta1.NotificationConfi
 	}
 
 	webhookID := cr.Spec.ForProvider.WebhookConfiguration.ID
-	expectedARN := fmt.Sprintf("arn:minio:lambda::%s:webhook", webhookID)
+	expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookID)
 
 	for i, lambda := range config.LambdaConfigs {
 		if lambda.Arn.String() == expectedARN {
