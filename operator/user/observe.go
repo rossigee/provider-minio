@@ -70,7 +70,7 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 		user.SetConditions(miniov1beta1.Disabled())
 	}
 
-	if mg.GetDeletionTimestamp() == nil {
+	if mg.GetDeletionTimestamp() == nil && mg.(resource.ModernManaged).GetWriteConnectionSecretToReference() != nil {
 
 		secret := corev1.Secret{}
 
@@ -79,24 +79,25 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 			Name:      mg.(resource.ModernManaged).GetWriteConnectionSecretToReference().Name,
 		}, &secret)
 		if err != nil {
-			return managed.ExternalObservation{}, err
-		}
+			log.V(1).Info("connection secret not found or not accessible", "error", err)
+			// This is not necessarily an error condition during initial creation
+		} else {
+			mclient, err := minio.New(u.url.Host, &minio.Options{
+				Creds:  credentials.NewStaticV4(string(secret.Data[AccessKeyName]), string(secret.Data[SecretKeyName]), ""),
+				Secure: u.tlsSettings,
+			})
+			if err != nil {
+				return managed.ExternalObservation{ResourceUpToDate: false, ResourceExists: true}, nil
+			}
 
-		mclient, err := minio.New(u.url.Host, &minio.Options{
-			Creds:  credentials.NewStaticV4(string(secret.Data[AccessKeyName]), string(secret.Data[SecretKeyName]), ""),
-			Secure: u.tlsSettings,
-		})
-		if err != nil {
-			return managed.ExternalObservation{ResourceUpToDate: false, ResourceExists: true}, nil
-		}
+			_, err = mclient.ListBuckets(context.Background())
+			// AccessDenied is ok in this context, because we just want to check if the user has working credentials
+			if err != nil && err.Error() != "Access Denied." {
+				return managed.ExternalObservation{ResourceUpToDate: false, ResourceExists: true}, nil
+			}
 
-		_, err = mclient.ListBuckets(context.Background())
-		// AccessDenied is ok in this context, because we just want to check if the user has working credentials
-		if err != nil && err.Error() != "Access Denied." {
-			return managed.ExternalObservation{ResourceUpToDate: false, ResourceExists: true}, nil
+			log.Info("user client created, everything went fine " + string(secret.Data[AccessKeyName]) + " " + string(secret.Data[SecretKeyName]))
 		}
-
-		log.Info("user client created, everything went fine " + string(secret.Data[AccessKeyName]) + " " + string(secret.Data[SecretKeyName]))
 	}
 
 	return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
