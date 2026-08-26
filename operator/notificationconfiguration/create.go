@@ -25,9 +25,10 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	cr.SetConditions(xpv1.Creating())
 
 	webhookConfig := cr.Spec.ForProvider.WebhookConfiguration
+	queueConfig := cr.Spec.ForProvider.QueueConfiguration
 
-	if webhookConfig == nil {
-		err := fmt.Errorf("webhook configuration is required")
+	if webhookConfig == nil && queueConfig == nil {
+		err := fmt.Errorf("either webhook or queue configuration is required")
 		cr.SetConditions(xpv1.ReconcileError(err))
 		return managed.ExternalCreation{}, err
 	}
@@ -46,64 +47,113 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 		return managed.ExternalCreation{}, err
 	}
 
-	// Check if webhook configuration already exists (idempotency and adoption)
+	// Handle webhook configuration if specified
 	if webhookConfig != nil {
 		expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookConfig.ID)
+		webhookExists := false
 		for _, lambda := range config.LambdaConfigs {
 			if lambda.Arn.String() == expectedARN {
+				webhookExists = true
 				// Webhook exists - either exact match or adoption
 				if lambda.Lambda == webhookConfig.Endpoint {
 					// Exact match
 					log.V(1).Info("webhook configuration already exists")
-					cr.SetConditions(xpv1.Available())
-					return managed.ExternalCreation{}, nil
 				} else {
 					// Different endpoint - adopt it anyway
 					log.V(1).Info("adopting existing webhook configuration with different endpoint")
 					nc.emitAdoptionEvent(cr)
-					cr.SetConditions(xpv1.Available())
-					return managed.ExternalCreation{}, nil
+				}
+				break
+			}
+		}
+
+		if !webhookExists {
+			// Create webhook configuration using LambdaConfig
+			lambdaConfig := notification.LambdaConfig{
+				Lambda: webhookConfig.Endpoint,
+			}
+
+			lambdaConfig.Config = notification.NewConfig(
+				notification.NewArn("minio", "lambda", "", webhookConfig.ID, "webhook"),
+			)
+
+			// Add events
+			for _, event := range cr.Spec.ForProvider.Events {
+				lambdaConfig.Events = append(lambdaConfig.Events, notification.EventType(event))
+			}
+
+			// Add filter
+			if filter := cr.Spec.ForProvider.Filter; filter != nil && filter.Key != nil {
+				lambdaConfig.Filter = &notification.Filter{
+					S3Key: notification.S3Key{
+						FilterRules: []notification.FilterRule{},
+					},
+				}
+				for _, rule := range filter.Key.FilterRules {
+					lambdaConfig.Filter.S3Key.FilterRules = append(
+						lambdaConfig.Filter.S3Key.FilterRules,
+						notification.FilterRule{
+							Name:  rule.Name,
+							Value: rule.Value,
+						},
+					)
 				}
 			}
+
+			config.LambdaConfigs = append(config.LambdaConfigs, lambdaConfig)
 		}
-
-		// Create webhook configuration using LambdaConfig
-		lambdaConfig := notification.LambdaConfig{
-			Lambda: webhookConfig.Endpoint,
-		}
-
-		lambdaConfig.Config = notification.NewConfig(
-			notification.NewArn("minio", "lambda", "", webhookConfig.ID, "webhook"),
-		)
-
-		// Add events
-		for _, event := range cr.Spec.ForProvider.Events {
-			lambdaConfig.Events = append(lambdaConfig.Events, notification.EventType(event))
-		}
-
-		// Add filter
-		if filter := cr.Spec.ForProvider.Filter; filter != nil && filter.Key != nil {
-			lambdaConfig.Filter = &notification.Filter{
-				S3Key: notification.S3Key{
-					FilterRules: []notification.FilterRule{},
-				},
-			}
-			for _, rule := range filter.Key.FilterRules {
-				lambdaConfig.Filter.S3Key.FilterRules = append(
-					lambdaConfig.Filter.S3Key.FilterRules,
-					notification.FilterRule{
-						Name:  rule.Name,
-						Value: rule.Value,
-					},
-				)
-			}
-		}
-
-		config.LambdaConfigs = append(config.LambdaConfigs, lambdaConfig)
 	}
 
-	// Set webhook notification configuration
-	if len(config.LambdaConfigs) > 0 {
+	// Handle queue configuration if specified
+	if queueConfig != nil {
+		queueExists := false
+		for _, queue := range config.QueueConfigs {
+			if queue.Arn.String() == queueConfig.QueueArn {
+				queueExists = true
+				log.V(1).Info("queue configuration already exists")
+				break
+			}
+		}
+
+		if !queueExists {
+			// Create queue configuration using QueueConfig
+			qConfig := notification.QueueConfig{
+				Queue: queueConfig.QueueArn,
+			}
+
+			qConfig.Config = notification.NewConfig(
+				notification.NewArn("minio", "sqs", "", queueConfig.ID, "queue"),
+			)
+
+			// Add events
+			for _, event := range cr.Spec.ForProvider.Events {
+				qConfig.Events = append(qConfig.Events, notification.EventType(event))
+			}
+
+			// Add filter
+			if filter := cr.Spec.ForProvider.Filter; filter != nil && filter.Key != nil {
+				qConfig.Filter = &notification.Filter{
+					S3Key: notification.S3Key{
+						FilterRules: []notification.FilterRule{},
+					},
+				}
+				for _, rule := range filter.Key.FilterRules {
+					qConfig.Filter.S3Key.FilterRules = append(
+						qConfig.Filter.S3Key.FilterRules,
+						notification.FilterRule{
+							Name:  rule.Name,
+							Value: rule.Value,
+						},
+					)
+				}
+			}
+
+			config.QueueConfigs = append(config.QueueConfigs, qConfig)
+		}
+	}
+
+	// Set notification configuration (both webhook and queue if specified)
+	if len(config.LambdaConfigs) > 0 || len(config.QueueConfigs) > 0 {
 		err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
 		if err != nil {
 			cr.SetConditions(xpv1.ReconcileError(err))
