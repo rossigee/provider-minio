@@ -45,7 +45,7 @@ func (nc *notificationClient) Observe(ctx context.Context, mg resource.Managed) 
 	if cr.Spec.ForProvider.WebhookConfiguration != nil {
 		webhookARN := "arn:minio:sqs:us-east-1:_:webhook"
 		for _, queue := range config.QueueConfigs {
-			if queue.Arn.String() == webhookARN {
+			if queue.Queue == webhookARN {
 				webhookExists = true
 				log.V(1).Info("webhook configuration already exists")
 				break
