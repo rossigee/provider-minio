@@ -61,11 +61,14 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 		}
 
 		if !webhookExists {
-			// Create webhook configuration using QueueConfig with webhook backend ARN
-			webhookQueueConfig := notification.QueueConfig{}
+			// Create webhook configuration using QueueConfig
+			// Important: the webhook ARN must be in the Queue field, not in Config.Arn
+			webhookQueueConfig := notification.QueueConfig{
+				Queue: "arn:minio:sqs:us-east-1:_:webhook",
+			}
 
 			webhookQueueConfig.Config = notification.NewConfig(
-				notification.NewArn("minio", "sqs", "us-east-1", "_", "webhook"),
+				notification.NewArn("", "", "", "", ""),
 			)
 
 			// Add events
