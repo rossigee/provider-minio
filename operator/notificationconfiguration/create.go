@@ -39,6 +39,13 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 		config = notification.Configuration{}
 	}
 
+	// Check if bucket has incompatible Topic configs that would block webhooks
+	if len(config.TopicConfigs) > 0 {
+		err := fmt.Errorf("bucket has Topic notifications which block webhook configuration - remove them first using MinIO Client (mc)")
+		cr.SetConditions(xpv1.ReconcileError(err))
+		return managed.ExternalCreation{}, err
+	}
+
 	// Check if webhook configuration already exists (idempotency and adoption)
 	if webhookConfig != nil {
 		expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookConfig.ID)

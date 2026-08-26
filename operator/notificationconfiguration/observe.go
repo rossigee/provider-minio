@@ -34,6 +34,13 @@ func (nc *notificationClient) Observe(ctx context.Context, mg resource.Managed) 
 		return managed.ExternalObservation{}, err
 	}
 
+	// Check if bucket has incompatible Topic configs that would block webhooks
+	if len(config.TopicConfigs) > 0 {
+		err := fmt.Errorf("bucket has Topic notifications which block webhook configuration - remove them first using MinIO Client (mc)")
+		cr.SetConditions(xpv1.ReconcileError(err))
+		return managed.ExternalObservation{}, err
+	}
+
 	// Check if our webhook configuration exists and is up-to-date
 	lambdaConfig, found := nc.findWebhookConfiguration(cr, &config)
 	if !found {
