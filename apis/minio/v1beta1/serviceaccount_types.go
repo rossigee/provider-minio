@@ -27,12 +27,15 @@ type ServiceAccount struct {
 }
 
 // ServiceAccountSpec defines the desired state of a ServiceAccount
+// +kubebuilder:object:generate=true
 type ServiceAccountSpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
 	ForProvider              ServiceAccountParameters `json:"forProvider,omitempty"`
 	// WriteConnectionSecretToRef specifies the namespace and name of a Secret to which
 	// any connection details for this managed resource should be written.
-	// This overrides the inherited field to support namespace specification.
+	// Connection details frequently include the endpoint, username, and password required
+	// to connect to the managed resource.
+	// +kubebuilder:validation:Optional
 	WriteConnectionSecretToRef *xpv1.SecretReference `json:"writeConnectionSecretToRef,omitempty"`
 }
 
