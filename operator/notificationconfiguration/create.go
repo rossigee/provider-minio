@@ -161,7 +161,7 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 	return managed.ExternalCreation{}, nil
 }
 
-func (nc *notificationClient) emitAdoptionEvent(cr *miniov1beta1.NotificationConfiguration) {
+func (nc *notificationClient) emitAdoptionEvent(cr *miniov1beta1.NotificationConfiguration) { //nolint:unused
 	nc.recorder.Event(cr, event.Event{
 		Type:    event.TypeNormal,
 		Reason:  "Adopted",
