@@ -38,8 +38,11 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 		if serviceAccount.Spec.ForProvider.AccessKey != "" {
 			accessKey = serviceAccount.Spec.ForProvider.AccessKey
 			// Fall through to check if this AccessKey exists in MinIO for adoption
+		} else if serviceAccount.Spec.ForProvider.Name != "" {
+			// Also try the Name field as a fallback for adoption
+			accessKey = serviceAccount.Spec.ForProvider.Name
 		} else {
-			// Resource has not yet been created (no external-name or AccessKey set)
+			// Resource has not yet been created (no external-name or AccessKey/Name set)
 			return managed.ExternalObservation{}, nil
 		}
 	}

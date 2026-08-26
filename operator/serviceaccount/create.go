@@ -35,6 +35,27 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 	// Get access key from spec or empty (MinIO will generate one)
 	accessKey := serviceAccount.Spec.ForProvider.AccessKey
 	secretKey := serviceAccount.Spec.ForProvider.SecretKey
+	name := serviceAccount.Spec.ForProvider.Name
+
+	// For adoption: check if service account already exists by AccessKey or Name
+	adoptionKey := accessKey
+	if adoptionKey == "" && name != "" {
+		adoptionKey = name
+	}
+
+	if adoptionKey != "" {
+		exists, err := s.serviceAccountExists(ctx, adoptionKey)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+		if exists {
+			// Service account already exists - adopt it
+			s.emitAdoptionEvent(serviceAccount, adoptionKey)
+			// Set the external-name annotation to the existing access key
+			meta.SetExternalName(serviceAccount, adoptionKey)
+			return managed.ExternalCreation{}, nil
+		}
+	}
 
 	// If no access key is provided but secret key is, that's an error
 	// If no access key is provided, don't provide secret key either - let MinIO generate both
@@ -57,7 +78,7 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 		AccessKey:   accessKey,
 		SecretKey:   secretKey,
 		TargetUser:  serviceAccount.Spec.ForProvider.TargetUser,
-		Name:        serviceAccount.Spec.ForProvider.Name,
+		Name:        name,
 		Description: serviceAccount.Spec.ForProvider.Description,
 	}
 
@@ -71,20 +92,14 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 		req.Expiration = &serviceAccount.Spec.ForProvider.Expiration.Time
 	}
 
-	// Check if service account already exists (only if access key was specified)
-	if accessKey != "" {
-		exists, err := s.serviceAccountExists(ctx, accessKey)
-		if err != nil {
-			return managed.ExternalCreation{}, err
-		}
-		if exists {
-			return managed.ExternalCreation{}, fmt.Errorf("service account already exists")
-		}
-	}
-
 	// Create the service account
 	credentials, err := s.ma.AddServiceAccount(ctx, req)
 	if err != nil {
+		s.recorder.Event(serviceAccount, event.Event{
+			Type:    event.TypeWarning,
+			Reason:  "CannotCreateExternalResource",
+			Message: fmt.Sprintf("Failed to create service account: %s", err),
+		})
 		return managed.ExternalCreation{}, err
 	}
 
@@ -124,5 +139,13 @@ func (s *serviceAccountClient) emitCreationEvent(serviceAccount *miniov1beta1.Se
 		Type:    event.TypeNormal,
 		Reason:  "Created",
 		Message: "Service Account successfully created",
+	})
+}
+
+func (s *serviceAccountClient) emitAdoptionEvent(serviceAccount *miniov1beta1.ServiceAccount, accessKey string) {
+	s.recorder.Event(serviceAccount, event.Event{
+		Type:    event.TypeNormal,
+		Reason:  "Adopted",
+		Message: fmt.Sprintf("Adopted existing service account: %s", accessKey),
 	})
 }
