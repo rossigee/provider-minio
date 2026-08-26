@@ -30,6 +30,10 @@ type ServiceAccount struct {
 type ServiceAccountSpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
 	ForProvider              ServiceAccountParameters `json:"forProvider,omitempty"`
+	// WriteConnectionSecretToRef specifies the namespace and name of a Secret to which
+	// any connection details for this managed resource should be written.
+	// This overrides the inherited field to support namespace specification.
+	WriteConnectionSecretToRef *xpv1.SecretReference `json:"writeConnectionSecretToRef,omitempty"`
 }
 
 // ServiceAccountStatus defines the observed state of a ServiceAccount

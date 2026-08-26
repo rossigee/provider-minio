@@ -32,7 +32,7 @@ func NewMinioClient(ctx context.Context, c client.Client, config *providerv1.Pro
 	// Use APISecretRef if available, otherwise fallback to SecretRef
 	if config.Spec.Credentials.APISecretRef.Name != "" {
 		key = client.ObjectKey{Name: config.Spec.Credentials.APISecretRef.Name, Namespace: config.Spec.Credentials.APISecretRef.Namespace}
-		secretKey = ""  // APISecretRef uses MinioIDKey and MinioSecretKey
+		secretKey = "" // APISecretRef uses MinioIDKey and MinioSecretKey
 	} else if config.Spec.Credentials.SecretRef != nil && config.Spec.Credentials.SecretRef.Name != "" {
 		key = client.ObjectKey{Name: config.Spec.Credentials.SecretRef.Name, Namespace: config.Spec.Credentials.SecretRef.Namespace}
 		secretKey = config.Spec.Credentials.SecretRef.Key

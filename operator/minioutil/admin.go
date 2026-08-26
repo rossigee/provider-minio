@@ -48,7 +48,7 @@ func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.Prov
 
 	// Use APISecretRef if available, otherwise fallback to SecretRef
 	if config.Spec.Credentials.APISecretRef.Name != "" {
-		secretKey = ""  // APISecretRef uses MinioIDKey and MinioSecretKey
+		secretKey = "" // APISecretRef uses MinioIDKey and MinioSecretKey
 	} else if config.Spec.Credentials.SecretRef != nil && config.Spec.Credentials.SecretRef.Name != "" {
 		secretKey = config.Spec.Credentials.SecretRef.Key
 	}
