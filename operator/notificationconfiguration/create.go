@@ -67,7 +67,7 @@ func (nc *notificationClient) Create(ctx context.Context, mg resource.Managed) (
 			}
 
 			webhookQueueConfig.Config = notification.NewConfig(
-				notification.NewArn("minio", "sqs", "us-east-1", "", "webhook"),
+				notification.NewArn("minio", "sqs", "us-east-1", "_", "webhook"),
 			)
 
 			// Add events
