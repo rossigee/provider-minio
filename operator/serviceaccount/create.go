@@ -53,6 +53,11 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 		secretKey = resolvedSecretKey
 	}
 
+	// Validate mutually exclusive policy fields
+	if serviceAccount.Spec.ForProvider.Policy != "" && len(serviceAccount.Spec.ForProvider.Policies) > 0 {
+		return managed.ExternalCreation{}, fmt.Errorf("only one of policy or policies may be specified")
+	}
+
 	// For adoption: check if service account already exists by AccessKey or Name
 	adoptionKey := accessKey
 	if adoptionKey == "" && name != "" {
@@ -69,6 +74,12 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 			s.emitAdoptionEvent(serviceAccount, adoptionKey)
 			// Set the external-name annotation to the existing access key
 			meta.SetExternalName(serviceAccount, adoptionKey)
+			// Attach policies if specified (for adopted accounts)
+			if len(serviceAccount.Spec.ForProvider.Policies) > 0 {
+				if err := s.attachPolicies(ctx, adoptionKey, serviceAccount.Spec.ForProvider.Policies); err != nil {
+					return managed.ExternalCreation{}, err
+				}
+			}
 			return managed.ExternalCreation{}, nil
 		}
 	}
@@ -128,6 +139,13 @@ func (s *serviceAccountClient) Create(ctx context.Context, mg resource.Managed) 
 	// Update the status with the created access key (for display/status purposes only)
 	serviceAccount.Status.AtProvider.AccessKey = credentials.AccessKey
 
+	// Attach policies if specified
+	if len(serviceAccount.Spec.ForProvider.Policies) > 0 {
+		if err := s.attachPolicies(ctx, credentials.AccessKey, serviceAccount.Spec.ForProvider.Policies); err != nil {
+			return managed.ExternalCreation{}, err
+		}
+	}
+
 	connectionDetails := managed.ConnectionDetails{
 		AccessKeyName: []byte(credentials.AccessKey),
 		SecretKeyName: []byte(credentials.SecretKey),
@@ -164,4 +182,22 @@ func (s *serviceAccountClient) emitAdoptionEvent(serviceAccount *miniov1beta1.Se
 		Reason:  "Adopted",
 		Message: fmt.Sprintf("Adopted existing service account: %s", accessKey),
 	})
+}
+
+func (s *serviceAccountClient) attachPolicies(ctx context.Context, accessKey string, policies []string) error {
+	for _, policy := range policies {
+		_, err := s.ma.AttachPolicy(ctx, madmin.PolicyAssociationReq{
+			Policies: []string{policy},
+			User:     accessKey,
+		})
+		if err != nil {
+			s.recorder.Event(nil, event.Event{
+				Type:    event.TypeWarning,
+				Reason:  "CannotAttachPolicy",
+				Message: fmt.Sprintf("Failed to attach policy %s to %s: %s", policy, accessKey, err),
+			})
+			return err
+		}
+	}
+	return nil
 }

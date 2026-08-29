@@ -96,7 +96,14 @@ type ServiceAccountParameters struct {
 	// Policy is a JSON policy document that defines the permissions
 	// for this service account. If not specified, the service account
 	// will inherit the policies of the target user.
+	// Mutually exclusive with Policies.
 	Policy string `json:"policy,omitempty"`
+
+	// Policies contains a list of policies that should be attached to this service account.
+	// These policies need to be created separately by using the policy CRD.
+	// Mutually exclusive with Policy.
+	// +kubebuilder:validation:Optional
+	Policies []string `json:"policies,omitempty"`
 
 	// Expiration defines when this service account should expire.
 	// If not specified, the service account will not expire.

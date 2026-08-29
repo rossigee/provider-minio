@@ -77,6 +77,49 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 	}
 
+	// Check if named policies need to be attached
+	if len(serviceAccount.Spec.ForProvider.Policies) > 0 {
+		userInfo, err := s.ma.GetUserInfo(ctx, accessKey)
+		if err != nil {
+			// If we can't get user info, assume not up-to-date to trigger update
+			log.V(1).Info("cannot get user info for policy check", "accessKey", accessKey, "error", err)
+			serviceAccount.SetConditions(miniov1beta1.Updating())
+			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
+		}
+		// PolicyName is comma-separated list for multiple policies (or single)
+		currentPolicies := []string{}
+		if userInfo.PolicyName != "" {
+			// MinIO returns comma-separated policies
+			for _, p := range strings.Split(userInfo.PolicyName, ",") {
+				p = strings.TrimSpace(p)
+				if p != "" {
+					currentPolicies = append(currentPolicies, p)
+				}
+			}
+		}
+		desiredPolicies := serviceAccount.Spec.ForProvider.Policies
+		policiesMatch := len(desiredPolicies) == len(currentPolicies)
+		if policiesMatch {
+			for _, desired := range desiredPolicies {
+				found := false
+				for _, current := range currentPolicies {
+					if desired == current {
+						found = true
+						break
+					}
+				}
+				if !found {
+					policiesMatch = false
+					break
+				}
+			}
+		}
+		if !policiesMatch {
+			serviceAccount.SetConditions(miniov1beta1.Updating())
+			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
+		}
+	}
+
 	// Set the condition based on account status
 	if info.AccountStatus == "enabled" {
 		serviceAccount.SetConditions(xpv1.Available())
@@ -105,7 +148,7 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 
 // isUpToDate checks if the service account configuration matches what's in MinIO
 func (s *serviceAccountClient) isUpToDate(serviceAccount *miniov1beta1.ServiceAccount, info madmin.InfoServiceAccountResp) bool {
-	// Check if policy needs updating
+	// Check if inline policy needs updating
 	if serviceAccount.Spec.ForProvider.Policy != "" && serviceAccount.Spec.ForProvider.Policy != info.Policy {
 		return false
 	}
@@ -124,6 +167,8 @@ func (s *serviceAccountClient) isUpToDate(serviceAccount *miniov1beta1.ServiceAc
 		}
 	}
 
-	// All checks passed
+	// Note: Policies (named policy attachments) are checked in Observe via GetUserInfo
+	// to avoid needing context in this helper. If Policies are specified, we consider
+	// inline check passed and rely on Observe to verify attachment.
 	return true
 }

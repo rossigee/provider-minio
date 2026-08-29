@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
@@ -57,10 +58,68 @@ func (s *serviceAccountClient) Update(ctx context.Context, mg resource.Managed) 
 		req.NewSecretKey = serviceAccount.Spec.ForProvider.SecretKey
 	}
 
-	// Perform the update
-	err := s.ma.UpdateServiceAccount(ctx, accessKey, req)
-	if err != nil {
-		return managed.ExternalUpdate{}, err
+	// Perform the update if any inline fields changed
+	if req.NewPolicy != nil || req.NewName != "" || req.NewDescription != "" || req.NewExpiration != nil || req.NewSecretKey != "" {
+		err := s.ma.UpdateServiceAccount(ctx, accessKey, req)
+		if err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+	}
+
+	// Handle named policy attachments
+	if len(serviceAccount.Spec.ForProvider.Policies) > 0 {
+		// Get current policies
+		userInfo, err := s.ma.GetUserInfo(ctx, accessKey)
+		if err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+		currentPolicies := []string{}
+		if userInfo.PolicyName != "" {
+			for _, p := range strings.Split(userInfo.PolicyName, ",") {
+				p = strings.TrimSpace(p)
+				if p != "" {
+					currentPolicies = append(currentPolicies, p)
+				}
+			}
+		}
+		// Detach policies not in desired
+		for _, current := range currentPolicies {
+			needDetach := true
+			for _, desired := range serviceAccount.Spec.ForProvider.Policies {
+				if current == desired {
+					needDetach = false
+					break
+				}
+			}
+			if needDetach {
+				_, err := s.ma.DetachPolicy(ctx, madmin.PolicyAssociationReq{
+					Policies: []string{current},
+					User:     accessKey,
+				})
+				if err != nil {
+					return managed.ExternalUpdate{}, err
+				}
+			}
+		}
+		// Attach desired policies not already attached
+		for _, desired := range serviceAccount.Spec.ForProvider.Policies {
+			found := false
+			for _, current := range currentPolicies {
+				if desired == current {
+					found = true
+					break
+				}
+			}
+			if !found {
+				_, err := s.ma.AttachPolicy(ctx, madmin.PolicyAssociationReq{
+					Policies: []string{desired},
+					User:     accessKey,
+				})
+				if err != nil {
+					return managed.ExternalUpdate{}, err
+				}
+			}
+		}
 	}
 
 	s.emitUpdateEvent(serviceAccount)
