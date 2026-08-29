@@ -81,11 +81,16 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 	if len(serviceAccount.Spec.ForProvider.Policies) > 0 {
 		userInfo, err := s.ma.GetUserInfo(ctx, accessKey)
 		if err != nil {
-			// If we can't get user info, assume not up-to-date to trigger update
-			log.V(1).Info("cannot get user info for policy check", "accessKey", accessKey, "error", err)
-			serviceAccount.SetConditions(miniov1beta1.Updating())
-			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
-		}
+			// If GetUserInfo fails (e.g., IAM not allowed for service accounts), assume up-to-date
+			// to avoid update loop. The policy was attached at creation.
+			if strings.Contains(err.Error(), "IAM action is not allowed") || strings.Contains(err.Error(), "does not exist") {
+				log.V(1).Info("cannot get user info for policy check, assuming up-to-date", "accessKey", accessKey, "error", err)
+			} else {
+				log.V(1).Info("cannot get user info for policy check", "accessKey", accessKey, "error", err)
+				serviceAccount.SetConditions(miniov1beta1.Updating())
+				return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
+			}
+		} else {
 		// PolicyName is comma-separated list for multiple policies (or single)
 		currentPolicies := []string{}
 		if userInfo.PolicyName != "" {
@@ -117,6 +122,7 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 		if !policiesMatch {
 			serviceAccount.SetConditions(miniov1beta1.Updating())
 			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
+		}
 		}
 	}
 

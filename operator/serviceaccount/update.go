@@ -70,11 +70,14 @@ func (s *serviceAccountClient) Update(ctx context.Context, mg resource.Managed) 
 	if len(serviceAccount.Spec.ForProvider.Policies) > 0 {
 		// Get current policies
 		userInfo, err := s.ma.GetUserInfo(ctx, accessKey)
-		if err != nil {
-			return managed.ExternalUpdate{}, err
-		}
 		currentPolicies := []string{}
-		if userInfo.PolicyName != "" {
+		if err != nil {
+			// If GetUserInfo fails for service accounts, assume no current policies
+			// and try to attach desired ones directly
+			if !strings.Contains(err.Error(), "IAM action is not allowed") && !strings.Contains(err.Error(), "does not exist") {
+				return managed.ExternalUpdate{}, err
+			}
+		} else if userInfo.PolicyName != "" {
 			for _, p := range strings.Split(userInfo.PolicyName, ",") {
 				p = strings.TrimSpace(p)
 				if p != "" {
