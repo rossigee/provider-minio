@@ -41,6 +41,7 @@ func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c 
 		managed.WithExternalConnector(c),
 		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
 		managed.WithRecorder(recorder),
+		managed.WithManagementPolicies(),
 		managed.WithPollInterval(1*time.Minute),
 		managed.WithCreationGracePeriod(creationGracePeriod))
 }
@@ -83,6 +84,7 @@ func createV1Beta1Reconciler(mgr ctrl.Manager, name string, recorder event.Recor
 		managed.WithExternalConnector(c),
 		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
 		managed.WithRecorder(recorder),
+		managed.WithManagementPolicies(),
 		managed.WithPollInterval(1*time.Minute),
 		managed.WithCreationGracePeriod(creationGracePeriod))
 }
