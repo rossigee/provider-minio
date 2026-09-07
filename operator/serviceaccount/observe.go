@@ -91,38 +91,38 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 				return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 			}
 		} else {
-		// PolicyName is comma-separated list for multiple policies (or single)
-		currentPolicies := []string{}
-		if userInfo.PolicyName != "" {
-			// MinIO returns comma-separated policies
-			for _, p := range strings.Split(userInfo.PolicyName, ",") {
-				p = strings.TrimSpace(p)
-				if p != "" {
-					currentPolicies = append(currentPolicies, p)
+			// PolicyName is comma-separated list for multiple policies (or single)
+			currentPolicies := []string{}
+			if userInfo.PolicyName != "" {
+				// MinIO returns comma-separated policies
+				for _, p := range strings.Split(userInfo.PolicyName, ",") {
+					p = strings.TrimSpace(p)
+					if p != "" {
+						currentPolicies = append(currentPolicies, p)
+					}
 				}
 			}
-		}
-		desiredPolicies := serviceAccount.Spec.ForProvider.Policies
-		policiesMatch := len(desiredPolicies) == len(currentPolicies)
-		if policiesMatch {
-			for _, desired := range desiredPolicies {
-				found := false
-				for _, current := range currentPolicies {
-					if desired == current {
-						found = true
+			desiredPolicies := serviceAccount.Spec.ForProvider.Policies
+			policiesMatch := len(desiredPolicies) == len(currentPolicies)
+			if policiesMatch {
+				for _, desired := range desiredPolicies {
+					found := false
+					for _, current := range currentPolicies {
+						if desired == current {
+							found = true
+							break
+						}
+					}
+					if !found {
+						policiesMatch = false
 						break
 					}
 				}
-				if !found {
-					policiesMatch = false
-					break
-				}
 			}
-		}
-		if !policiesMatch {
-			serviceAccount.SetConditions(miniov1beta1.Updating())
-			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
-		}
+			if !policiesMatch {
+				serviceAccount.SetConditions(miniov1beta1.Updating())
+				return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
+			}
 		}
 	}
 
