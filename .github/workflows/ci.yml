@@ -1,5 +1,5 @@
 # Standardized CI/CD Template for Crossplane Providers
-# Version: 2026-08-20 - Updated for Go 1.26.6 + golangci-lint v2 + full security scanning
+# Version: 2026-08-20 - Updated for Go 1.27.0 + golangci-lint v2 + full security scanning
 #
 # This template implements CI builds and validates ONLY
 # - CI: Build validation only (no publishing to avoid tag conflicts)
@@ -27,9 +27,9 @@ permissions:
   actions: read    # Needed for detecting duplicate actions
 
 env:
-  GO_VERSION: '1.26.6'
-  GOLANGCI_VERSION: '2.12.2'
-  GOLANGCILINT_VERSION: '2.12.2'
+  GO_VERSION: '1.27.0'
+  GOLANGCI_VERSION: '2.13.1'
+  GOLANGCILINT_VERSION: '2.13.1'
   DOCKER_BUILDX_VERSION: 'v0.11.2'
 
 jobs:
@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Detect No-op Changes
         id: noop
-        uses: fkirc/skip-duplicate-actions@v5.3.1
+        uses: fkirc/skip-duplicate-actions@v5.3.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           paths_ignore: '["**.md", "**.png", "**.jpg"]'
@@ -58,7 +58,7 @@ jobs:
           submodules: true
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -80,7 +80,7 @@ jobs:
           submodules: true
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -105,7 +105,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -116,7 +116,7 @@ jobs:
         run: make test
 
       - name: Upload Coverage Reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.out
@@ -137,7 +137,7 @@ jobs:
           submodules: true
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -202,12 +202,15 @@ jobs:
           submodules: true
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Vendor Dependencies
         run: go mod vendor
+
+      - name: Generate CRDs and Webhooks
+        run: make generate
 
       - name: Validate Build Process
         run: |

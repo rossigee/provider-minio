@@ -36,7 +36,17 @@ type ServiceAccountSpec struct {
 	// Connection details frequently include the endpoint, username, and password required
 	// to connect to the managed resource.
 	// +kubebuilder:validation:Optional
-	WriteConnectionSecretToRef *xpv1.SecretReference `json:"writeConnectionSecretToRef,omitempty"`
+	WriteConnectionSecretToRef *SecretReferenceWithNamespace `json:"writeConnectionSecretToRef,omitempty"`
+}
+
+// SecretReferenceWithNamespace is a reference to a secret with both name and namespace
+// +kubebuilder:object:generate=true
+type SecretReferenceWithNamespace struct {
+	// Name of the secret.
+	Name string `json:"name"`
+
+	// Namespace of the secret.
+	Namespace string `json:"namespace"`
 }
 
 // ServiceAccountStatus defines the observed state of a ServiceAccount
@@ -87,11 +97,25 @@ type ServiceAccountParameters struct {
 	// Policy is a JSON policy document that defines the permissions
 	// for this service account. If not specified, the service account
 	// will inherit the policies of the target user.
+	// Mutually exclusive with Policies.
 	Policy string `json:"policy,omitempty"`
+
+	// Policies contains a list of policies that should be attached to this service account.
+	// These policies need to be created separately by using the policy CRD.
+	// Mutually exclusive with Policy.
+	// +kubebuilder:validation:Optional
+	Policies []string `json:"policies,omitempty"`
 
 	// Expiration defines when this service account should expire.
 	// If not specified, the service account will not expire.
 	Expiration *metav1.Time `json:"expiration,omitempty"`
+
+	// CredentialsSecretRef references a Kubernetes Secret containing predetermined
+	// credentials for this service account. The secret must contain 'AWS_ACCESS_KEY_ID'
+	// and 'AWS_SECRET_ACCESS_KEY' keys. When set, these credentials will be used instead
+	// of generating new ones. Mutually exclusive with explicit AccessKey and SecretKey.
+	// +kubebuilder:validation:Optional
+	CredentialsSecretRef *xpv1.SecretReference `json:"credentialsSecretRef,omitempty"`
 
 	// WriteConnectionSecretsToRef specifies the namespace and name of a
 	// Secret to which any connection details for this managed resource should

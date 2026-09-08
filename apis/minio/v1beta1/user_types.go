@@ -58,6 +58,13 @@ type UserParameters struct {
 	// Policies contains a list of policies that should get assigned to this user.
 	// These policies need to be created separately by using the policy CRD.
 	Policies []string `json:"policies,omitempty"`
+
+	// CredentialsSecretRef references a Kubernetes Secret containing a predetermined
+	// password for this user. The secret must contain an 'AWS_SECRET_ACCESS_KEY' key,
+	// which will be used as the user's password. When set, this password will be used
+	// instead of generating a new one. Mutually exclusive with generating new credentials.
+	// +kubebuilder:validation:Optional
+	CredentialsSecretRef *xpv1.SecretReference `json:"credentialsSecretRef,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -29,6 +29,11 @@ func (v *Validator) ValidateCreate(ctx context.Context, serviceAccount *miniov1b
 		return nil, field.Invalid(field.NewPath("spec", "providerConfigRef", "name"), "null", "Provider config is required")
 	}
 
+	// Validate mutually exclusive policy fields
+	if serviceAccount.Spec.ForProvider.Policy != "" && len(serviceAccount.Spec.ForProvider.Policies) > 0 {
+		return nil, field.Invalid(field.NewPath("spec", "forProvider"), "policy/policies", "only one of policy or policies may be specified")
+	}
+
 	// Validate policy if specified
 	if serviceAccount.Spec.ForProvider.Policy != "" {
 		err := v.validatePolicy(ctx, serviceAccount, serviceAccount.Spec.ForProvider.Policy)
@@ -49,6 +54,11 @@ func (v *Validator) ValidateCreate(ctx context.Context, serviceAccount *miniov1b
 		if len(serviceAccount.Spec.ForProvider.SecretKey) < 8 {
 			return nil, field.Invalid(field.NewPath("spec", "forProvider", "secretKey"), "***", "Secret key must be at least 8 characters")
 		}
+	}
+
+	// Validate that credentialsSecretRef and literal secretKey are not both set (ambiguous)
+	if serviceAccount.Spec.ForProvider.CredentialsSecretRef != nil && serviceAccount.Spec.ForProvider.SecretKey != "" {
+		return nil, field.Invalid(field.NewPath("spec", "forProvider"), "ambiguous credentials", "credentialsSecretRef and secretKey cannot both be set")
 	}
 
 	return nil, nil
@@ -75,6 +85,11 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldServiceAccount, newSe
 	providerConfigRef := newServiceAccount.Spec.ProviderConfigReference
 	if providerConfigRef == nil || providerConfigRef.Name == "" {
 		return nil, field.Invalid(field.NewPath("spec", "providerConfigRef", "name"), "null", "Provider config is required")
+	}
+
+	// Validate mutually exclusive policy fields
+	if newServiceAccount.Spec.ForProvider.Policy != "" && len(newServiceAccount.Spec.ForProvider.Policies) > 0 {
+		return nil, field.Invalid(field.NewPath("spec", "forProvider"), "policy/policies", "only one of policy or policies may be specified")
 	}
 
 	// Validate policy if specified
