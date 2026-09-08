@@ -27,6 +27,7 @@ type ServiceAccount struct {
 }
 
 // ServiceAccountSpec defines the desired state of a ServiceAccount
+// +kubebuilder:object:generate=true
 type ServiceAccountSpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
 	ForProvider              ServiceAccountParameters `json:"forProvider,omitempty"`
