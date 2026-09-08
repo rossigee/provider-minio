@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/rossigee/provider-minio/operator/bucket"
 	"github.com/rossigee/provider-minio/operator/config"
 	"github.com/rossigee/provider-minio/operator/notificationconfiguration"
@@ -11,19 +12,24 @@ import (
 )
 
 // SetupControllers creates all controllers and adds them to the supplied manager.
-func SetupControllers(mgr ctrl.Manager) error {
-	for _, setup := range []func(ctrl.Manager) error{
-		config.SetupController,
-		// v1beta1 controllers for namespaced resources (now the main controllers)
-		bucket.SetupController,
-		user.SetupController,
-		policy.SetupController,
-		serviceaccount.SetupController,
-		notificationconfiguration.SetupController,
-	} {
-		if err := setup(mgr); err != nil {
-			return err
-		}
+func SetupControllers(mgr ctrl.Manager, o controller.Options) error {
+	if err := config.SetupController(mgr); err != nil {
+		return err
+	}
+	if err := bucket.SetupController(mgr, o); err != nil {
+		return err
+	}
+	if err := user.SetupController(mgr, o); err != nil {
+		return err
+	}
+	if err := policy.SetupController(mgr, o); err != nil {
+		return err
+	}
+	if err := serviceaccount.SetupController(mgr, o); err != nil {
+		return err
+	}
+	if err := notificationconfiguration.SetupController(mgr, o); err != nil {
+		return err
 	}
 	return nil
 }

@@ -41,7 +41,7 @@ func main() {
 		pollInt                  = app.Flag("poll", "Poll interval controls how often an individual resource should be checked for drift.").Default("10m").Duration()
 		leaderElect              = app.Flag("leader-elect", "Use leader election for the controller manager.").Short('l').Default("false").Bool()
 		maxReconcileRate         = app.Flag("max-reconcile-rate", "The global maximum rate per second at which resources may checked for drift from the desired state.").Default("10").Int()
-		enableManagementPolicies = app.Flag("enable-management-policies", "Enable support for Management Policies.").Default("false").Bool()
+		enableManagementPolicies = app.Flag("enable-management-policies", "Enable support for Management Policies.").Default("true").Bool()
 		pollStateMetricInterval  = app.Flag("poll-state-metric", "State metric recording interval").Default("5s").Duration()
 		metricsBindAddress       = app.Flag("metrics-bind-address", "The address the metrics endpoint binds to.").Default(":8080").String()
 	)
@@ -122,7 +122,7 @@ func main() {
 		log.Info("Beta feature enabled", "flag", feature.EnableBetaManagementPolicies)
 	}
 
-	kingpin.FatalIfError(operator.SetupControllers(mgr), "Cannot setup MinIO controllers")
+	kingpin.FatalIfError(operator.SetupControllers(mgr, o), "Cannot setup MinIO controllers")
 	kingpin.FatalIfError(operator.SetupWebhooks(mgr), "Cannot setup MinIO webhooks")
 
 	// Register state metrics for managed resources

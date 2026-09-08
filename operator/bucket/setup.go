@@ -4,7 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/feature"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
@@ -14,7 +16,7 @@ import (
 )
 
 // SetupController adds a controller that reconciles managed resources.
-func SetupController(mgr ctrl.Manager) error {
+func SetupController(mgr ctrl.Manager, o controller.Options) error {
 	name := strings.ToLower(miniov1beta1.BucketGroupKind)
 	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name))
 
@@ -22,11 +24,11 @@ func SetupController(mgr ctrl.Manager) error {
 		kube:     mgr.GetClient(),
 		recorder: recorder,
 		usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1.ProviderConfigUsage{}),
-	}, 0*time.Second)
+	}, 0*time.Second, o)
 }
 
-func SetupControllerWithConnector(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnector, creationGracePeriod time.Duration) error {
-	r := createReconciler(mgr, name, recorder, c, creationGracePeriod)
+func SetupControllerWithConnector(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnector, creationGracePeriod time.Duration, o controller.Options) error {
+	r := createReconciler(mgr, name, recorder, c, creationGracePeriod, o)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
@@ -34,16 +36,20 @@ func SetupControllerWithConnector(mgr ctrl.Manager, name string, recorder event.
 		Complete(r)
 }
 
-func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnector, creationGracePeriod time.Duration) *managed.Reconciler {
-
-	return managed.NewReconciler(mgr,
-		resource.ManagedKind(miniov1beta1.BucketGroupVersionKind),
+func createReconciler(mgr ctrl.Manager, name string, recorder event.Recorder, c managed.ExternalConnector, creationGracePeriod time.Duration, o controller.Options) *managed.Reconciler {
+	opts := []managed.ReconcilerOption{
 		managed.WithExternalConnector(c),
 		managed.WithLogger(logging.NewLogrLogger(mgr.GetLogger().WithValues("controller", name))),
 		managed.WithRecorder(recorder),
-		managed.WithManagementPolicies(),
-		managed.WithPollInterval(1*time.Minute),
-		managed.WithCreationGracePeriod(creationGracePeriod))
+		managed.WithPollInterval(1 * time.Minute),
+		managed.WithCreationGracePeriod(creationGracePeriod),
+	}
+	if o.Features.Enabled(feature.EnableBetaManagementPolicies) {
+		opts = append(opts, managed.WithManagementPolicies())
+	}
+	return managed.NewReconciler(mgr,
+		resource.ManagedKind(miniov1beta1.BucketGroupVersionKind),
+		opts...)
 }
 
 // SetupWebhook adds a webhook for managed resources.
