@@ -143,16 +143,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: Build and Publish Artifacts
-        env:
-          BRANCH_NAME: master   # override: tag-based builds are in detached HEAD state
+      - name: Install Crossplane CLI v2.5.0
         run: |
           set -e
-          echo "Building version ${{ steps.version.outputs.version }}"
+          mkdir -p .cache/tools/linux_x86_64
+          echo "Installing crossplane-cli v2.5.0 (from cli.crossplane.io to match rossigee/build fork k8s_tools.mk)"
+          curl -fsSLo .cache/tools/linux_x86_64/crossplane-cli-v2.5.0 \
+            --create-dirs https://cli.crossplane.io/stable/v2.5.0/bin/linux_amd64/crossplane
+          chmod +x .cache/tools/linux_x86_64/crossplane-cli-v2.5.0
+          ls -l .cache/tools/linux_x86_64/
+
+      - name: Build and Publish Artifacts
+        env:
+          BRANCH_NAME: master
+        run: |
+          set -e
+          echo "Building version ${VERSION}"
           make publish.artifacts \
             REGISTRY_ORGS="ghcr.io/${{ github.repository_owner }}" \
             XPKG_REG_ORGS="ghcr.io/${{ github.repository_owner }}" \
             BRANCH_NAME=master
+
 
       - name: Verify Publication
         run: |
