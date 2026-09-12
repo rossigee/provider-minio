@@ -3,7 +3,7 @@ package apis
 
 import (
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -14,7 +14,7 @@ func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
 	AddToSchemes = append(AddToSchemes,
 		miniov1beta1.SchemeBuilder.AddToScheme,
-		providerv1.SchemeBuilder.AddToScheme,
+		providerv1beta1.SchemeBuilder.AddToScheme,
 	)
 }
 

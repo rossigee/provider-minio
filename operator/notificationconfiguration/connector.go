@@ -10,7 +10,7 @@ import (
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,7 +30,7 @@ type notificationClient struct {
 	ma       *madmin.AdminClient
 	mc       *minio.Client
 	kube     client.Client
-	cfg      *providerv1.ProviderConfig
+	cfg      *providerv1beta1.ProviderConfig
 	recorder event.Recorder
 }
 
@@ -74,9 +74,9 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	return nc, nil
 }
 
-func (c *connector) getProviderConfig(ctx context.Context, cr *miniov1beta1.NotificationConfiguration) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfig(ctx context.Context, cr *miniov1beta1.NotificationConfiguration) (*providerv1beta1.ProviderConfig, error) {
 	configName := cr.GetProviderConfigReference().Name
-	config := &providerv1.ProviderConfig{}
+	config := &providerv1beta1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
 	return config, err
 }

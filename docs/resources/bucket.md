@@ -36,7 +36,6 @@ spec:
       env: production
   providerConfigRef:
     name: default
-  deletionPolicy: Delete
 ```
 
 ## Behavior

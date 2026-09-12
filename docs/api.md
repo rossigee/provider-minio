@@ -63,8 +63,7 @@ spec:
     tags:                  # optional map[string]string
       env: production
   providerConfigRef:
-    name: default
-  deletionPolicy: Delete   # Crossplane: Delete | Orphan
+    name: default   # Crossplane: Delete | Orphan
   writeConnectionSecretToRef:
     name: bucket-connection
 ```

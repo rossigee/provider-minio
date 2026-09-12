@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
-	v1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	v1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"

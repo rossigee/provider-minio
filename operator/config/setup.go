@@ -5,20 +5,20 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/providerconfig"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // SetupController adds a controller that reconciles ProviderConfigs and tracks
 // their current usage.
 func SetupController(mgr ctrl.Manager) error {
-	name := providerconfig.ControllerName(providerv1.ProviderConfigGroupKind)
+	name := providerconfig.ControllerName(providerv1beta1.ProviderConfigGroupKind)
 	recorder := event.NewAPIRecorder(mgr.GetEventRecorder(name))
 
 	of := resource.ProviderConfigKinds{
-		Config:    providerv1.ProviderConfigGroupVersionKind,
-		Usage:     providerv1.ProviderConfigUsageGroupVersionKind,
-		UsageList: providerv1.ProviderConfigUsageListGroupVersionKind,
+		Config:    providerv1beta1.ProviderConfigGroupVersionKind,
+		Usage:     providerv1beta1.ProviderConfigUsageGroupVersionKind,
+		UsageList: providerv1beta1.ProviderConfigUsageListGroupVersionKind,
 	}
 
 	r := providerconfig.NewReconciler(mgr, of,
@@ -27,7 +27,7 @@ func SetupController(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&providerv1.ProviderConfig{}).
-		Watches(&providerv1.ProviderConfigUsage{}, &resource.EnqueueRequestForProviderConfig{}).
+		For(&providerv1beta1.ProviderConfig{}).
+		Watches(&providerv1beta1.ProviderConfigUsage{}, &resource.EnqueueRequestForProviderConfig{}).
 		Complete(r)
 }

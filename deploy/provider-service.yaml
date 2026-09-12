@@ -9,11 +9,11 @@ spec:
   selector:
     app: provider-minio-controller
   ports:
-  - name: health
-    port: 8081
-    targetPort: health
-    protocol: TCP
-  - name: webhook
-    port: 9443
-    targetPort: webhook
-    protocol: TCP
+    - name: health
+      port: 8081
+      targetPort: health
+      protocol: TCP
+    - name: webhook
+      port: 9443
+      targetPort: webhook
+      protocol: TCP

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/rossigee/provider-minio/apis/common"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -23,13 +23,9 @@ const (
 [TEST CA CERTIFICATE CONTENT - PLACEHOLDER FOR TESTING]
 -----END CERTIFICATE-----`
 
-	testClientCert = `-----BEGIN CERTIFICATE-----
-[TEST CLIENT CERTIFICATE CONTENT - PLACEHOLDER FOR TESTING]
------END CERTIFICATE-----`
+	testClientCert = `TEST CLIENT CERTIFICATE CONTENT - PLACEHOLDER FOR TESTING`
 
-	testClientKey = `-----BEGIN PRIVATE KEY-----
-[TEST PRIVATE KEY CONTENT - PLACEHOLDER FOR TESTING]
------END PRIVATE KEY-----`
+	testClientKey = `TEST PRIVATE KEY CONTENT - PLACEHOLDER FOR TESTING`
 )
 
 func Test_IsTLSEnabled(t *testing.T) {
@@ -269,17 +265,17 @@ func TestNewMinioClient(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		config      *providerv1.ProviderConfig
+		config      *providerv1beta1.ProviderConfig
 		setupClient func() client.Client
 		wantErr     bool
 		wantSecure  bool
 	}{
 		{
 			name: "Basic HTTP config should work",
-			config: &providerv1.ProviderConfig{
-				Spec: providerv1.ProviderConfigSpec{
+			config: &providerv1beta1.ProviderConfig{
+				Spec: providerv1beta1.ProviderConfigSpec{
 					MinioURL: "http://minio.example.com:9000/",
-					Credentials: providerv1.ProviderCredentials{
+					Credentials: providerv1beta1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
 							Name:      "minio-creds",
 							Namespace: "crossplane-system",
@@ -293,10 +289,10 @@ func TestNewMinioClient(t *testing.T) {
 		},
 		{
 			name: "Basic HTTPS config should work",
-			config: &providerv1.ProviderConfig{
-				Spec: providerv1.ProviderConfigSpec{
+			config: &providerv1beta1.ProviderConfig{
+				Spec: providerv1beta1.ProviderConfigSpec{
 					MinioURL: "https://minio.example.com:9000/",
-					Credentials: providerv1.ProviderCredentials{
+					Credentials: providerv1beta1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
 							Name:      "minio-creds",
 							Namespace: "crossplane-system",
@@ -310,10 +306,10 @@ func TestNewMinioClient(t *testing.T) {
 		},
 		{
 			name: "TLS config with CA secret reference should work",
-			config: &providerv1.ProviderConfig{
-				Spec: providerv1.ProviderConfigSpec{
+			config: &providerv1beta1.ProviderConfig{
+				Spec: providerv1beta1.ProviderConfigSpec{
 					MinioURL: "https://minio.example.com:9000/",
-					Credentials: providerv1.ProviderCredentials{
+					Credentials: providerv1beta1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
 							Name:      "minio-creds",
 							Namespace: "crossplane-system",
@@ -335,10 +331,10 @@ func TestNewMinioClient(t *testing.T) {
 		},
 		{
 			name: "Missing secret should return error",
-			config: &providerv1.ProviderConfig{
-				Spec: providerv1.ProviderConfigSpec{
+			config: &providerv1beta1.ProviderConfig{
+				Spec: providerv1beta1.ProviderConfigSpec{
 					MinioURL: "https://minio.example.com:9000/",
-					Credentials: providerv1.ProviderCredentials{
+					Credentials: providerv1beta1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
 							Name:      "nonexistent-secret",
 							Namespace: "crossplane-system",
@@ -351,10 +347,10 @@ func TestNewMinioClient(t *testing.T) {
 		},
 		{
 			name: "Invalid URL should return error",
-			config: &providerv1.ProviderConfig{
-				Spec: providerv1.ProviderConfigSpec{
+			config: &providerv1beta1.ProviderConfig{
+				Spec: providerv1beta1.ProviderConfigSpec{
 					MinioURL: "://invalid-url",
-					Credentials: providerv1.ProviderCredentials{
+					Credentials: providerv1beta1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
 							Name:      "minio-creds",
 							Namespace: "crossplane-system",
@@ -367,10 +363,10 @@ func TestNewMinioClient(t *testing.T) {
 		},
 		{
 			name: "TLS config with invalid secret should return error",
-			config: &providerv1.ProviderConfig{
-				Spec: providerv1.ProviderConfigSpec{
+			config: &providerv1beta1.ProviderConfig{
+				Spec: providerv1beta1.ProviderConfigSpec{
 					MinioURL: "https://minio.example.com:9000/",
-					Credentials: providerv1.ProviderCredentials{
+					Credentials: providerv1beta1.ProviderCredentials{
 						APISecretRef: corev1.SecretReference{
 							Name:      "minio-creds",
 							Namespace: "crossplane-system",

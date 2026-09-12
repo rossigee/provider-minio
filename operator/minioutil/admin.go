@@ -9,14 +9,14 @@ import (
 
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewMinioAdmin returns a new minio admin client that can manage users and IAM.
 // It can be used to assign a policy to a user.
-func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1.ProviderConfig) (*madmin.AdminClient, error) {
+func NewMinioAdmin(ctx context.Context, c client.Client, config *providerv1beta1.ProviderConfig) (*madmin.AdminClient, error) {
 	secret := &corev1.Secret{}
 	var key client.ObjectKey
 	var tlsNamespace string

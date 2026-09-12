@@ -11,7 +11,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -23,7 +23,7 @@ func SetupController(mgr ctrl.Manager, o controller.Options) error {
 	return SetupControllerWithConnector(mgr, name, recorder, &connector{
 		kube:     mgr.GetClient(),
 		recorder: recorder,
-		usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1.ProviderConfigUsage{}),
+		usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1beta1.ProviderConfigUsage{}),
 	}, 0*time.Second, o)
 }
 
@@ -70,7 +70,7 @@ func SetupV1Beta1Controller(mgr ctrl.Manager) error {
 	return SetupV1Beta1ControllerWithConnector(mgr, name, recorder, &connector{
 		kube:     mgr.GetClient(),
 		recorder: recorder,
-		usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1.ProviderConfigUsage{}),
+		usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1beta1.ProviderConfigUsage{}),
 	}, 0*time.Second)
 }
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -105,13 +105,13 @@ func (v *Validator) doesPolicyExist(ctx context.Context, user *miniov1beta1.User
 	return nil
 }
 
-func getProviderConfig(ctx context.Context, user *miniov1beta1.User, kube client.Client) (*providerv1.ProviderConfig, error) {
+func getProviderConfig(ctx context.Context, user *miniov1beta1.User, kube client.Client) (*providerv1beta1.ProviderConfig, error) {
 	configName := user.GetProviderConfigReference().Name
-	config := &providerv1.ProviderConfig{}
+	config := &providerv1beta1.ProviderConfig{}
 	err := kube.Get(ctx, client.ObjectKey{Name: configName}, config)
 	return config, err
 }
 
-func getMinioAdmin(ctx context.Context, kube client.Client, config *providerv1.ProviderConfig) (cannedPolicyLister, error) {
+func getMinioAdmin(ctx context.Context, kube client.Client, config *providerv1beta1.ProviderConfig) (cannedPolicyLister, error) {
 	return minioutil.NewMinioAdmin(ctx, kube, config)
 }

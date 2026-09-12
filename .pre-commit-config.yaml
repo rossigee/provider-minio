@@ -31,7 +31,9 @@ repos:
     hooks:
       - id: golangci-lint
         name: golangci-lint
-        entry: golangci-lint run --timeout=5m
+        # Use the repo-standard lint target so the pinned v2 toolchain
+        # (build submodule) is used instead of whatever system binary exists.
+        entry: make lint
         language: system
         files: \.go$
         pass_filenames: false
@@ -96,13 +98,18 @@ repos:
           import re
 
           secret_patterns = [
-              r'(?i)(password|passwd|pwd)\s*[=:]\s*[\"\']\w+[\"\']\s*',
-              r'(?i)(api[_-]?key|apikey)\s*[=:]\s*[\"\']\w+[\"\']\s*',
-              r'(?i)(secret[_-]?key|secretkey)\s*[=:]\s*[\"\']\w+[\"\']\s*',
-              r'(?i)(access[_-]?token|accesstoken)\s*[=:]\s*[\"\']\w+[\"\']\s*',
-              r'(?i)(auth[_-]?token|authtoken)\s*[=:]\s*[\"\']\w+[\"\']\s*',
-              r'(?i)(discord[_-]?token|bot[_-]?token)\s*[=:]\s*[\"\']\w+[\"\']\s*',
+              r'(?i)(password|passwd|pwd)\s*[=:]\s*[\"\'](\w+)[\"\']\s*',
+              r'(?i)(api[_-]?key|apikey)\s*[=:]\s*[\"\'](\w+)[\"\']\s*',
+              r'(?i)(secret[_-]?key|secretkey)\s*[=:]\s*[\"\'](\w+)[\"\']\s*',
+              r'(?i)(access[_-]?token|accesstoken)\s*[=:]\s*[\"\'](\w+)[\"\']\s*',
+              r'(?i)(auth[_-]?token|authtoken)\s*[=:]\s*[\"\'](\w+)[\"\']\s*',
+              r'(?i)(discord[_-]?token|bot[_-]?token)\s*[=:]\s*[\"\'](\w+)[\"\']\s*',
           ]
+
+          # ALL_CAPS values are env-var names (e.g. MinioSecretKey = \"AWS_SECRET_ACCESS_KEY\"),
+          # not secret material. Real secrets are never bare SCREAMING_SNAKE identifiers.
+          def is_env_var_name(value):
+              return re.fullmatch(r'[A-Z][A-Z0-9_]*', value) is not None
 
           for filename in sys.argv[1:]:
               if filename.endswith('.pre-commit-config.yaml') or filename.endswith('_test.go'):
@@ -111,9 +118,10 @@ repos:
                   with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
                       content = f.read()
                       for pattern in secret_patterns:
-                          if re.search(pattern, content):
-                              print(f'Potential secret found in {filename}')
-                              sys.exit(1)
+                          for match in re.finditer(pattern, content):
+                              if not is_env_var_name(match.group(2)):
+                                  print(f'Potential secret found in {filename}')
+                                  sys.exit(1)
               except Exception:
                   pass
           "

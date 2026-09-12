@@ -9,7 +9,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	"github.com/minio/minio-go/v7"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +45,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	var config *providerv1.ProviderConfig
+	var config *providerv1beta1.ProviderConfig
 
 	bucket, ok := mg.(*miniov1beta1.Bucket)
 	if !ok {
@@ -71,9 +71,9 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	return bc, nil
 }
 
-func (c *connector) getProviderConfig(ctx context.Context, bucket *miniov1beta1.Bucket) (*providerv1.ProviderConfig, error) {
+func (c *connector) getProviderConfig(ctx context.Context, bucket *miniov1beta1.Bucket) (*providerv1beta1.ProviderConfig, error) {
 	configName := bucket.GetProviderConfigReference().Name
-	config := &providerv1.ProviderConfig{}
+	config := &providerv1beta1.ProviderConfig{}
 	err := c.kube.Get(ctx, client.ObjectKey{Name: configName}, config)
 	return config, err
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rossigee/provider-minio/apis/common"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +26,7 @@ const (
 )
 
 // NewMinioClient returns a new minio client according to the given provider config.
-func NewMinioClient(ctx context.Context, c client.Client, config *providerv1.ProviderConfig) (*minio.Client, error) {
+func NewMinioClient(ctx context.Context, c client.Client, config *providerv1beta1.ProviderConfig) (*minio.Client, error) {
 	secret := &corev1.Secret{}
 	var key client.ObjectKey
 	var secretKey string

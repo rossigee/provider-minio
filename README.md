@@ -73,7 +73,6 @@ spec:
     region: us-east-1
   providerConfigRef:
     name: default
-  deletionPolicy: Delete
 ```
 
 ## Resource Types
@@ -161,7 +160,7 @@ metadata:
 | < v0.16.5 | ✅ | ❌ | v1.x |
 | v0.16.5+ | ❌ | ✅ | v2.x |
 
-**Note**: This is a **breaking change**. v1 and v1beta1 managed APIs cannot coexist. `ProviderConfig` remains `minio.crossplane.io/v1` cluster-scoped in both.
+**Note**: This is a **breaking change**. Legacy `minio.crossplane.io/v1` APIs are removed. All resources including cluster-scoped `ProviderConfig` are served as `minio.m.crossplane.io/v1beta1`.
 
 ## Documentation
 

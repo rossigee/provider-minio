@@ -1,9 +1,9 @@
 // +kubebuilder:object:generate=true
-// +groupName=minio.crossplane.io
-// +versionName=v1
+// +groupName=minio.m.crossplane.io
+// +versionName=v1beta1
 
-// Package v1 contains the core resources of the provider-minio.
-package v1
+// Package v1beta1 contains the core resources of the provider-minio.
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,8 +13,8 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "minio.crossplane.io"
-	Version = "v1"
+	Group   = "minio.m.crossplane.io"
+	Version = "v1beta1"
 )
 
 var (

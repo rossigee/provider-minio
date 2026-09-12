@@ -11,7 +11,7 @@ import (
 	"github.com/minio/madmin-go/v3"
 	"github.com/pkg/errors"
 	"github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/rossigee/provider-minio/internal/clients"
 	"github.com/rossigee/provider-minio/internal/tracing"
 	"k8s.io/apimachinery/pkg/types"
@@ -44,7 +44,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 			resource.ManagedKind(v1beta1.UserGroupVersionKind),
 			managed.WithExternalConnector(&connector{
 				kube:         mgr.GetClient(),
-				usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1.ProviderConfigUsage{}),
+				usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &providerv1beta1.ProviderConfigUsage{}),
 				newServiceFn: clients.NewMinIOClient,
 			}),
 			managed.WithLogger(o.Logger.WithValues("controller", name)),
@@ -75,7 +75,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 
-	pc := &providerv1.ProviderConfig{}
+	pc := &providerv1beta1.ProviderConfig{}
 	if err := c.kube.Get(ctx, types.NamespacedName{Name: cr.GetProviderConfigReference().Name}, pc); err != nil {
 		return nil, errors.Wrap(err, errGetPC)
 	}

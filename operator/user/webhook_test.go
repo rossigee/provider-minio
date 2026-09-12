@@ -8,7 +8,7 @@ import (
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/go-logr/logr"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
-	providerv1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -270,12 +270,12 @@ func TestValidator_ValidateUpdate(t *testing.T) {
 	}
 }
 
-func getMockProviderConfig(context.Context, *miniov1beta1.User, client.Client) (*providerv1.ProviderConfig, error) {
-	return &providerv1.ProviderConfig{}, nil
+func getMockProviderConfig(context.Context, *miniov1beta1.User, client.Client) (*providerv1beta1.ProviderConfig, error) {
+	return &providerv1beta1.ProviderConfig{}, nil
 }
 
-func getMockMinioAdmin(policies map[string]json.RawMessage) func(context.Context, client.Client, *providerv1.ProviderConfig) (cannedPolicyLister, error) {
-	return func(context.Context, client.Client, *providerv1.ProviderConfig) (cannedPolicyLister, error) {
+func getMockMinioAdmin(policies map[string]json.RawMessage) func(context.Context, client.Client, *providerv1beta1.ProviderConfig) (cannedPolicyLister, error) {
+	return func(context.Context, client.Client, *providerv1beta1.ProviderConfig) (cannedPolicyLister, error) {
 		return &mockAdminClient{
 			policies: policies,
 		}, nil

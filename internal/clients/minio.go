@@ -8,7 +8,7 @@ import (
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/pkg/errors"
-	v1 "github.com/rossigee/provider-minio/apis/provider/v1"
+	v1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
