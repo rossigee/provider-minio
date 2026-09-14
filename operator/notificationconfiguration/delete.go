@@ -2,7 +2,6 @@ package notificationconfiguration
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
@@ -40,16 +39,16 @@ func (nc *notificationClient) Delete(ctx context.Context, mg resource.Managed) (
 	}
 
 	// Remove our webhook configuration from the bucket
-	webhookID := webhookConfig.ID
-	expectedARN := fmt.Sprintf("arn:minio:sqs::%s:webhook", webhookID)
+	// Webhook is stored as QueueConfig with static ARN (matching create.go/observe.go)
+	webhookARN := "arn:minio:sqs:us-east-1:_:webhook"
 
-	filtered := []notification.LambdaConfig{}
-	for _, lambda := range config.LambdaConfigs {
-		if lambda.Arn.String() != expectedARN || lambda.Lambda != webhookConfig.Endpoint {
-			filtered = append(filtered, lambda)
+	filtered := []notification.QueueConfig{}
+	for _, queue := range config.QueueConfigs {
+		if queue.Queue != webhookARN {
+			filtered = append(filtered, queue)
 		}
 	}
-	config.LambdaConfigs = filtered
+	config.QueueConfigs = filtered
 
 	// Update bucket notification
 	err = nc.mc.SetBucketNotification(ctx, cr.Spec.ForProvider.BucketName, config)
