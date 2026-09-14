@@ -44,6 +44,13 @@ publish.artifacts: do.build.artifacts
 	fi
 	$(foreach r,$(XPKG_REG_ORGS), $(foreach x,$(XPKGS),@$(MAKE) xpkg.release.publish.$(r).$(x)))
 	$(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),@$(MAKE) img.release.publish.$(r).$(i)))
+xpkg.release.publish.ghcr.io/rossigee.provider-minio:
+	@$(foreach p,$(XPKG_LINUX_PLATFORMS),$(MAKE) xpkg.build.provider-minio PLATFORM=$(p) || exit 1;)
+	@$(CROSSPLANE_CLI) xpkg push \
+		$(foreach p,$(XPKG_LINUX_PLATFORMS),--package-files $(XPKG_OUTPUT_DIR)/$(p)/provider-minio-$(VERSION).xpkg ) \
+		ghcr.io/rossigee/provider-minio:$(VERSION)
+	@$(OK) Pushed package ghcr.io/rossigee/provider-minio:$(VERSION)
+
 
 # Setup XPKG - Standardized registry configuration
 # Primary registry: GitHub Container Registry under rossigee
@@ -140,3 +147,7 @@ webhook-debug: webhook-cert
 	kubectl apply -f -
 
 .PHONY: submodules run install-crds uninstall-crds install-samples delete-samples webhook-cert webhook-debug
+
+# Neutralize plain image publish for ghcr (xpkg uses same ref; plain push would clobber package.yaml)
+img.release.publish.ghcr.io/rossigee.provider-minio:
+	@:
