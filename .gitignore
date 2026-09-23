@@ -61,10 +61,11 @@ temp/
 *.temp
 __debug*
 
-# Generated build artifacts
-crds/
-crossplane.yaml
-webhook
+# Generated build artifacts (root only; package/crds, package/crossplane.yaml,
+# and package/webhook are committed for the xpkg)
+/crds/
+/crossplane.yaml
+/webhook
 docs/node_modules/
 docs/package-lock.json
 .public/
