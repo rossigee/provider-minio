@@ -71,9 +71,17 @@ XPKGS = provider-minio
 xpkg.build.provider-minio: do.build.images
 
 # Setup Package Metadata
-CROSSPLANE_VERSION = 2.5.0
+CROSSPLANE_VERSION = 2.4.2
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk
+
+# Local development, integration and end to end test targets. The kind based
+# local-install/mirror-setup/package-push-local flow this file used to rely on
+# is gone: the provider is now side-loaded with local.xpkg.deploy.provider, so
+# no in-cluster registry is needed. `test/local.mk` had no includer at all
+# between 1554ce1 and now, which is why `make test-e2e` reported
+# "No rule to make target".
+-include test/local.mk
 
 # Targets
 

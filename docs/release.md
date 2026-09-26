@@ -50,7 +50,7 @@ Example tags:
 
 ## Crossplane Version
 
-`Makefile:69` pins `CROSSPLANE_VERSION = 2.5.0`; `crossplane.yaml:66` requires `>=v2.5.0`. Managed resources are `minio.m.crossplane.io/v1beta1` namespaced since `v0.16.5+` (`README.md:150`).
+`Makefile` pins `CROSSPLANE_VERSION = 2.4.2`; `package/crossplane.yaml` requires `>=v2.4.2`. Managed resources are `minio.m.crossplane.io/v1beta1` namespaced since `v0.16.5+` (`README.md:150`).
 
 ## Registries
 

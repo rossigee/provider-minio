@@ -9,7 +9,36 @@ This file begins at v0.21.4. The published v0.21.3 tag was built from a commit
 predating the v0.21.3 release preparation, so none of that work shipped; everything
 below is therefore released for the first time in v0.21.4.
 
-## [v0.21.5] - 2026-09-26
+## [v0.21.6] - 2026-09-27
+
+### Fixed in v0.21.6
+
+- **Corrected the Crossplane version floor from `>=v2.5.0` to `>=v2.4.2`.** There is
+  no released Crossplane v2.5.0: the latest is v2.4.2, and the Helm chart index tops out
+  at 2.4.2 as well. The `>=v2.5.0` requirement therefore could not be satisfied by any
+  released Crossplane, and the package was rejected at install time with
+  `incompatible Crossplane version: package is not compatible with Crossplane version
+  (v2.4.2)`. This affected every release from v0.21.4 onwards, because v0.21.3 was built
+  from a commit that predated the change. Verified by deploying this provider into a kind
+  cluster running Crossplane v2.4.2: with the floor corrected the package installs, the
+  provider reports `HEALTHY`, and all five managed resource CRDs plus `ProviderConfig` and
+  `ProviderConfigUsage` register. `Makefile`'s `CROSSPLANE_VERSION`, used to install the
+  control plane for local end to end tests, was pinned to the same non-existent 2.5.0 and is
+  now 2.4.2.
+- Restored `make test-e2e`, which reported `No rule to make target 'test-e2e'`. The
+  `-include test/local.mk` line was removed in 1554ce1 and never restored, so the 26 files
+  under `test/e2e/` could not be executed by any command.
+- Rebuilt `test/local.mk` on the vendored kind machinery: `controlplane.up` brings up the
+  cluster and Crossplane, and `local.xpkg.deploy.provider.$(PROJECT_NAME)` side-loads the
+  locally built provider image. This removes the in-cluster docker-registry, `mirror-setup`
+  and `package-push-local` flow that existed only so Crossplane could pull an image.
+- MinIO now runs in-cluster with no ingress, and the end to end suite is given its own
+  kubeconfig. The suite previously drove its own object uploads through an ingress at
+  `minio.127.0.0.1.nip.io`, which requires public DNS and ingress-nginx and so could never
+  run on a CI runner. The suite is also no longer at risk of acting on whatever cluster an
+  ambient `KUBECONFIG` happens to point at.
+
+## [v0.21.5] - 2026-09-27
 
 ### Fixed in v0.21.5
 
@@ -62,7 +91,6 @@ below is therefore released for the first time in v0.21.4.
 
 - Standardized tag-only release publishing for both supported Linux architectures.
 - Ensured cross-architecture image builds use target-specific binaries.
-- Raised the Crossplane minimum version to v2.5.0.
 - Regenerated the sample manifests under the `minio.m.crossplane.io/v1beta1` API group and renamed the files to match.
 
 ### Fixed

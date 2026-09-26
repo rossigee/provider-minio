@@ -187,6 +187,58 @@ jobs:
           sarif_file: gosec-results.sarif
           category: gosec
 
+
+  # End to end tests against a real MinIO in a kind cluster.
+  #
+  # This job is the reason the manifest defects fixed in v0.21.4 and v0.21.5 were
+  # able to ship: nothing previously executed test/e2e, so `make test-e2e` did
+  # not even exist as a target. `make test-e2e` provisions the control plane,
+  # installs MinIO, side-loads the provider and runs the kuttl suite.
+  # Runs on pull requests as well as master, unlike build-validation, because the
+  # point is to catch manifest defects before they are merged rather than after.
+  e2e:
+    runs-on: ubuntu-24.04
+    needs: [detect-noop, lint, check-diff, unit-tests, security-scan]
+    if: ${{ !cancelled() && needs.detect-noop.outputs.noop != 'true' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vendor Dependencies
+        run: go mod vendor
+
+      - name: Free disk space
+        # The kind node image, the provider image and the Crossplane and MinIO
+        # images together overrun the default runner disk.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: Run End to End Tests
+        run: make test-e2e
+
+      - name: Dump control plane state on failure
+        if: failure()
+        run: |
+          make controlplane.dump || true
+          kubectl --context kind-local-dev get all -A || true
+          kubectl --context kind-local-dev describe provider.pkg.crossplane.io || true
+
+      - name: Tear down the cluster
+        if: always()
+        run: make controlplane.down || true
+
   # CI ONLY VALIDATES BUILDS - NO PUBLISHING
   build-validation:
     runs-on: ubuntu-24.04
