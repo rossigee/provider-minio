@@ -120,6 +120,9 @@ func (p *policyClient) emitCreationEvent(policy *miniov1beta1.Policy) {
 
 func (p *policyClient) setLock(policy *miniov1beta1.Policy) {
 	annotations := policy.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
 	annotations[PolicyCreatedAnnotationKey] = "claimed"
 	policy.SetAnnotations(annotations)
 }
