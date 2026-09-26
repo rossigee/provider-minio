@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.21.3] - 2026-09-24
+This file begins at v0.21.4. The published v0.21.3 tag was built from a commit
+predating the v0.21.3 release preparation, so none of that work shipped; everything
+below is therefore released for the first time in v0.21.4.
+
+## [v0.21.4] - 2026-09-26
 
 ### Changed
 
-- Updated release metadata and installation references for v0.21.3.
 - Standardized tag-only release publishing for both supported Linux architectures.
 - Ensured cross-architecture image builds use target-specific binaries.
 - Raised the Crossplane minimum version to v2.5.0.

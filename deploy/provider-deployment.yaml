@@ -18,7 +18,7 @@ spec:
       serviceAccountName: provider-minio
       containers:
         - name: provider-minio-controller
-          image: ghcr.io/rossigee/provider-minio:v0.21.3
+          image: ghcr.io/rossigee/provider-minio:v0.21.4
           args:
             - operator
             - --enable-leader-election
