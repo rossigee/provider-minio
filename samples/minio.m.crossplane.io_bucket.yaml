@@ -1,12 +1,12 @@
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: Bucket
 metadata:
-  creationTimestamp: null
   name: bucket-local-dev
 spec:
   forProvider:
     region: us-east-1
   providerConfigRef:
+    kind: ProviderConfig
     name: provider-config
 status:
   atProvider: {}

@@ -150,5 +150,5 @@ kubectl delete bucket my-bucket -n default
 
 * `examples/v2/bucket-namespaced.yaml` — canonical Bucket example
 * `examples/v2/user-namespaced.yaml` — canonical User example
-* `examples/minio.crossplane.io_serviceaccount.yaml` — ServiceAccount (legacy filename, v1beta1 content)
+* `examples/minio.m.crossplane.io_serviceaccount.yaml` — ServiceAccount
 * `samples/` — generated samples (see `generate_sample.go:10`)

@@ -15,6 +15,7 @@ import (
 	"github.com/rossigee/provider-minio/apis"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	"github.com/rossigee/provider-minio/internal/tracing"
+	"github.com/rossigee/provider-minio/internal/version"
 	"github.com/rossigee/provider-minio/operator"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -58,7 +59,7 @@ func main() {
 	// This must be called before any controller-runtime operations
 	ctrl.SetLogger(zl)
 
-	log.Debug("Starting", "sync-period", syncPeriod.String())
+	log.Debug("Starting", "version", version.Version, "sync-period", syncPeriod.String())
 
 	cfg, err := ctrl.GetConfig()
 	kingpin.FatalIfError(err, "Cannot get API server rest config")
@@ -142,18 +143,19 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 	ctx := context.Background()
 
 	rules := []rbacv1.PolicyRule{
-		{APIGroups: []string{"minio.crossplane.io"}, Resources: []string{"providerconfigs", "providerconfigs/status", "providerconfigusages", "providerconfigusages/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
-		{APIGroups: []string{"bucket.minio.crossplane.io"}, Resources: []string{"buckets", "buckets/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
-		{APIGroups: []string{"user.minio.crossplane.io"}, Resources: []string{"users", "users/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
-		{APIGroups: []string{"policy.minio.crossplane.io"}, Resources: []string{"policies", "policies/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
-		{APIGroups: []string{"serviceaccount.minio.crossplane.io"}, Resources: []string{"serviceaccounts", "serviceaccounts/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
-		{APIGroups: []string{"notificationconfiguration.minio.crossplane.io"}, Resources: []string{"notificationconfigurations", "notificationconfigurations/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
+		{APIGroups: []string{"minio.m.crossplane.io"}, Resources: []string{"providerconfigs", "providerconfigs/status", "providerconfigusages", "providerconfigusages/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
+		{APIGroups: []string{"bucket.minio.m.crossplane.io"}, Resources: []string{"buckets", "buckets/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
+		{APIGroups: []string{"user.minio.m.crossplane.io"}, Resources: []string{"users", "users/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
+		{APIGroups: []string{"policy.minio.m.crossplane.io"}, Resources: []string{"policies", "policies/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
+		{APIGroups: []string{"serviceaccount.minio.m.crossplane.io"}, Resources: []string{"serviceaccounts", "serviceaccounts/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
+		{APIGroups: []string{"notificationconfiguration.minio.m.crossplane.io"}, Resources: []string{"notificationconfigurations", "notificationconfigurations/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
 		{
-			APIGroups: []string{"minio.crossplane.io", "bucket.minio.crossplane.io", "user.minio.crossplane.io", "policy.minio.crossplane.io", "serviceaccount.minio.crossplane.io", "notificationconfiguration.minio.crossplane.io"},
+			APIGroups: []string{"minio.m.crossplane.io", "bucket.minio.m.crossplane.io", "user.minio.m.crossplane.io", "policy.minio.m.crossplane.io", "serviceaccount.minio.m.crossplane.io", "notificationconfiguration.minio.m.crossplane.io"},
 			Resources: []string{"*/finalizers"},
 			Verbs:     []string{"update"},
 		},
 		{APIGroups: []string{"", "coordination.k8s.io"}, Resources: []string{"secrets", "configmaps", "events", "leases"}, Verbs: []string{"*"}},
+		{APIGroups: []string{"events.k8s.io"}, Resources: []string{"events"}, Verbs: []string{"create", "patch", "update"}},
 	}
 
 	system := &rbacv1.ClusterRole{

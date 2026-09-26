@@ -12,7 +12,9 @@ metadata:
       `provider-minio` is a Crossplane infrastructure provider for
       [MinIO](https://www.min.io/) object storage.
 
-      Managed resources are `minio.m.crossplane.io/v1beta1` namespaced (Bucket, Policy, User, ServiceAccount, NotificationConfiguration) with a cluster-scoped `ProviderConfig` (`minio.crossplane.io/v1`).
+      Managed resources are `minio.m.crossplane.io/v1beta1` namespaced
+      (Bucket, Policy, User, ServiceAccount, NotificationConfiguration)
+      with a cluster-scoped `ProviderConfig` (`minio.m.crossplane.io/v1beta1`).
 
       Available resources and their fields can be found in the CRDs (`package/crds/`) and `docs/API.md`.
       If you encounter an issue please create an issue in the
@@ -20,47 +22,43 @@ metadata:
 spec:
   permissionRequests:
     - apiGroups:
-      - minio.crossplane.io
+        - minio.m.crossplane.io
       resources:
-      - providerconfigs
-      - providerconfigs/status
-      - providerconfigusages
-      - providerconfigusages/status
+        - providerconfigs
+        - providerconfigs/status
+        - providerconfigusages
+        - providerconfigusages/status
       verbs:
-      - "*"
+        - "*"
     - apiGroups:
-      - minio.m.crossplane.io
+        - minio.m.crossplane.io
       resources:
-      - buckets
-      - buckets/status
-      - policies
-      - policies/status
-      - serviceaccounts
-      - serviceaccounts/status
-      - users
-      - users/status
-      - notificationconfigurations
-      - notificationconfigurations/status
+        - buckets
+        - buckets/status
+        - policies
+        - policies/status
+        - serviceaccounts
+        - serviceaccounts/status
+        - users
+        - users/status
+        - notificationconfigurations
+        - notificationconfigurations/status
       verbs:
-      - "*"
+        - "*"
     - apiGroups:
-      - ""
+        - ""
       resources:
-      - secrets
+        - secrets
       verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+        - get
+        - list
+        - watch
     - apiGroups:
-      - events.k8s.io
+        - events.k8s.io
       resources:
-      - events
+        - events
       verbs:
-      - "*"
+        - "*"
   controller: {}
   crossplane:
-    version: ">=v2.0.0-0"
+    version: ">=v2.5.0"

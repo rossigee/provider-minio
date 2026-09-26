@@ -1,19 +1,20 @@
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ServiceAccount
 metadata:
   name: test-serviceaccount
 spec:
   providerConfigRef:
-    name: minio-provider-config
+    name: provider-config
+    kind: ProviderConfig
 status:
   conditions:
-  - type: Ready
-    status: "True"
-    reason: Available
-  - type: Synced
-    status: "True"
-    reason: ReconcileSuccess
+    - type: Ready
+      status: "True"
+      reason: Available
+    - type: Synced
+      status: "True"
+      reason: ReconcileSuccess
   atProvider:
     accountStatus: enabled
 ---

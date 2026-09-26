@@ -1,5 +1,5 @@
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: User
 metadata:
   creationTimestamp: null
@@ -8,13 +8,13 @@ spec:
   forProvider: {}
   providerConfigRef:
     name: provider-config
+    kind: ProviderConfig
   writeConnectionSecretToRef:
     name: testuser
-    namespace: default
 status:
   atProvider: {}
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: Policy
 metadata:
   creationTimestamp: null
@@ -24,5 +24,6 @@ spec:
     allowBucket: e2e-test-kuttl-provider
   providerConfigRef:
     name: provider-config
+    kind: ProviderConfig
 status:
   atProvider: {}

@@ -1,14 +1,13 @@
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: User
 metadata:
-  creationTimestamp: null
   name: devuser
 spec:
   forProvider: {}
   providerConfigRef:
+    kind: ProviderConfig
     name: provider-config
   writeConnectionSecretToRef:
     name: devuser
-    namespace: default
 status:
   atProvider: {}

@@ -2,20 +2,21 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: Bucket
 metadata:
   name: e2e-test-bucket-policy
   annotations:
-    minio.crossplane.io/lock: claimed
+    minio.m.crossplane.io/lock: claimed
 spec:
-  deletionPolicy: Delete
+  managementPolicies: ["*"]
   forProvider:
     bucketName: e2e-test-kuttl-provider-minio-policy
     bucketDeletionPolicy: DeleteAll
     region: us-east-1
   providerConfigRef:
     name: provider-config
+    kind: ProviderConfig
 status:
   atProvider:
     bucketName: e2e-test-kuttl-provider-minio-policy
@@ -25,7 +26,7 @@ status:
   endpoint: minio-server.minio.svc:9000
   endpointURL: http://minio-server.minio.svc:9000/
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: Policy
 metadata:
   name: e2e-test-policy
@@ -34,6 +35,7 @@ spec:
     allowBucket: e2e-test-kuttl-provider-minio-policy
   providerConfigRef:
     name: provider-config
+    kind: ProviderConfig
 status:
   atProvider:
     policy: '{"Version":"2012-10-17","Statement":[{"Sid":"addPerm","Effect":"Allow","Action":["s3:*"],"Resource":["arn:aws:s3:::e2e-test-kuttl-provider-minio-policy/","arn:aws:s3:::e2e-test-kuttl-provider-minio-policy/*"]}]}'

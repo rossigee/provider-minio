@@ -12,7 +12,7 @@ Crossplane provider for managing MinIO object storage resources including bucket
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.19.9`
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.21.3`
 
 ## Getting Started
 
@@ -27,7 +27,7 @@ Crossplane provider for managing MinIO object storage resources including bucket
 Install the provider:
 
 ```bash
-kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.19.9
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.3
 ```
 
 Create a secret with your MinIO credentials:
@@ -42,7 +42,7 @@ kubectl create secret generic minio-credentials \
 Configure the provider (cluster-scoped):
 
 ```yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: default
@@ -77,7 +77,7 @@ spec:
 
 ## Resource Types
 
-All managed resources are `minio.m.crossplane.io/v1beta1` **namespaced**; `ProviderConfig` is `minio.crossplane.io/v1` **cluster-scoped**.
+All managed resources are `minio.m.crossplane.io/v1beta1` **namespaced**; `ProviderConfig` is `minio.m.crossplane.io/v1beta1` **cluster-scoped**.
 
 ### Bucket
 
@@ -232,16 +232,14 @@ To test and troubleshoot the webhooks on the cluster, simply apply your changes 
    kubectl apply -f package/webhook
    ```
 
-2. To debug the webhook in an IDE, we need to generate certificates:
+2. To debug the webhook in an IDE, use a certificate issued by your cluster-approved authority:
 
    ```bash
+   export WEBHOOK_CA_BUNDLE="$(base64 -w0 < /path/to/ca.crt)"
    make webhook-debug
-   # if necessary with another endpoint name, depending on your docker setup
-   # if you change the webhook_service_name variable, you need to clean out the old certificates
-   make webhook-debug -e webhook_service_name=$HOSTIP
    ```
 
-3. Start the operator in your IDE with `WEBHOOK_TLS_CERT_DIR` environment set to `.work/webhooks`.
+3. Start the operator in your IDE with `WEBHOOK_TLS_CERT_DIR` set to the directory containing the issued certificate and key.
 
 4. Apply the samples to test the webhooks:
 
@@ -252,7 +250,7 @@ To test and troubleshoot the webhooks on the cluster, simply apply your changes 
 ### Run operator in debugger
 
 - `make crossplane-setup minio-setup install-crds` to install crossplane and minio in the kind cluster
-- `kubectl apply -f samples/_secret.yaml samples/minio.crossplane.io_providerconfig.yaml`
+- `kubectl apply -f samples/_secret.yaml samples/minio.m.crossplane.io_providerconfig.yaml`
 - `export KUBECONFIG=.work/kind/kind-kubeconfig`
 - `go run ./cmd/provider --debug`
 

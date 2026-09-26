@@ -1,6 +1,6 @@
 # TLS Configuration for provider-minio
 
-This document describes custom TLS settings for the MinIO provider (`spec.tls` in `ProviderConfig` `minio.crossplane.io/v1`).
+This document describes custom TLS settings for the MinIO provider (`spec.tls` in `ProviderConfig` `minio.m.crossplane.io/v1beta1`).
 
 > **Types:** `apis/common/common.go:23` `TLSConfig`, wired in `operator/minioutil/client.go:44`.
 > **ProviderConfig:** `apis/provider/v1/providerconfig_types.go:22` cluster-scoped.
@@ -11,7 +11,7 @@ This document describes custom TLS settings for the MinIO provider (`spec.tls` i
 `spec.tls` allows you to:
 
 * Connect via custom/internal CA
-* Use self-signed certificates
+* Use a certificate issued by a trusted internal or public CA
 * Configure mutual TLS (mTLS)
 * Skip verification for testing (`insecureSkipVerify`)
 
@@ -20,7 +20,7 @@ This document describes custom TLS settings for the MinIO provider (`spec.tls` i
 ### 1. Custom CA via Secret (Recommended)
 
 ```yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: provider-config-with-ca
@@ -40,7 +40,7 @@ spec:
 ### 2. Inline CA Certificate Data
 
 ```yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: provider-config-with-ca-data
@@ -66,7 +66,7 @@ spec:
 Useful when CA is managed by cert-manager or shared across apps.
 
 ```yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: provider-config-with-ca-configmap
@@ -86,7 +86,7 @@ spec:
 ### 4. Mutual TLS (mTLS)
 
 ```yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: provider-config-with-mtls
@@ -114,7 +114,7 @@ Inline variant for client cert/key also supported (`clientCertData`, `clientKeyD
 ### 5. Skip TLS Verification (Testing Only)
 
 ```yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: provider-config-insecure
@@ -178,13 +178,15 @@ spec:
     caSecretRef: { name: internal-ca-secret, key: ca.crt }
 ```
 
-### Self-Signed (Development)
+### Development CA
+
+Use a CA issued by the cluster-approved development certificate authority:
 
 ```yaml
 spec:
   minioURL: https://dev-minio.local:9000
   tls:
-    caSecretRef: { name: dev-ca-secret, key: ca.crt }
+    caSecretRef: { name: development-ca-secret, key: ca.crt }
 ```
 
 ### Corporate mTLS
@@ -225,11 +227,12 @@ kubectl create secret tls minio-client-cert \
 
 ## Security Considerations
 
-1. Store certs/keys in Secrets in `crossplane-system` (or same namespace as `apiSecretRef`).
-2. RBAC: provider ServiceAccount must be able to `get` Secrets/ConfigMaps in that namespace.
-3. Private keys should use `clientKeySecretRef`, not inline `clientKeyData` (deprecated).
-4. Rotate Secrets in place; provider picks up changes on next reconcile (TLS config is read at client creation `operator/minioutil/client.go:47`).
-5. `insecureSkipVerify: true` only for development/testing.
+1. Store certificates and keys in Secrets in `crossplane-system` (or the same namespace as `apiSecretRef`).
+2. Issue certificates from a trusted CA; do not generate self-signed certificates.
+3. RBAC: provider ServiceAccount must be able to `get` Secrets/ConfigMaps in that namespace.
+4. Private keys should use `clientKeySecretRef`, not inline `clientKeyData` (deprecated).
+5. Rotate Secrets in place; provider picks up changes on next reconcile (TLS config is read at client creation `operator/minioutil/client.go:47`).
+6. `insecureSkipVerify: true` only for development/testing.
 
 ## Troubleshooting
 
@@ -267,5 +270,5 @@ kubectl create secret tls minio-client-cert \
 
 * `samples/providerconfig-tls-configmap.yaml` — ConfigMap CA example
 * `samples/tls-resources.yaml` — Secrets/ConfigMaps for TLS
-* `samples/minio.crossplane.io_providerconfig_with_tls.yaml`
+* `samples/minio.m.crossplane.io_providerconfig_with_tls.yaml`
 * `docs/CONFIGURATION.md`

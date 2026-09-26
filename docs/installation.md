@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-* Kubernetes cluster with [Crossplane](https://docs.crossplane.io) >= `v2.0.0` (`crossplane.yaml:64`, `Makefile:74` `CROSSPLANE_VERSION = 2.4.0`)
+* Kubernetes cluster with [Crossplane](https://docs.crossplane.io) >= `v2.5.0` (`crossplane.yaml:66`, `Makefile:69` `CROSSPLANE_VERSION = 2.5.0`)
 * `kubectl`, `helm`, `yq` (see `README.md:163` Requirements)
 * MinIO deployment reachable from the cluster
 
@@ -23,11 +23,11 @@ kubectl get pods -n crossplane-system
 
 ## 2. Install Provider
 
-Choose a released version (`VERSION` file is `v0.19.9`; `README.md` example may lag):
+Choose the released version (`VERSION` file is `v0.21.3`):
 
 ```bash
 # Using Crossplane CLI (v2)
-kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.19.9
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.3
 
 # Or via Provider manifest
 kubectl apply -f - <<EOF
@@ -36,7 +36,7 @@ kind: Provider
 metadata:
   name: provider-minio
 spec:
-  package: ghcr.io/rossigee/provider-minio:v0.19.9
+  package: ghcr.io/rossigee/provider-minio:v0.21.3
 EOF
 ```
 
@@ -64,7 +64,7 @@ The provider reads `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` (`operator/miniou
 
 ```yaml
 # providerconfig.yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: default
@@ -116,7 +116,7 @@ kubectl wait --for=condition=Ready bucket/my-bucket -n default --timeout=60s
 * `docs/ServiceAccount.md` — programmatic access
 * `docs/TLS_CONFIGURATION.md` — custom CA / mTLS
 * `examples/v2/` — hand-written v1beta1 examples
-* `samples/` — generated samples (legacy style)
+* `samples/` — v1beta1 samples; the five core files are generated, the TLS and ServiceAccount ones are hand-written
 
 ## Local Development
 
@@ -135,7 +135,7 @@ See `README.md:159` and `docs/DEVELOPMENT.md`.
 
 See `README.md:98` Breaking Change and `docs/API.md`. Key steps:
 
-1. Update `apiVersion` from `minio.crossplane.io/v1` → `minio.m.crossplane.io/v1beta1`
+1. Update managed resource `apiVersion` from `minio.crossplane.io/v1beta1` → `minio.m.crossplane.io/v1beta1`
 2. Add `metadata.namespace` to every managed resource (they are now `scope: Namespaced` per `package/crds/minio.m.crossplane.io_buckets.yaml:18`)
-3. Keep `ProviderConfig` as `minio.crossplane.io/v1` cluster-scoped (unchanged)
+3. Update `ProviderConfig` `apiVersion` from `minio.crossplane.io/v1` → `minio.m.crossplane.io/v1beta1` (still cluster-scoped)
 4. Use provider `v0.16.5+` with Crossplane `v2.x`

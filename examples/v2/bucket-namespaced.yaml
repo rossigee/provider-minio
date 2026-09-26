@@ -24,3 +24,4 @@ spec:
       }
   providerConfigRef:
     name: default
+    kind: ProviderConfig

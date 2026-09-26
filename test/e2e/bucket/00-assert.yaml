@@ -2,20 +2,21 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: Bucket
 metadata:
   name: e2e-test-bucket
   annotations:
-    minio.crossplane.io/lock: claimed
+    minio.m.crossplane.io/lock: claimed
 spec:
-  deletionPolicy: Delete
+  managementPolicies: ["*"]
   forProvider:
     bucketName: e2e-test-kuttl-provider-minio
     bucketDeletionPolicy: DeleteAll
     region: us-east-1
   providerConfigRef:
     name: provider-config
+    kind: ProviderConfig
 status:
   atProvider:
     bucketName: e2e-test-kuttl-provider-minio
