@@ -25,6 +25,12 @@ MINIO_SERVICE      ?= minio-server
 # this is deliberately generous. The first CI run failed at 5m with a bare
 # "context deadline exceeded", which says nothing about the cause.
 MINIO_WAIT_TIMEOUT ?= 10m
+# The chart requests 2Gi by default, which the kind node cannot satisfy once
+# Crossplane and the provider are running, and the pod stays Pending with
+# "Insufficient memory". The previous test/minio/values.yaml asked for 128Mi and
+# this must be kept explicitly, because the default is far too large.
+MINIO_MEMORY_REQUEST ?= 128Mi
+MINIO_MEMORY_LIMIT   ?= 512Mi
 
 # kuttl is the test runner. It is deprecated upstream (no release since January
 # 2023) and is kept only because test/e2e is already written in its format.
@@ -76,8 +82,11 @@ minio-setup: $(HELM) kind-kubeconfig
 		--set rootUser=minioadmin \
 		--set rootPassword=minioadmin \
 		--set ingress.enabled=false \
+		--set resources.requests.memory=$(MINIO_MEMORY_REQUEST) \
+		--set resources.requests.cpu=50m \
+		--set resources.limits.memory=$(MINIO_MEMORY_LIMIT) \
 		--wait --timeout $(MINIO_WAIT_TIMEOUT) || { \
-		$(INFO) MinIO did not become ready; dumping state; \
+		$(INFO) MinIO did not become ready, dumping state
 		$(KUBECTL) -n $(MINIO_NAMESPACE) get pods -o wide || true; \
 		$(KUBECTL) -n $(MINIO_NAMESPACE) describe pod -l app=$(MINIO_SERVICE) || true; \
 		$(KUBECTL) -n $(MINIO_NAMESPACE) get events --sort-by=.lastTimestamp | tail -25 || true; \
