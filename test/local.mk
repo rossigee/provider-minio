@@ -33,6 +33,11 @@ $(mc_bin): export GOBIN = $(go_bin)
 $(mc_bin): | $(go_bin)
 	go install github.com/minio/mc@latest
 
+# The build submodule does not create this directory, and the e2e job failed on
+# a clean runner with "No rule to make target _output/bin".
+$(go_bin):
+	@mkdir -p $@
+
 .PHONY: local-install
 local-install: kind-load-image crossplane-setup minio-setup package-push-local ## Install Operator in local cluster
 
