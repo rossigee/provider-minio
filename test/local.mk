@@ -21,6 +21,10 @@ INTEGRATION_TEST_DEBUG_OUTPUT ?= false
 MINIO_CHART_VERSION ?= 5.0.7
 MINIO_NAMESPACE    ?= minio
 MINIO_SERVICE      ?= minio-server
+# A cold runner has to pull the MinIO image before the chart becomes ready, so
+# this is deliberately generous. The first CI run failed at 5m with a bare
+# "context deadline exceeded", which says nothing about the cause.
+MINIO_WAIT_TIMEOUT ?= 10m
 
 # kuttl is the test runner. It is deprecated upstream (no release since January
 # 2023) and is kept only because test/e2e is already written in its format.
@@ -72,7 +76,14 @@ minio-setup: $(HELM) kind-kubeconfig
 		--set rootUser=minioadmin \
 		--set rootPassword=minioadmin \
 		--set ingress.enabled=false \
-		--wait --timeout 5m
+		--wait --timeout $(MINIO_WAIT_TIMEOUT) || { \
+		$(INFO) MinIO did not become ready; dumping state; \
+		$(KUBECTL) -n $(MINIO_NAMESPACE) get pods -o wide || true; \
+		$(KUBECTL) -n $(MINIO_NAMESPACE) describe pod -l app=$(MINIO_SERVICE) || true; \
+		$(KUBECTL) -n $(MINIO_NAMESPACE) get events --sort-by=.lastTimestamp | tail -25 || true; \
+		$(HELM) -n $(MINIO_NAMESPACE) status minio || true; \
+		exit 1; \
+	}
 	@$(KUBECTL) -n $(MINIO_NAMESPACE) rollout status deployment/$(MINIO_SERVICE) --timeout=180s
 	@$(OK) MinIO is available in-cluster at http://$(MINIO_SERVICE).$(MINIO_NAMESPACE).svc:9000
 
