@@ -54,7 +54,7 @@ $(kind_dir)/.credentials.yaml:
 .PHONY: provider-config
 provider-config: export KUBECONFIG = $(KIND_KUBECONFIG)
 provider-config: $(KIND_KUBECONFIG) $(kind_dir)/.credentials.yaml
-	kubectl apply -n crossplane-system -f $(kind_dir)/.credentials.yaml -f samples/minio.crossplane.io_providerconfig.yaml
+	kubectl apply -n crossplane-system -f $(kind_dir)/.credentials.yaml -f samples/minio.m.crossplane.io_providerconfig.yaml
 
 minio-setup: export KUBECONFIG = $(KIND_KUBECONFIG)
 minio-setup: kind-setup-ingress ## Install Minio Crossplane implementation

@@ -16,7 +16,12 @@ NPROCS ?= 1
 GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
-GO_SUBDIRS += operator apis
+# Must list every subdirectory containing Go packages that we want built,
+# tested and generated. This uses `=` rather than `+=` deliberately: golang.mk
+# declares `GO_SUBDIRS ?= cmd pkg`, but that default is only applied when the
+# variable is still undefined. An `+=` here runs first and would therefore
+# suppress the default, silently excluding cmd/ and internal/ from `make test`.
+GO_SUBDIRS = operator apis cmd internal pkg
 GO111MODULE = on
 -include build/makelib/golang.mk
 

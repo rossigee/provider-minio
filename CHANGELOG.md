@@ -30,6 +30,14 @@ below is therefore released for the first time in v0.21.4.
 - Updated the e2e and sample manifests to the `minio.m.crossplane.io/v1beta1` API group and lock annotation group.
 - Removed dead `forProvider` fields (`zone`, `versioning` and `public`).
 - Rewrote `generate_sample.go`, which had never compiled. It now regenerates the five structured samples idempotently and no longer deletes the hand-written TLS and ServiceAccount samples.
+- Fixed ServiceAccount connection secrets never being written. `ServiceAccountSpec` re-declared a `writeConnectionSecretToRef` field that shadowed the one inherited from the embedded `ManagedResourceSpec`, giving two Go fields the same JSON tag. The generated `GetWriteConnectionSecretToReference` accessor reads the embedded field, which therefore stayed `nil`, so the managed reconciler discarded the connection details and never created the Secret. The shadowing field and its custom `SecretReferenceWithNamespace` type have been removed; ServiceAccount now uses the standard name-only reference like every other managed resource in this provider, and the Secret is written to the ServiceAccount's own namespace. As a side effect the `namespace` field is no longer accepted under `writeConnectionSecretToRef` for ServiceAccount.
+
+### Testing
+
+- Made the MinIO client substitutable behind narrow per-resource interfaces, so controllers can be tested with fakes. All five `connector.go` files previously had 0% coverage and could not be tested at all, because each client struct held a concrete `*minio.Client` or `*madmin.AdminClient`.
+- Removed the package-level function variables in `operator/bucket` that existed only so tests could monkey-patch them. One was overwritten without being restored and another was never stubbed, so state leaked between tests.
+- `make test` no longer silently skips `cmd/` and `internal/`. The `GO_SUBDIRS` assignment used `+=` before `golang.mk` declared its default, so the default never applied.
+- Replaced five no-op `setup_test.go` files and a tautological `main_test.go` that asserted `ptr.To(true)` was true, with tests that assert real behaviour and fail when the behaviour regresses.
 
 ### Docs
 

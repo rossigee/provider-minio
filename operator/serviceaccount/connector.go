@@ -8,7 +8,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
@@ -24,10 +23,20 @@ type connector struct {
 	kube     client.Client
 	recorder event.Recorder
 	usage    resource.ModernTracker
+
+	// newAdmin is a seam so tests can substitute a fake. When nil the real
+	// MinIO admin client is used.
+	newAdmin adminFactory
+}
+
+type adminFactory func(context.Context, client.Client, *providerv1beta1.ProviderConfig) (minioutil.ServiceAccountAdmin, error)
+
+func newRealAdmin(ctx context.Context, kube client.Client, config *providerv1beta1.ProviderConfig) (minioutil.ServiceAccountAdmin, error) {
+	return minioutil.NewMinioAdmin(ctx, kube, config)
 }
 
 type serviceAccountClient struct {
-	ma          *madmin.AdminClient
+	ma          minioutil.ServiceAccountAdmin
 	kube        client.Client
 	recorder    event.Recorder
 	url         *url.URL
@@ -53,7 +62,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	ma, err := minioutil.NewMinioAdmin(ctx, c.kube, config)
+	maker := c.newAdmin
+	if maker == nil {
+		maker = newRealAdmin
+	}
+
+	ma, err := maker(ctx, c.kube, config)
 	if err != nil {
 		return nil, err
 	}

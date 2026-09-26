@@ -1,27 +1,36 @@
 package main
 
 import (
+	"os"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
+	"github.com/stretchr/testify/require"
 )
 
-func TestWatchBookmarksEnabled(t *testing.T) {
-	// This test verifies that watch bookmarks are enabled in the cache options.
-	// Watch bookmarks help with watch synchronization and recovery when watches
-	// drop events or become stalled.
-	//
-	// This is a compile-time check that the main.go file enables watch bookmarks
-	// via DefaultEnableWatchBookmarks: ptr.To(true).
-	//
-	// If this test fails, it indicates that watch bookmarks have been disabled,
-	// which would require investigation into why they were disabled and whether
-	// the watch reliability issues have been resolved.
+// TestMainEnablesWatchBookmarks verifies the actual source, rather than
+// re-asserting a literal. The previous version of this test constructed
+// ptr.To(true) and asserted it was true, so it passed even if main.go had
+// stopped enabling watch bookmarks entirely.
+//
+// Watch bookmarks let a dropped or stalled watch resume efficiently instead of
+// relisting, so a silent regression here is worth failing a build over.
+func TestMainEnablesWatchBookmarks(t *testing.T) {
+	src, err := os.ReadFile("main.go")
+	require.NoError(t, err)
 
-	// ptr.To(true) creates a pointer to true
-	// We use this value in cache.Options.DefaultEnableWatchBookmarks
-	expectedWatchBookmarks := ptr.To(true)
-	assert.NotNil(t, expectedWatchBookmarks)
-	assert.True(t, *expectedWatchBookmarks)
+	re := regexp.MustCompile(`(?s)cache\.Options\{.*?DefaultEnableWatchBookmarks:\s*ptr\.To\(true\)`)
+	assert.Regexp(t, re, string(src),
+		"main.go must set DefaultEnableWatchBookmarks to ptr.To(true) in its cache.Options")
+}
+
+// TestMainConfiguresLeaderElection documents the leader election defaults the
+// deployment relies on for HA.
+func TestMainConfiguresLeaderElection(t *testing.T) {
+	src, err := os.ReadFile("main.go")
+	require.NoError(t, err)
+
+	assert.Contains(t, string(src), "LeaderElection",
+		"main.go must configure leader election so replicas do not reconcile concurrently")
 }
