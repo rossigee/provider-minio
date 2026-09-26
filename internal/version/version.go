@@ -1,4 +1,4 @@
 package version
 
 // Version is the version of the provider. This is set at build time.
-var Version = "v0.21.4"
+var Version = "v0.21.5"
