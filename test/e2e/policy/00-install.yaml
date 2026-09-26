@@ -1,5 +1,5 @@
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: Bucket
 metadata:
   name: e2e-test-bucket-policy
@@ -9,8 +9,9 @@ spec:
     bucketDeletionPolicy: DeleteAll
   providerConfigRef:
     name: provider-config
+    kind: ProviderConfig
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: Policy
 metadata:
   creationTimestamp: null
@@ -20,3 +21,4 @@ spec:
     allowBucket: e2e-test-kuttl-provider-minio-policy
   providerConfigRef:
     name: provider-config
+    kind: ProviderConfig

@@ -11,4 +11,4 @@ rules:
   comments:
     min-spaces-from-content: 1
   indentation:
-    ignore: [package.yaml, package/crds/]
+    ignore: [package/crds/]

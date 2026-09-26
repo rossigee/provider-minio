@@ -103,24 +103,10 @@ test-integration: $(setup_envtest_bin) .envtest_crds ## Run integration tests ag
 
 .PHONY: kind-run-operator
 kind-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
-kind-run-operator: kind-setup webhook-cert ## Run in Operator mode against kind cluster
-	go run . -v 1 operator --webhook-tls-cert-dir $(kind_dir)
-
-webhook_key = $(kind_dir)/tls.key
-webhook_cert = $(kind_dir)/tls.crt
-webhook_service_name = provider-exocale.crossplane-system.svc
-
-# Generate webhook certificates.
-# This is only relevant when running in IDE with debugger.
-# When installed as a provider, Crossplane handles the certificate generation.
-.PHONY: webhook-cert
-webhook-cert: $(webhook_cert) ## Generate webhook certificates for out-of-cluster debugging in an IDE
-
-$(webhook_key):
-	openssl req -x509 -newkey rsa:4096 -nodes -keyout $@ --noout -days 3650 -subj "/CN=$(webhook_service_name)" -addext "subjectAltName = DNS:$(webhook_service_name)"
-
-$(webhook_cert): $(webhook_key)
-	openssl req -x509 -key $(webhook_key) -nodes -out $@ -days 3650 -subj "/CN=$(webhook_service_name)" -addext "subjectAltName = DNS:$(webhook_service_name)"
+kind-run-operator: kind-setup
+	test -n "$${WEBHOOK_TLS_CERT_DIR:-}"
+	test -f "$${WEBHOOK_TLS_CERT_DIR}/tls.crt"
+	go run . -v 1 operator --webhook-tls-cert-dir "$${WEBHOOK_TLS_CERT_DIR}"
 
 ###
 ### E2E Tests

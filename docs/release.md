@@ -2,11 +2,11 @@
 
 ## Versioning
 
-`provider-minio` follows SemVer with `v` prefix, as defined in `VERSION` (`v0.19.9`). Pre-releases may use `-rcN` suffix (e.g. `v0.20.0-rc1`) — pattern from legacy `docs/modules/ROOT/pages/how-tos/create-releases.adoc:15`.
+`provider-minio` follows SemVer with `v` prefix, as defined in `VERSION` (`v0.21.3`). Pre-releases may use `-rcN` suffix (e.g. `v0.20.0-rc1`) — pattern from legacy `docs/modules/ROOT/pages/how-tos/create-releases.adoc:15`.
 
 ## How to Release
 
-Releasing requires pushing a new git tag (`.github/workflows/release.yml:4` handles publishing):
+Releasing requires pushing an exact SemVer git tag (`.github/workflows/release.yml` handles publishing):
 
 ```bash
 # Ensure main is clean and CI green
@@ -15,16 +15,17 @@ git pull
 make generate && make lint && make test
 
 # Tag
-git tag v0.19.10
-git push origin v0.19.10
+git tag v0.21.3
+git push origin v0.21.3
 ```
 
 CI `release.yml` then:
 
-* Validates tag matches `v*`
-* Builds binary, image, and xpkg
-* Publishes to `ghcr.io/rossigee/provider-minio` (`Makefile:50` `XPKG_REG_ORGS`, `Makefile:36` `REGISTRY_ORGS`)
-* Creates GitHub Release with auto-generated changelog
+* Validates exact SemVer and that the tag points at `origin/master`
+* Builds `linux_amd64` and `linux_arm64` xpkg files
+* Publishes the version tag and aliases `latest`
+* Verifies equal digests and both Linux architectures
+* Creates GitHub Release with auto-generated release notes
 
 > `publish.artifacts` is gated to `main|master|release-*` branches (`Makefile:41`). Tag-based releases run via `release.yml`, not `ci.yml` (`ci.yml:189` `build-validation` only).
 
@@ -49,7 +50,7 @@ Example tags:
 
 ## Crossplane Version
 
-`Makefile:74` pins `CROSSPLANE_VERSION = 2.4.0`; `crossplane.yaml:64` requires `>=v2.0.0-0`. Managed resources are `minio.m.crossplane.io/v1beta1` namespaced since `v0.16.5+` (`README.md:150`).
+`Makefile:69` pins `CROSSPLANE_VERSION = 2.5.0`; `crossplane.yaml:66` requires `>=v2.5.0`. Managed resources are `minio.m.crossplane.io/v1beta1` namespaced since `v0.16.5+` (`README.md:150`).
 
 ## Registries
 

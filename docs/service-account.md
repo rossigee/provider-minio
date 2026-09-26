@@ -292,9 +292,9 @@ kubectl get serviceaccounts.minio.m.crossplane.io -A
 
 ## Examples
 
-* `examples/minio.crossplane.io_serviceaccount.yaml` (filename legacy, content is `minio.m.crossplane.io/v1beta1`)
+* `examples/minio.m.crossplane.io_serviceaccount.yaml`
 * `examples/v2/` — canonical v1beta1 examples
-* `samples/` — generated legacy samples (see `generate_sample.go`)
+* `samples/` — v1beta1 samples (five generated via `generate_sample.go`, the rest hand-written)
 * `test/e2e/serviceaccount/` — E2E scenarios
 
 ## Related Resources

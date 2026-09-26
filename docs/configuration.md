@@ -21,7 +21,7 @@ stringData:
   AWS_ACCESS_KEY_ID: minioadmin
   AWS_SECRET_ACCESS_KEY: minioadmin
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: default
@@ -106,7 +106,7 @@ TLS data resolution order per key (`operator/minioutil/client.go:117`): `inlineD
 ### Multiple ProviderConfigs
 
 ```yaml
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: prod
@@ -116,7 +116,7 @@ spec:
     source: Secret
     apiSecretRef: { name: prod-creds, namespace: crossplane-system }
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: dev
@@ -149,4 +149,4 @@ If omitted, defaults to `default` (`package/crds/minio.m.crossplane.io_buckets.y
 * `docs/TLS_CONFIGURATION.md` — TLS examples and secret creation
 * `docs/API.md` — managed resource specs
 * `docs/ServiceAccount.md` — service accounts
-* `samples/` — generated examples (legacy v1-style, see `examples/v2/` for v1beta1)
+* `samples/` — generated v1beta1 examples (see `generate_sample.go` for which files are generated)

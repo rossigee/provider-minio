@@ -1,11 +1,12 @@
 ---
-apiVersion: minio.crossplane.io/v1
+apiVersion: minio.m.crossplane.io/v1beta1
 kind: ServiceAccount
 metadata:
   name: test-serviceaccount
 spec:
   providerConfigRef:
-    name: minio-provider-config
+    name: provider-config
+    kind: ProviderConfig
   forProvider:
     name: "Updated Test Service Account"
     description: "Updated E2E test service account for MinIO with new description"
@@ -28,6 +29,6 @@ spec:
           }
         ]
       }
-  writeConnectionSecretsToRef:
+  writeConnectionSecretToRef:
     name: test-serviceaccount-secret
     namespace: default

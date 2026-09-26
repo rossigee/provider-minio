@@ -8,6 +8,7 @@ include ../../../build/makelib/common.mk
 # Options
 IMAGE ?= $(BUILD_REGISTRY)/provider-minio:$(VERSION)
 TARGETOS := $(word 1, $(subst _, ,$(PLATFORM)))
+TARGETARCH := $(word 2, $(subst _, ,$(PLATFORM)))
 include ../../../build/makelib/imagelight.mk
 
 # ====================================================================================
@@ -24,7 +25,7 @@ img.build.shared:
 	@cp -r $(ROOT_DIR)/package/crds $(IMAGE_TEMP_DIR)/
 	@cp -r $(ROOT_DIR)/package/webhook $(IMAGE_TEMP_DIR)/
 	@cp $(ROOT_DIR)/package/crossplane.yaml $(IMAGE_TEMP_DIR)/
-	@docker build $(BUILD_ARGS) --build-arg TARGETOS=$(TARGETOS) --build-arg TARGETARCH=$(TARGETARCH) --build-arg VERSION=$(VERSION) -t $(IMAGE) $(IMAGE_TEMP_DIR)
+	@docker buildx build --platform $(IMAGE_PLATFORM) --load $(BUILD_ARGS) --build-arg TARGETOS=$(TARGETOS) --build-arg TARGETARCH=$(TARGETARCH) --build-arg VERSION=$(VERSION) -t $(IMAGE) $(IMAGE_TEMP_DIR)
 
 # ====================================================================================
 # Image Publish

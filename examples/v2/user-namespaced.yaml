@@ -10,3 +10,4 @@ spec:
       - app-policy
   providerConfigRef:
     name: default
+    kind: ProviderConfig

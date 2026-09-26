@@ -61,24 +61,12 @@ XPKG_REG_ORGS_NO_PROMOTE ?= ghcr.io/rossigee
 # Harbor publishing has been removed - using only ghcr.io/rossigee
 # To enable Upbound: export ENABLE_UPBOUND_PUBLISH=true make publish XPKG_REG_ORGS=xpkg.upbound.io/crossplane-contrib
 XPKGS = provider-minio
-XPKG_IGNORE := crossplane.yaml
 -include build/makelib/xpkg.mk
 
-# Crossplane v2.4+ expects package.yaml at the package root (not crossplane.yaml).
-# crossplane.yaml is kept for Docker image compatibility but excluded from xpkg
-# via XPKG_IGNORE above. Generate package.yaml from the source metadata.
-package/package.yaml: package/crossplane.yaml
-	@mkdir -p package
-	@cp package/crossplane.yaml package/package.yaml
-
-xpkg.build.provider-minio: package/package.yaml
-
-# NOTE: we force image building to happen prior to xpkg build so that we ensure
-# image is present in daemon.
 xpkg.build.provider-minio: do.build.images
 
 # Setup Package Metadata
-CROSSPLANE_VERSION = 2.4.0
+CROSSPLANE_VERSION = 2.5.0
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk
 
@@ -130,24 +118,17 @@ install-samples:
 delete-samples:
 	-yq ./samples/*.yaml | kubectl delete --ignore-not-found --wait=false -f -
 
-# Generate webhook certificates for out-of-cluster debugging
-webhook-cert:
-	mkdir -p .work/webhook
-	openssl req -x509 -newkey rsa:4096 -nodes -keyout .work/webhook/tls.key -out .work/webhook/tls.crt -days 3650 -subj "/CN=host.docker.internal" -addext "subjectAltName = DNS:host.docker.internal"
-
-# Setup webhook for debugging
-webhook-debug: webhook-cert
+webhook-debug:
+	test -n "$${WEBHOOK_CA_BUNDLE:-}"
 	kubectl apply -f package/webhook
-	cabundle=$$(cat .work/webhook/tls.crt | base64) && \
 	HOSTIP=host.docker.internal && \
 	kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io validating-webhook-configuration -oyaml | \
-	yq e "del(.webhooks[0].clientConfig.service) | .webhooks[0].clientConfig.caBundle |= \"$$cabundle\" | .webhooks[0].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-bucket\"" - | \
-	yq e "del(.webhooks[1].clientConfig.service) | .webhooks[1].clientConfig.caBundle |= \"$$cabundle\" | .webhooks[1].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-policy\"" - | \
-	yq e "del(.webhooks[2].clientConfig.service) | .webhooks[2].clientConfig.caBundle |= \"$$cabundle\" | .webhooks[2].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-user\"" - | \
+	yq e "del(.webhooks[0].clientConfig.service) | .webhooks[0].clientConfig.caBundle |= \"$$WEBHOOK_CA_BUNDLE\" | .webhooks[0].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-bucket\"" - | \
+	yq e "del(.webhooks[1].clientConfig.service) | .webhooks[1].clientConfig.caBundle |= \"$$WEBHOOK_CA_BUNDLE\" | .webhooks[1].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-policy\"" - | \
+	yq e "del(.webhooks[2].clientConfig.service) | .webhooks[2].clientConfig.caBundle |= \"$$WEBHOOK_CA_BUNDLE\" | .webhooks[2].clientConfig.url |= \"https://$$HOSTIP:9443//validate-minio-crossplane-io-v1-user\"" - | \
 	kubectl apply -f -
 
-.PHONY: submodules run install-crds uninstall-crds install-samples delete-samples webhook-cert webhook-debug
+.PHONY: submodules run install-crds uninstall-crds install-samples delete-samples webhook-debug
 
-# Neutralize plain image publish for ghcr (xpkg uses same ref; plain push would clobber package.yaml)
 img.release.publish.ghcr.io/rossigee.provider-minio:
 	@:
