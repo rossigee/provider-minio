@@ -26,13 +26,20 @@ below is therefore released for the first time in v0.21.4.
   run on a CI runner. The suite is also no longer at risk of acting on whatever cluster an
   ambient `KUBECONFIG` happens to point at.
 - The end to end suite is **not run on pull requests or master pushes**, only on manual
-  dispatch. MinIO's published images are no longer pullable anonymously:
-  `quay.io/minio/minio` and `docker.io/minio/minio` both return `401` with a valid anonymous
-  token, `ghcr.io/minio/minio` returns `403`, and `bitnami/minio` has been removed, with no
-  public mirror available. The suite therefore cannot complete on a stock runner, and
-  running it on every push would mean a permanently red job. `MINIO_IMAGE_REPOSITORY` and
-  `MINIO_IMAGE_TAG` select the image, so pointing them at an internal mirror is all that
-  stands between this and a green run.
+  dispatch, because a 2.5.0 Crossplane image has to be supplied (see Known below) and the
+  full run builds a provider image. `MINIO_IMAGE_REPOSITORY` and `MINIO_IMAGE_TAG` select
+  the MinIO image, defaulting to the anonymously pullable `pgsty/minio` and `pgsty/mc`
+  mirrors, because MinIO's own `quay.io/minio/minio`, `quay.io/minio/mc` and
+  `docker.io/minio/minio` all return `401` with a valid anonymous token and `bitnami/minio`
+  has been removed.
+- Skips the MinIO chart's post-install hook with `--no-hooks`. That hook runs
+  `/bin/sh /config/add-user`, which reads `/config/rootUser`, but the chart only mounts a
+  secret there when `existingSecret` and `existingSecretKey` are set, and `existingSecretKey`
+  is not a value this chart version defines. The job therefore aborts on
+  `cat: /config/rootUser: No such file or directory`, and because `helm --wait` covers hooks
+  the install fails even though the MinIO server is healthy. The hook only creates a
+  convenience user; the suite authenticates with `rootUser`/`rootPassword`, which reach the
+  server through the chart's own secret.
 
 ### Known in v0.21.6
 

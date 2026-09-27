@@ -73,12 +73,19 @@ INTEGRATION_TEST_DEBUG_OUTPUT ?= false
 MINIO_CHART_VERSION ?= 5.0.7
 MINIO_NAMESPACE    ?= minio
 MINIO_SERVICE      ?= minio-server
-# MinIO's published images are no longer pullable anonymously: both
-# quay.io/minio/minio and docker.io/minio/minio return 401 with a valid
-# anonymous token, and there is no public mirror. Point these at an internal
-# mirror or a registry credential to make the suite runnable again.
-MINIO_IMAGE_REPOSITORY ?= quay.io/minio/minio
-MINIO_IMAGE_TAG        ?=
+# MinIO's own published images are no longer pullable anonymously:
+# quay.io/minio/minio and docker.io/minio/minio both return 401 with a valid
+# anonymous token, ghcr.io/minio/minio returns 403, and bitnami/minio has been
+# removed, with no public mirror. pgsty/minio is an anonymously pullable mirror
+# of the upstream binary and is verified to run. Pin the tag rather than
+# floating on latest, so the suite cannot change under us.
+MINIO_IMAGE_REPOSITORY ?= pgsty/minio
+MINIO_IMAGE_TAG        ?= RELEASE.2026-08-04T00-00-00Z
+# The chart's post-install job uses a second, separate image (mcImage) to create a
+# default user, and it is also 401 on quay.io. helm --wait blocks on the hook, so
+# the suite hangs unless this is redirected too. pgsty/mc is the same mirror.
+MINIO_MC_IMAGE_REPOSITORY ?= pgsty/mc
+MINIO_MC_IMAGE_TAG        ?= RELEASE.2026-03-21T00-00-00Z
 # A cold runner has to pull the MinIO image before the chart becomes ready, so
 # this is deliberately generous. The first CI run failed at 5m with a bare
 # "context deadline exceeded", which says nothing about the cause.
@@ -143,6 +150,15 @@ minio-setup: $(HELM) kind-kubeconfig
 	@$(INFO) installing MinIO $(MINIO_CHART_VERSION)
 	@$(HELM) repo add minio https://charts.min.io/ --force-update
 	@$(HELM) repo update minio
+	@# --no-hooks skips the chart's post-install job. That job runs
+	@# /bin/sh /config/add-user, which reads /config/rootUser, but the chart only
+	@# mounts a secret there when existingSecret and existingSecretKey are set, and
+	@# existingSecretKey is not a value this chart version defines. Without them the
+	@# job aborts on `cat: /config/rootUser: No such file or directory` and, because
+	@# helm --wait covers hooks, the whole install fails even though the MinIO server
+	@# is healthy. The job only creates a convenience user; the suite authenticates
+	@# with rootUser/rootPassword, which reach the server through the chart's own
+	@# secret, so nothing the tests rely on is lost.
 	@$(HELM) upgrade --install --create-namespace --namespace $(MINIO_NAMESPACE) minio minio/minio \
 		--version $(MINIO_CHART_VERSION) \
 		--set fullnameOverride=$(MINIO_SERVICE) \
@@ -153,6 +169,9 @@ minio-setup: $(HELM) kind-kubeconfig
 		--set ingress.enabled=false \
 		$(if $(MINIO_IMAGE_TAG),--set image.tag=$(MINIO_IMAGE_TAG),) \
 		--set image.repository=$(MINIO_IMAGE_REPOSITORY) \
+		--set mcImage.repository=$(MINIO_MC_IMAGE_REPOSITORY) \
+		--set mcImage.tag=$(MINIO_MC_IMAGE_TAG) \
+		--no-hooks \
 		--set resources.requests.memory=$(MINIO_MEMORY_REQUEST) \
 		--set resources.requests.cpu=50m \
 		--set resources.limits.memory=$(MINIO_MEMORY_LIMIT) \
