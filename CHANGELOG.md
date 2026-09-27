@@ -43,6 +43,17 @@ below is therefore released for the first time in v0.21.4.
 
 ### Known in v0.21.6
 
+- A Crossplane v2.5.0 control plane can now be built and used, and the provider is
+  verified working against it. Built from the `rossigee/crossplane` `develop` branch at
+  `e33ad34` with nix. Note that the build requires refreshing the Go vendor hash first: the
+  `root` hash pinned in `nix/vendor-hashes.nix` is stale on that branch, so the build fails
+  with a fixed-output hash mismatch until `nix run .#tidy` is run. With `buildVersion` pinned
+  to `v2.5.0` in `flake.nix` the resulting image reports `v2.5.0` and the chart is
+  `crossplane-2.5.0`. Against that control plane the provider installs `HEALTHY` with the
+  `>= v2.5.0` floor unchanged, and both the S3 and the admin API paths were exercised
+  against a real MinIO: a `Bucket` reconciles to `Available` and appears in a server-side
+  bucket listing, a `User` reconciles to `Available`, its generated credentials authenticate
+  successfully, and both resources are removed from MinIO when deleted.
 - **This release cannot be installed until a Crossplane v2.5.0 artifact is available.** The
   package requires `crossplane.version: ">=v2.5.0"`, and no such artifact is published.
   The latest upstream release is v2.4.2, `charts.crossplane.io/stable` tops out at v2.4.2
