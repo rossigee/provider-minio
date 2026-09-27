@@ -86,7 +86,7 @@ minio-setup: $(HELM) kind-kubeconfig
 		--set resources.requests.cpu=50m \
 		--set resources.limits.memory=$(MINIO_MEMORY_LIMIT) \
 		--wait --timeout $(MINIO_WAIT_TIMEOUT) || { \
-		$(INFO) MinIO did not become ready, dumping state
+		$(INFO) MinIO did not become ready, dumping state; \
 		$(KUBECTL) -n $(MINIO_NAMESPACE) get pods -o wide || true; \
 		$(KUBECTL) -n $(MINIO_NAMESPACE) describe pod -l app=$(MINIO_SERVICE) || true; \
 		$(KUBECTL) -n $(MINIO_NAMESPACE) get events --sort-by=.lastTimestamp | tail -25 || true; \
