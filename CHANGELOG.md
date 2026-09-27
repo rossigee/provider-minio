@@ -13,18 +13,6 @@ below is therefore released for the first time in v0.21.4.
 
 ### Fixed in v0.21.6
 
-- **Corrected the Crossplane version floor from `>=v2.5.0` to `>=v2.4.2`.** There is
-  no released Crossplane v2.5.0: the latest is v2.4.2, and the Helm chart index tops out
-  at 2.4.2 as well. The `>=v2.5.0` requirement therefore could not be satisfied by any
-  released Crossplane, and the package was rejected at install time with
-  `incompatible Crossplane version: package is not compatible with Crossplane version
-  (v2.4.2)`. This affected every release from v0.21.4 onwards, because v0.21.3 was built
-  from a commit that predated the change. Verified by deploying this provider into a kind
-  cluster running Crossplane v2.4.2: with the floor corrected the package installs, the
-  provider reports `HEALTHY`, and all five managed resource CRDs plus `ProviderConfig` and
-  `ProviderConfigUsage` register. `Makefile`'s `CROSSPLANE_VERSION`, used to install the
-  control plane for local end to end tests, was pinned to the same non-existent 2.5.0 and is
-  now 2.4.2.
 - Restored `make test-e2e`, which reported `No rule to make target 'test-e2e'`. The
   `-include test/local.mk` line was removed in 1554ce1 and never restored, so the 26 files
   under `test/e2e/` could not be executed by any command.
@@ -37,6 +25,29 @@ below is therefore released for the first time in v0.21.4.
   `minio.127.0.0.1.nip.io`, which requires public DNS and ingress-nginx and so could never
   run on a CI runner. The suite is also no longer at risk of acting on whatever cluster an
   ambient `KUBECONFIG` happens to point at.
+- The end to end suite is **not run on pull requests or master pushes**, only on manual
+  dispatch. MinIO's published images are no longer pullable anonymously:
+  `quay.io/minio/minio` and `docker.io/minio/minio` both return `401` with a valid anonymous
+  token, `ghcr.io/minio/minio` returns `403`, and `bitnami/minio` has been removed, with no
+  public mirror available. The suite therefore cannot complete on a stock runner, and
+  running it on every push would mean a permanently red job. `MINIO_IMAGE_REPOSITORY` and
+  `MINIO_IMAGE_TAG` select the image, so pointing them at an internal mirror is all that
+  stands between this and a green run.
+
+### Known in v0.21.6
+
+- **This release cannot be installed until a Crossplane v2.5.0 artifact is available.** The
+  package requires `crossplane.version: ">=v2.5.0"`, and no such artifact is published:
+  the latest upstream release is v2.4.2, `charts.crossplane.io/stable` tops out at v2.4.2
+  across 161 chart versions, and there is no v2.5.0 or v2.5.0-rc.0 image on
+  `docker.io/crossplane/crossplane`, `ghcr.io/crossplane/crossplane` or
+  `xpkg.crossplane.io/crossplane/crossplane`. The `rossigee/crossplane` fork carries the
+  upstream `v2.5.0-rc.0` tag but publishes no release and no image for it. Installing this
+  package against a released Crossplane fails with
+  `incompatible Crossplane version: package is not compatible with Crossplane version`.
+  The v2.5.0 requirement is retained deliberately; it must not be relaxed to v2.4.2.
+  Resolving it requires a published Crossplane v2.5.0 chart and image, or an override of
+  `CROSSPLANE_CHART_REPO` and `CROSSPLANE_VERSION` for the control plane under test.
 
 ## [v0.21.5] - 2026-09-27
 

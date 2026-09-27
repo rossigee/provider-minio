@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-* Kubernetes cluster with [Crossplane](https://docs.crossplane.io) >= `v2.4.2` (`package/crossplane.yaml`, `Makefile` `CROSSPLANE_VERSION = 2.4.2`)
+* Kubernetes cluster with [Crossplane](https://docs.crossplane.io) >= `v2.5.0` (`package/crossplane.yaml`, `Makefile` `CROSSPLANE_VERSION = 2.5.0`)
 * `kubectl`, `helm`, `yq` (see `README.md:163` Requirements)
 * MinIO deployment reachable from the cluster
 
