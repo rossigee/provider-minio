@@ -21,6 +21,12 @@ INTEGRATION_TEST_DEBUG_OUTPUT ?= false
 MINIO_CHART_VERSION ?= 5.0.7
 MINIO_NAMESPACE    ?= minio
 MINIO_SERVICE      ?= minio-server
+# MinIO's published images are no longer pullable anonymously: both
+# quay.io/minio/minio and docker.io/minio/minio return 401 with a valid
+# anonymous token, and there is no public mirror. Point these at an internal
+# mirror or a registry credential to make the suite runnable again.
+MINIO_IMAGE_REPOSITORY ?= quay.io/minio/minio
+MINIO_IMAGE_TAG        ?=
 # A cold runner has to pull the MinIO image before the chart becomes ready, so
 # this is deliberately generous. The first CI run failed at 5m with a bare
 # "context deadline exceeded", which says nothing about the cause.
@@ -82,6 +88,8 @@ minio-setup: $(HELM) kind-kubeconfig
 		--set rootUser=minioadmin \
 		--set rootPassword=minioadmin \
 		--set ingress.enabled=false \
+		$(if $(MINIO_IMAGE_TAG),--set image.tag=$(MINIO_IMAGE_TAG),) \
+		--set image.repository=$(MINIO_IMAGE_REPOSITORY) \
 		--set resources.requests.memory=$(MINIO_MEMORY_REQUEST) \
 		--set resources.requests.cpu=50m \
 		--set resources.limits.memory=$(MINIO_MEMORY_LIMIT) \
