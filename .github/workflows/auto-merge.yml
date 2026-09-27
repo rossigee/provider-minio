@@ -80,6 +80,9 @@ jobs:
             });
 
             // Required CI check names from ci.yml
+            // 'e2e' is deliberately absent: it has never run to completion, and
+            // requiring a check that has not yet been shown to be stable would block all merges.
+            // Add it here once it is green on a few consecutive master runs.
             const requiredChecks = ['lint', 'check-diff', 'unit-tests', 'security-scan'];
             const completedChecks = checks.check_runs || [];
 
@@ -140,6 +143,9 @@ jobs:
               status: 'completed',
             });
 
+            // 'e2e' is deliberately absent: it has never run to completion, and
+            // requiring a check that has not yet been shown to be stable would block all merges.
+            // Add it here once it is green on a few consecutive master runs.
             const requiredChecks = ['lint', 'check-diff', 'unit-tests', 'security-scan'];
             const completedChecks = checks.check_runs || [];
             let allPassed = true;

@@ -71,9 +71,25 @@ XPKGS = provider-minio
 xpkg.build.provider-minio: do.build.images
 
 # Setup Package Metadata
+#
+# The provider requires Crossplane >= v2.5.0 and that requirement is deliberate.
+# No v2.5.0 chart or image is published publicly yet: the latest upstream release is
+# v2.4.2, charts.crossplane.io/stable tops out at v2.4.2, and there is no v2.5.0 or
+# v2.5.0-rc.0 image on docker.io, ghcr.io or xpkg.crossplane.io. Override
+# CROSSPLANE_CHART_REPO and CROSSPLANE_VERSION to point the end to end control plane at
+# wherever v2.5.0 is actually served from, for example an internal mirror.
+CROSSPLANE_CHART_REPO ?= https://charts.crossplane.io/stable
 CROSSPLANE_VERSION = 2.5.0
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk
+
+# Local development, integration and end to end test targets. The kind based
+# local-install/mirror-setup/package-push-local flow this file used to rely on
+# is gone: the provider is now side-loaded with local.xpkg.deploy.provider, so
+# no in-cluster registry is needed. `test/local.mk` had no includer at all
+# between 1554ce1 and now, which is why `make test-e2e` reported
+# "No rule to make target".
+-include test/local.mk
 
 # Targets
 

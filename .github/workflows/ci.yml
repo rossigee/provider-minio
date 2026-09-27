@@ -187,6 +187,66 @@ jobs:
           sarif_file: gosec-results.sarif
           category: gosec
 
+
+  # End to end tests against a real MinIO in a kind cluster.
+  #
+  # This job is the reason the manifest defects fixed in v0.21.4 and v0.21.5 were
+  # able to ship: nothing previously executed test/e2e, so `make test-e2e` did
+  # not even exist as a target. `make test-e2e` provisions the control plane,
+  # installs MinIO, side-loads the provider and runs the kuttl suite.
+  # Manual only. This is not a required check and is deliberately not run on
+  # pull requests or master pushes.
+  #
+  # The suite cannot currently complete anywhere: MinIO's published images are
+  # no longer pullable anonymously (quay.io/minio/minio and docker.io/minio/minio
+  # both return 401 with a valid anonymous token, and there is no public mirror).
+  # Running this on every push would mean a permanently red job, which trains
+  # everyone to ignore CI. Trigger it from the Actions tab to see how far it gets
+  # once an internal MinIO mirror is available; set MINIO_IMAGE_REPOSITORY and
+  # MINIO_IMAGE_TAG to point at one.
+  e2e:
+    runs-on: ubuntu-24.04
+    needs: [lint, check-diff, unit-tests, security-scan]
+    if: github.event_name == 'workflow_dispatch'
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vendor Dependencies
+        run: go mod vendor
+
+      - name: Free disk space
+        # The kind node image, the provider image and the Crossplane and MinIO
+        # images together overrun the default runner disk.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: Run End to End Tests
+        run: make test-e2e
+
+      - name: Dump control plane state on failure
+        if: failure()
+        run: |
+          make controlplane.dump || true
+          kubectl --context kind-local-dev get all -A || true
+          kubectl --context kind-local-dev describe provider.pkg.crossplane.io || true
+
+      - name: Tear down the cluster
+        if: always()
+        run: make controlplane.down || true
+
   # CI ONLY VALIDATES BUILDS - NO PUBLISHING
   build-validation:
     runs-on: ubuntu-24.04
