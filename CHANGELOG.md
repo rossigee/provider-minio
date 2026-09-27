@@ -43,6 +43,32 @@ below is therefore released for the first time in v0.21.4.
 
 ### Known in v0.21.6
 
+- **The end to end suite now runs and passes.** It had never been executed in this
+  project's history, and doing so found a real defect immediately.
+- **Fixed a ServiceAccount update loop.** The controller compared the inline policy as a raw
+  string against the policy MinIO returns, but MinIO re-serialises it and sorts the `Action`
+  and `Resource` arrays, so the comparison never matched. Every reconcile therefore issued an
+  `UpdateServiceAccount` call and the resource never converged to `UpToDate`: it sat at
+  `Updating` forever, calling MinIO once per poll interval. The policies are now compared as
+  canonicalised JSON, with object keys and array elements sorted, so ordering differences no
+  longer register as a change. A ServiceAccount with a `policy` set now reaches `Available`
+  in about 20 seconds.
+- **Fixed ServiceAccount being reported `Disabled`.** `madmin.AccountEnabled` is `"enabled"`,
+  which is what the admin API reports for users, but `InfoServiceAccountResp` reports service
+  account status as `"on"`. The comparison only accepted `"enabled"`, so no service account
+  was ever `Available`. Both spellings are now accepted.
+- Repaired the end to end test files, which had never been validated against a running system.
+  The bucket and policy asserts expected `status.endpoint` and `status.endpointURL`, fields
+  the provider has never written and which do not exist on any status type. The serviceaccount
+  asserts expected a secret of type `Opaque` with empty values, whereas the controller writes
+  `connection.crossplane.io/v1alpha1` with both keys populated, and expected
+  `accountStatus: enabled` rather than `on`; `on` additionally has to be quoted because YAML
+  reads it as a boolean. The access pod used the un-pullable `minio/mc` image and pointed at
+  `minio.default.svc`, while the service is in the `minio` namespace. The connection secret is
+  now checked by a script step rather than an exact match, since the values are generated.
+  `TestStep` and `TestAssert` are kept in separate files because kuttl does not accept them in
+  one document, and command steps are scripts because kuttl executes them word by word rather
+  than through a shell.
 - A Crossplane v2.5.0 control plane can now be built and used, and the provider is
   verified working against it. Built from the `rossigee/crossplane` `develop` branch at
   `e33ad34` with nix. Note that the build requires refreshing the Go vendor hash first: the

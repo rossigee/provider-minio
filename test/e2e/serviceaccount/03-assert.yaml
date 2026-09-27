@@ -1,0 +1,9 @@
+---
+# The access pod in 02-test-access exits non-zero if the service account turns
+# out to have admin rights, so Succeeded is the assertion that matters.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-serviceaccount-access
+status:
+  phase: Succeeded

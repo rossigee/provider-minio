@@ -298,3 +298,86 @@ func TestSAConnectorConnect(t *testing.T) {
 		assert.Same(t, ma, uc.ma)
 	})
 }
+
+// TestPoliciesEqual pins the fix for an infinite update loop: MinIO
+// re-serialises the policy it stores, so a raw string compare never matched and
+// the controller called UpdateServiceAccount on every reconcile, leaving the
+// resource stuck at Updating forever.
+func TestPoliciesEqual(t *testing.T) {
+	cases := map[string]struct {
+		a, b string
+		want bool
+	}{
+		"Identical":            {`{"a":1}`, `{"a":1}`, true},
+		"WhitespaceDiffers":    {"{\n  \"a\": 1\n}", `{"a":1}`, true},
+		"KeyOrderDiffers":      {`{"a":1,"b":2}`, `{"b":2,"a":1}`, true},
+		"NestedOrderDiffers":   {`{"s":[{"x":1,"y":2}]}`, `{"s":[{"y":2,"x":1}]}`, true},
+		"DifferentValue":       {`{"a":1}`, `{"a":2}`, false},
+		"ExtraKey":             {`{"a":1}`, `{"a":1,"b":2}`, false},
+		"MinioNormalisedEmpty": {`{"Version":"2012-10-17","Statement":[]}`, `{"Statement":[],"Version":"2012-10-17"}`, true},
+		// The real case found by the e2e suite: MinIO sorts Action.
+		"MinioSortsActionArray": {
+			`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:ListBucket"],"Resource":["arn:aws:s3:::b","arn:aws:s3:::b/*"]}]}`,
+			`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject","s3:ListBucket","s3:PutObject"],"Resource":["arn:aws:s3:::b","arn:aws:s3:::b/*"]}]}`,
+			true,
+		},
+		"MinioSortsResourceArray": {
+			`{"Statement":[{"Resource":["z","a"]}]}`,
+			`{"Statement":[{"Resource":["a","z"]}]}`,
+			true,
+		},
+		"UnparseableSpec":   {`not json`, `not json`, true},
+		"UnparseableRemote": {`{"a":1}`, `not json`, false},
+		"EmptyRemote":       {`{"a":1}`, ``, false},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, policiesEqual(tc.a, tc.b))
+		})
+	}
+}
+
+// TestAccountStatusEnabled pins the fix for the second bug: madmin reports
+// "enabled" for users but InfoServiceAccountResp reports "on" for service
+// accounts, so comparing only against "enabled" left every service account
+// reported Disabled.
+func TestAccountStatusEnabled(t *testing.T) {
+	assert.True(t, accountStatusEnabled("on"), "MinIO reports on for service accounts")
+	assert.True(t, accountStatusEnabled("enabled"), "madmin.AccountEnabled")
+	assert.True(t, accountStatusEnabled(string(madmin.AccountEnabled)))
+	assert.False(t, accountStatusEnabled("off"))
+	assert.False(t, accountStatusEnabled("disabled"))
+	assert.False(t, accountStatusEnabled(""))
+}
+
+// TestIsUpToDateConvergesForEquivalentPolicy is the regression test for the
+// loop itself: a spec policy that differs from MinIO's re-serialised copy only
+// in formatting must be reported up to date, or the controller never settles.
+func TestIsUpToDateConvergesForEquivalentPolicy(t *testing.T) {
+	sa := newTestSAClient(t, newFakeSAAdmin())
+
+	specPolicy := `{
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+          "Resource": ["arn:aws:s3:::test-bucket", "arn:aws:s3:::test-bucket/*"]
+        }
+      ]
+    }`
+	// What MinIO actually returned, compact and reordered.
+	remotePolicy := `{"Statement":[{"Action":["s3:GetObject","s3:ListBucket","s3:PutObject"],"Effect":"Allow","Resource":["arn:aws:s3:::test-bucket","arn:aws:s3:::test-bucket/*"]}],"Version":"2012-10-17"}`
+
+	saRef := testSA("AKIA", func(s *miniov1beta1.ServiceAccount) {
+		s.Spec.ForProvider.Policy = specPolicy
+	})
+
+	info := madmin.InfoServiceAccountResp{
+		AccountStatus: "on",
+		Policy:        remotePolicy,
+	}
+
+	assert.True(t, sa.isUpToDate(saRef, info),
+		"an equivalent policy must be considered up to date, or the controller loops forever")
+}
