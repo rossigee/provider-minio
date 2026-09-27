@@ -9,6 +9,58 @@ go_bin    ?= $(OUTPUT_DIR)/bin
 # cluster.
 KIND_KUBECONFIG ?= $(kind_dir)/kubeconfig
 
+# Crossplane control plane for the end to end suite.
+#
+# The provider requires Crossplane >= v2.5.0 and no published v2.5.0 artifact
+# exists: the latest upstream release is v2.4.2, charts.crossplane.io/stable tops
+# out there, and neither docker.io, ghcr.io nor xpkg.crossplane.io carries a
+# v2.5.0 or v2.5.0-rc.0 image. The Go dependencies already come from the rossigee
+# forks (crossplane-runtime v2.5.0, crossplane/apis v2.5.0-rc.0), so the gap is
+# only a runnable control plane.
+#
+# So the control plane is built from the rossigee/crossplane develop branch, whose
+# flake.nix stamps the version from `buildVersion` and otherwise emits
+# "v0.0.0-<lastModified>-<shortRev>". A build without buildVersion set would
+# self-report v0.0.0 and fail this provider's >= v2.5.0 constraint, which is why
+# CROSSPLANE_BUILD_VERSION has to be set explicitly.
+#
+# Override these to point at an already published 2.5.0 image and skip the build:
+#   make test-e2e CROSSPLANE_IMAGE_REPOSITORY=ghcr.io/rossigee/crossplane \
+#                   CROSSPLANE_IMAGE_TAG=v2.5.0
+CROSSPLANE_FORK_URL     ?= https://github.com/rossigee/crossplane.git
+CROSSPLANE_FORK_BRANCH  ?= develop
+CROSSPLANE_BUILD_VERSION ?= v2.5.0
+CROSSPLANE_IMAGE_REPOSITORY ?= ghcr.io/rossigee/crossplane
+CROSSPLANE_IMAGE_TAG        ?= $(CROSSPLANE_BUILD_VERSION)
+CROSSPLANE_LOCAL_IMAGE      ?= crossplane-controlplane:$(CROSSPLANE_BUILD_VERSION)
+CROSSPLANE_SRC_DIR          ?= $(kind_dir)/crossplane-src
+
+# Build the control plane image from the fork's develop branch. Requires Nix,
+# which is not a normal developer tool for this repo, so this is a separate
+# target rather than part of test-e2e.
+.PHONY: crossplane-image
+crossplane-image: ## Build the Crossplane control plane from the fork's develop branch
+	@$(INFO) building Crossplane $(CROSSPLANE_BUILD_VERSION) from $(CROSSPLANE_FORK_BRANCH)
+	@command -v nix >/dev/null 2>&1 || { \
+		echo "nix is required to build the Crossplane control plane from source."; \
+		echo "Either install nix, or point the suite at an already published 2.5.0 image:"; \
+		echo "  make test-e2e CROSSPLANE_IMAGE_REPOSITORY=<repo> CROSSPLANE_IMAGE_TAG=v2.5.0"; \
+		exit 1; \
+	}
+	@test -d "$(CROSSPLANE_SRC_DIR)/.git" || \
+		git clone --depth 1 --branch $(CROSSPLANE_FORK_BRANCH) $(CROSSPLANE_FORK_URL) $(CROSSPLANE_SRC_DIR)
+	@git -C $(CROSSPLANE_SRC_DIR) fetch --depth 1 origin $(CROSSPLANE_FORK_BRANCH)
+	@git -C $(CROSSPLANE_SRC_DIR) checkout -q FETCH_HEAD
+	@$(INFO) pinning buildVersion to $(CROSSPLANE_BUILD_VERSION)
+	@sed -i 's|buildVersion = null;|buildVersion = "$(CROSSPLANE_BUILD_VERSION)";|' $(CROSSPLANE_SRC_DIR)/flake.nix
+	@grep -q 'buildVersion = "$(CROSSPLANE_BUILD_VERSION)"' $(CROSSPLANE_SRC_DIR)/flake.nix || { \
+		echo "could not pin buildVersion in $(CROSSPLANE_SRC_DIR)/flake.nix"; exit 1; }
+	@nix build $(CROSSPLANE_SRC_DIR) --option warn-dirty false --print-build-logs
+	@$(INFO) build outputs:
+	@nix build $(CROSSPLANE_SRC_DIR) --option warn-dirty false --no-link --print-out-paths 2>/dev/null || true
+	@$(OK) built. Load the image into kind with: \
+		kind load docker-image <image-ref> -n $(KIND_CLUSTER_NAME)
+
 crossplane_sentinel = $(kind_dir)/crossplane_sentinel
 # TEST:integration
 ENVTEST_ADDITIONAL_FLAGS ?= --bin-dir "$(kind_dir)"
@@ -67,8 +119,19 @@ kind-kubeconfig: $(KIND)
 	@chmod 600 $(KIND_KUBECONFIG)
 	@$(INFO) wrote $(KIND_KUBECONFIG)
 
+# Install Crossplane, optionally overriding the controller image so the suite can
+# run against a 2.5.0 control plane built from the fork. controlplane.up installs
+# the published chart, which pins the 2.4.2 image, so the image is overridden
+# afterwards and the deployment restarted. The chart itself is fine: it only
+# supplies manifests, and its image values are overridable.
 .PHONY: crossplane-setup
-crossplane-setup: controlplane.up ## Installs Crossplane in the kind cluster.
+crossplane-setup: controlplane.up
+	@if [ -n "$(CROSSPLANE_IMAGE_REPOSITORY)" ]; then \
+		$(INFO) overriding Crossplane image with $(CROSSPLANE_IMAGE_REPOSITORY):$(CROSSPLANE_IMAGE_TAG); \
+		$(KUBECTL) -n crossplane-system set image deployment/crossplane \
+			crossplane=$(CROSSPLANE_IMAGE_REPOSITORY):$(CROSSPLANE_IMAGE_TAG); \
+		$(KUBECTL) -n crossplane-system rollout status deployment/crossplane --timeout=300s; \
+	fi
 
 # MinIO runs in-cluster with no ingress. The provider and the tests both reach it
 # over cluster DNS (http://minio-server.minio.svc:9000), which is what makes the

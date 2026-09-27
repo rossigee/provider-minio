@@ -37,17 +37,26 @@ below is therefore released for the first time in v0.21.4.
 ### Known in v0.21.6
 
 - **This release cannot be installed until a Crossplane v2.5.0 artifact is available.** The
-  package requires `crossplane.version: ">=v2.5.0"`, and no such artifact is published:
-  the latest upstream release is v2.4.2, `charts.crossplane.io/stable` tops out at v2.4.2
-  across 161 chart versions, and there is no v2.5.0 or v2.5.0-rc.0 image on
-  `docker.io/crossplane/crossplane`, `ghcr.io/crossplane/crossplane` or
-  `xpkg.crossplane.io/crossplane/crossplane`. The `rossigee/crossplane` fork carries the
-  upstream `v2.5.0-rc.0` tag but publishes no release and no image for it. Installing this
-  package against a released Crossplane fails with
-  `incompatible Crossplane version: package is not compatible with Crossplane version`.
-  The v2.5.0 requirement is retained deliberately; it must not be relaxed to v2.4.2.
-  Resolving it requires a published Crossplane v2.5.0 chart and image, or an override of
-  `CROSSPLANE_CHART_REPO` and `CROSSPLANE_VERSION` for the control plane under test.
+  package requires `crossplane.version: ">=v2.5.0"`, and no such artifact is published.
+  The latest upstream release is v2.4.2, `charts.crossplane.io/stable` tops out at v2.4.2
+  across 161 chart versions, and there is no v2.5.0 or v2.5.0-rc.0 image for
+  `crossplane/crossplane` on `docker.io`, `ghcr.io` or `xpkg.crossplane.io`. The
+  `rossigee/crossplane` fork carries the upstream `v2.5.0-rc.0` tag but publishes no
+  release and no image for it; its `ghcr.io/rossigee/crossplane` repository tops out at
+  v2.4.x, with `latest` built on 2026-05-22. Installing this package against a released
+  Crossplane fails with `incompatible Crossplane version: package is not compatible with
+  Crossplane version`. The v2.5.0 requirement is retained deliberately; it must not be
+  relaxed to v2.4.2.
+- Added a path to run the end to end suite against a 2.5.0 control plane. The Go
+  dependencies already come from the rossigee forks (`crossplane-runtime/v2 v2.5.0` and
+  `crossplane/apis/v2 v2.5.0-rc.0`); only a runnable control plane was missing.
+  `make crossplane-image` builds one from the fork's `develop` branch, and
+  `make test-e2e CROSSPLANE_IMAGE_REPOSITORY=<repo> CROSSPLANE_IMAGE_TAG=v2.5.0` uses it.
+  The `develop` flake pins the reported version through a `buildVersion` binding that
+  defaults to `null` and then emits `v0.0.0-<lastModified>-<shortRev>`, so a build without
+  it set would self-report `v0.0.0` and be rejected by this package's `>= v2.5.0`
+  constraint. The target therefore sets it explicitly, the same way the fork's own CI
+  does. Building it requires nix, which is not a dependency of this repository.
 
 ## [v0.21.5] - 2026-09-27
 
