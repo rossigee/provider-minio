@@ -69,6 +69,24 @@ below is therefore released for the first time in v0.21.4.
   `TestStep` and `TestAssert` are kept in separate files because kuttl does not accept them in
   one document, and command steps are scripts because kuttl executes them word by word rather
   than through a shell.
+- The Go dependencies now track the `develop` branch of the Crossplane forks rather than
+  release tags, so the provider is built against the features currently under test.
+  `crossplane-runtime/v2` moves from the `v2.5.0` tag to develop `8df966ac`, and
+  `crossplane/apis/v2` from the `main` tip to develop `e33ad34be`. Both are pinned by
+  commit via pseudo-version, because `develop` is a moving integration branch and tagging
+  it would freeze a target that moves by design.
+
+  This matters: the previously pinned `v2.5.0` runtime tag is on a different lineage from
+  `develop`, 67 commits behind it and missing both the `APIRecorder` to
+  `events.EventRecorder` migration and the `ExternalLister` interface. The `crossplane/apis/v2`
+  pin was on the `main` tip, 28 commits behind `develop`, and so saw none of the resource
+  discovery and import work. Neither repository uses a `master` branch; both track `main`,
+  and both `develop` branches were already rebased onto it with nothing behind.
+
+  The provider compiles, vets, tests and passes the full end to end suite against these
+  versions. Regenerating the CRDs produces no schema change: only the `controller-gen`
+  version annotation and some upstream wording differ, and all seven schema shapes are
+  identical.
 - A Crossplane v2.5.0 control plane can now be built and used, and the provider is
   verified working against it. Built from the `rossigee/crossplane` `develop` branch at
   `e33ad34` with nix. Note that the build requires refreshing the Go vendor hash first: the
