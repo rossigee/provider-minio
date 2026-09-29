@@ -2,6 +2,7 @@ package serviceaccount
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -92,6 +93,59 @@ func TestServiceAccountClient_IsUpToDate(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+}
+
+// TestServiceAccountSpec_ConnectionSecretReferenceIsInherited guards the fix for
+// the field-shadowing defect.
+//
+// ServiceAccountSpec used to re-declare WriteConnectionSecretToRef with the same
+// JSON tag as the field inherited from the embedded ManagedResourceSpec. Go's
+// JSON decoder resolves the duplicate tag to the shallower (outer) field, while
+// the generated GetWriteConnectionSecretToReference accessor reads the embedded
+// field. A manifest applied from YAML therefore populated a field nothing read,
+// the accessor returned nil, and the managed reconciler never wrote a connection
+// secret for any ServiceAccount.
+func TestServiceAccountSpec_ConnectionSecretReferenceIsInherited(t *testing.T) {
+	const manifest = `{"metadata":{"name":"sa","namespace":"default"},` +
+		`"spec":{"writeConnectionSecretToRef":{"name":"conn"}}}`
+
+	sa := &miniov1beta1.ServiceAccount{}
+	require.NoError(t, json.Unmarshal([]byte(manifest), sa),
+		"a manifest setting writeConnectionSecretToRef must apply cleanly")
+
+	got := sa.GetWriteConnectionSecretToReference()
+	require.NotNil(t, got,
+		"the connection secret reference set from a manifest must be readable, "+
+			"otherwise the reconciler silently skips writing the secret")
+	assert.Equal(t, "conn", got.Name)
+}
+
+// TestPoliciesEqual covers the MinIO re-serialisation problem: the policy stored
+// by MinIO is pretty-printed, so comparing it to the spec as a raw string never
+// matches and the controller updates the resource on every reconcile.
+func TestPoliciesEqual(t *testing.T) {
+	compact := `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::b/*"]}]}`
+	pretty := `{
+  "Version": "2012-10-17",
+  "Statement": [
+   {
+    "Effect": "Allow",
+    "Action": [
+     "s3:GetObject"
+    ],
+    "Resource": [
+     "arn:aws:s3:::b/*"
+    ]
+   }
+  ]
+}`
+
+	assert.True(t, policiesEqual(compact, pretty), "reformatted but equivalent policies must compare equal")
+	assert.True(t, policiesEqual(compact, compact))
+	assert.False(t, policiesEqual(compact, `{"Version":"2012-10-17","Statement":[]}`))
+	assert.False(t, policiesEqual("not json", pretty))
 }
 
 // TestServiceAccountClientObserve_ConnectionSecretMissing covers the case where a
