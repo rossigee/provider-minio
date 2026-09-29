@@ -87,7 +87,27 @@ below is therefore released for the first time in v0.21.4.
   versions. Regenerating the CRDs produces no schema change: only the `controller-gen`
   version annotation and some upstream wording differ, and all seven schema shapes are
   identical.
-- A Crossplane v2.5.0 control plane can now be built and used, and the provider is
+  - **Published the Crossplane 2.5.0 control plane the provider requires.** The package
+    declares `crossplane.version: ">=v2.5.0"`, but upstream has no 2.5.0: the newest chart at
+    `charts.crossplane.io/stable` is 2.4.2 and the newest stable image is `v2.2.2`. The
+    documented install path, `helm repo add crossplane https://charts.crossplane.io/stable`,
+    therefore produced a 2.4.2 control plane on which the provider install was rejected on the
+    version constraint. Both v0.21.4 and v0.21.5 were published in that state.
+
+    Two artifacts are now public, built from `rossigee/crossplane` `develop` at `e33ad34` with
+    `buildVersion` pinned to `v2.5.0`:
+
+    * `ghcr.io/rossigee/crossplane:v2.5.0`, a multi-arch manifest list over
+      `linux/amd64`, `linux/arm64`, `linux/arm/v7` and `linux/ppc64le`.
+    * `oci://ghcr.io/rossigee/charts/crossplane:2.5.0`, the upstream chart with
+      `image.repository` set to `ghcr.io/rossigee/crossplane`. The stock chart defaults to
+      `xpkg.crossplane.io/crossplane/crossplane`, so publishing it unmodified would have
+      installed the absent upstream image, and once upstream does ship 2.5.0 it would have
+      silently installed upstream Core rather than the build this provider was verified against.
+
+    Both pull anonymously. `docs/installation.md` and `README.md` now install the provider from
+    this registry, and note that any Crossplane >= 2.5.0 satisfies the floor.
+  - A Crossplane v2.5.0 control plane can now be built and used, and the provider is
   verified working against it. Built from the `rossigee/crossplane` `develop` branch at
   `e33ad34` with nix. Note that the build requires refreshing the Go vendor hash first: the
   `root` hash pinned in `nix/vendor-hashes.nix` is stale on that branch, so the build fails
