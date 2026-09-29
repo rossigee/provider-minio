@@ -261,6 +261,28 @@ minio-setup: $(HELM) kind-kubeconfig
 .PHONY: provider-config
 provider-config: export KUBECONFIG = $(KIND_KUBECONFIG)
 provider-config: kind-kubeconfig
+	@$(INFO) waiting for the provider to establish its CRDs
+	@for crd in buckets users policies serviceaccounts \
+		notificationconfigurations providerconfigs providerconfigusages; do \
+		full=$$crd.minio.m.crossplane.io; \
+		for i in $$(seq 1 120); do \
+			$(KUBECTL) get crd $$full >/dev/null 2>&1 && break; \
+			sleep 1; \
+		done; \
+		if ! $(KUBECTL) get crd $$full >/dev/null 2>&1; then \
+			echo "timed out waiting for CRD $$full to be created"; \
+			$(KUBECTL) get provider.pkg.crossplane.io/$(PROJECT_NAME) -o wide || true; \
+			exit 1; \
+		fi; \
+	done
+	@$(KUBECTL) wait --for=condition=Established --timeout=180s \
+		crd/buckets.minio.m.crossplane.io \
+		crd/users.minio.m.crossplane.io \
+		crd/policies.minio.m.crossplane.io \
+		crd/serviceaccounts.minio.m.crossplane.io \
+		crd/notificationconfigurations.minio.m.crossplane.io \
+		crd/providerconfigs.minio.m.crossplane.io \
+		crd/providerconfigusages.minio.m.crossplane.io
 	@$(INFO) installing the MinIO credentials secret
 	@$(KUBECTL) apply -n crossplane-system -f samples/_secret.yaml
 	@$(KUBECTL) apply -f test/providerconfig.yaml
