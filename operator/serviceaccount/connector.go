@@ -2,6 +2,7 @@ package serviceaccount
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -16,7 +17,17 @@ import (
 )
 
 var (
-	errNotServiceAccount = fmt.Errorf("managed resource is not a service account")
+	errNotServiceAccount   = fmt.Errorf("managed resource is not a service account")
+	errGetConnectionSecret = errors.New("cannot get connection secret")
+
+	// errConnectionSecretUnrecoverable is returned when a service account exists
+	// in MinIO but its connection secret is gone. MinIO stores secret keys
+	// hashed and never returns them, so the credentials cannot be reissued
+	// without deleting and recreating the service account.
+	errConnectionSecretUnrecoverable = errors.New(
+		"connection secret is missing and its credentials are unrecoverable: " +
+			"MinIO never returns secret keys, so delete this ServiceAccount to have " +
+			"a new set issued and written to the connection secret")
 )
 
 type connector struct {
