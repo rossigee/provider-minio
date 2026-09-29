@@ -18,4 +18,14 @@ echo "Endpoint: ${endpoint}"
 echo "Access key: ${access_key}"
 echo "Secret key: ${secret_key}"
 
-"${GOBIN}/mc" cp --quiet --debug "${file_path}" "minio/${bucket_name}"
+# mc is installed to the suite's tool directory by the $(mc_bin) prerequisite of
+# test-e2e, which exports GOBIN only for its own recipe. kuttl does not inherit
+# that, so an unset GOBIN would expand to "/mc". Resolve it from the checkout
+# root instead, which is where kuttl is invoked from, and fall back to PATH.
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "${PWD}/../../..")
+mc="${MC_BIN:-${repo_root}/_output/bin/mc}"
+if [ ! -x "${mc}" ]; then
+  mc=$(command -v mc)
+fi
+
+"${mc}" cp --quiet --debug "${file_path}" "minio/${bucket_name}"

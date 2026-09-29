@@ -40,6 +40,22 @@ below is therefore released for the first time in v0.21.4.
   the install fails even though the MinIO server is healthy. The hook only creates a
   convenience user; the suite authenticates with `rootUser`/`rootPassword`, which reach the
   server through the chart's own secret.
+- **Fixed the end to end suite failing to install its ProviderConfig.** `local.xpkg.deploy.provider`
+  returns as soon as the `Provider` object is created, but Crossplane's package manager
+  establishes the CRDs from the package contents asynchronously, so the `ProviderConfig` apply
+  could run before any CRD existed and fail with
+  `no matches for kind "ProviderConfig" in version "minio.m.crossplane.io/v1beta1"`.
+  The target now polls for each of the seven provider CRDs and then waits for them to be
+  `Established`. The poll is bounded at 120 seconds and reports the `Provider` object if it
+  expires, because `kubectl wait --for=condition=Established` fails immediately on a
+  resource that does not exist yet rather than waiting for it.
+- **Fixed the end to end suite failing to find the MinIO client.** `test/e2e/upload-object.sh`
+  invoked `"${GOBIN}/mc"`, but `GOBIN` is exported only for the recipe of the `$(mc_bin)`
+  prerequisite, which installs the client into the suite's tool directory. kuttl does not
+  inherit it, so `GOBIN` was empty in the step and the path resolved to `/mc`, giving
+  `No such file or directory` and exit status 127 in the bucket and policy tests. The script
+  now resolves the client from the repository root, falling back to `PATH`, and honours
+  `MC_BIN` if set.
 
 ### Known in v0.21.6
 
