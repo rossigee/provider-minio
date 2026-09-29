@@ -3,31 +3,47 @@
 ## Prerequisites
 
 * Kubernetes cluster with [Crossplane](https://docs.crossplane.io) >= `v2.5.0` (`package/crossplane.yaml`, `Makefile` `CROSSPLANE_VERSION = 2.5.0`)
-* `kubectl`, `helm`, `yq` (see `README.md:163` Requirements)
+* `kubectl`, `helm` 3.8+, `yq` (see `README.md:163` Requirements)
 * MinIO deployment reachable from the cluster
 
 ## 1. Install Crossplane
 
+This provider declares `crossplane.version: ">=v2.5.0"`, so Crossplane 2.5.0 or
+newer must be installed *before* the provider. Upstream has not published a 2.5.0
+release yet, so `helm repo add crossplane https://charts.crossplane.io/stable`
+would give you 2.4.2 and the provider install would then be rejected on the
+version constraint. Install the 2.5.0 chart from this project's OCI registry
+instead:
+
 ```bash
-helm repo add crossplane https://charts.crossplane.io/stable
-helm repo update
-helm upgrade --install crossplane crossplane/crossplane \
+helm upgrade --install crossplane oci://ghcr.io/rossigee/charts/crossplane \
+  --version 2.5.0 \
   --namespace crossplane-system --create-namespace --wait
 ```
 
-Verify:
+The chart is public, so no `helm registry login` is required. It is the upstream
+Crossplane chart with `image.repository` pointed at `ghcr.io/rossigee/crossplane`
+so that it deploys the matching multi-arch image. Any Crossplane >= 2.5.0 works;
+if you later install a newer upstream release, use that instead and ignore this
+step.
+
+Verify the running version, which must be `v2.5.0` or newer:
 
 ```bash
+kubectl -n crossplane-system get deploy crossplane \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+# ghcr.io/rossigee/crossplane:v2.5.0
+
 kubectl get pods -n crossplane-system
 ```
 
 ## 2. Install Provider
 
-Choose the released version (`VERSION` file is `v0.21.3`):
+Choose the released version (`VERSION` file is `v0.21.6`):
 
 ```bash
 # Using Crossplane CLI (v2)
-kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.3
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.6
 
 # Or via Provider manifest
 kubectl apply -f - <<EOF
@@ -36,7 +52,7 @@ kind: Provider
 metadata:
   name: provider-minio
 spec:
-  package: ghcr.io/rossigee/provider-minio:v0.21.3
+  package: ghcr.io/rossigee/provider-minio:v0.21.6
 EOF
 ```
 

@@ -2,6 +2,9 @@ package serviceaccount
 
 import (
 	"context"
+	"encoding/json"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
@@ -126,8 +129,14 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 		}
 	}
 
-	// Set the condition based on account status
-	if info.AccountStatus == "enabled" {
+	// Set the condition based on account status.
+	//
+	// MinIO is inconsistent here: for users the admin API reports the account
+	// status as madmin.AccountEnabled ("enabled"), but for service accounts
+	// InfoServiceAccountResp reports "on". Comparing only against "enabled"
+	// therefore never matched a service account and every one was reported
+	// Disabled. Accept either spelling.
+	if accountStatusEnabled(info.AccountStatus) {
 		serviceAccount.SetConditions(xpv1.Available())
 	} else {
 		serviceAccount.SetConditions(miniov1beta1.Disabled())
@@ -154,8 +163,16 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 
 // isUpToDate checks if the service account configuration matches what's in MinIO
 func (s *serviceAccountClient) isUpToDate(serviceAccount *miniov1beta1.ServiceAccount, info madmin.InfoServiceAccountResp) bool {
-	// Check if inline policy needs updating
-	if serviceAccount.Spec.ForProvider.Policy != "" && serviceAccount.Spec.ForProvider.Policy != info.Policy {
+	// Check if inline policy needs updating.
+	//
+	// This must compare the policy as JSON, not as a raw string. MinIO
+	// re-serialises the policy it stores, so the bytes it returns never match the
+	// bytes in the spec even when the documents are identical. A string
+	// comparison therefore reported a difference on every single reconcile, so
+	// the controller issued an UpdateServiceAccount call each time and the
+	// resource never converged to UpToDate - it sat at Updating forever,
+	// hammering MinIO once per poll interval.
+	if serviceAccount.Spec.ForProvider.Policy != "" && !policiesEqual(serviceAccount.Spec.ForProvider.Policy, info.Policy) {
 		return false
 	}
 
@@ -177,4 +194,72 @@ func (s *serviceAccountClient) isUpToDate(serviceAccount *miniov1beta1.ServiceAc
 	// to avoid needing context in this helper. If Policies are specified, we consider
 	// inline check passed and rely on Observe to verify attachment.
 	return true
+}
+
+// policiesEqual reports whether two MinIO policy documents are equivalent.
+//
+// MinIO re-serialises the policy it stores, so a raw string compare never matches.
+// It also normalises array order: a spec declaring
+// Action: ["s3:GetObject", "s3:PutObject", "s3:ListBucket"] comes back as
+// ["s3:GetObject", "s3:ListBucket", "s3:PutObject"]. Action, Resource and
+// Condition are sets in an IAM policy, so order carries no meaning and is
+// canonicalised away here.
+//
+// Comparing raw strings made the controller report a difference on every
+// reconcile, so it called UpdateServiceAccount each time and the resource never
+// converged to UpToDate - it sat at Updating forever, hammering MinIO once per
+// poll interval.
+func policiesEqual(a, b string) bool {
+	if a == b {
+		return true
+	}
+
+	var av, bv any
+	if err := json.Unmarshal([]byte(a), &av); err != nil {
+		return false
+	}
+	if err := json.Unmarshal([]byte(b), &bv); err != nil {
+		return false
+	}
+	return canonicalJSON(av) == canonicalJSON(bv)
+}
+
+// canonicalJSON renders a decoded JSON value with object keys sorted and array
+// elements sorted by their own canonical form, so that two documents differing
+// only in key or element order serialise identically.
+func canonicalJSON(v any) string {
+	switch t := v.(type) {
+	case map[string]any:
+		keys := make([]string, 0, len(t))
+		for k := range t {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		parts := make([]string, 0, len(keys))
+		for _, k := range keys {
+			parts = append(parts, strconv.Quote(k)+":"+canonicalJSON(t[k]))
+		}
+		return "{" + strings.Join(parts, ",") + "}"
+	case []any:
+		parts := make([]string, 0, len(t))
+		for _, e := range t {
+			parts = append(parts, canonicalJSON(e))
+		}
+		sort.Strings(parts)
+		return "[" + strings.Join(parts, ",") + "]"
+	default:
+		b, err := json.Marshal(t)
+		if err != nil {
+			return ""
+		}
+		return string(b)
+	}
+}
+
+// accountStatusEnabled reports whether a MinIO account status means enabled.
+// madmin.AccountEnabled is "enabled", which is what the admin API reports for
+// users, but InfoServiceAccountResp reports "on" for service accounts. Both are
+// accepted so a service account is not permanently reported Disabled.
+func accountStatusEnabled(status string) bool {
+	return status == string(madmin.AccountEnabled) || status == "on"
 }

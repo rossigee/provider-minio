@@ -12,22 +12,27 @@ Crossplane provider for managing MinIO object storage resources including bucket
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.21.3`
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.21.6`
 
 ## Getting Started
 
 ### Prerequisites
 
-- Kubernetes cluster with Crossplane installed
+- Kubernetes cluster with Crossplane **>= v2.5.0** installed. Upstream has not released
+  2.5.0 yet, so install the chart published by this project:
+  `helm upgrade --install crossplane oci://ghcr.io/rossigee/charts/crossplane --version 2.5.0 --namespace crossplane-system --create-namespace --wait`
 - MinIO server with API access enabled
 - MinIO root credentials
+
+The provider package declares `crossplane.version: ">=v2.5.0"`, so a cluster on an
+older Crossplane will reject it. See [docs/installation.md](docs/installation.md#1-install-crossplane).
 
 ### Installation
 
 Install the provider:
 
 ```bash
-kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.3
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.6
 ```
 
 Create a secret with your MinIO credentials:

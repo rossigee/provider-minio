@@ -1,4 +1,7 @@
 ---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+---
 apiVersion: minio.m.crossplane.io/v1beta1
 kind: ServiceAccount
 metadata:
@@ -16,14 +19,6 @@ status:
       status: "True"
       reason: ReconcileSuccess
   atProvider:
-    accountStatus: enabled
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: test-serviceaccount-secret
-  namespace: default
-type: Opaque
-data:
-  AWS_ACCESS_KEY_ID: ""  # Will be populated by controller
-  AWS_SECRET_ACCESS_KEY: ""  # Will be populated by controller
+    # MinIO reports the service account status as "on". It is not "enabled",
+    # which is the value madmin uses for users.
+    accountStatus: "on"
