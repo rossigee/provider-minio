@@ -3,10 +3,12 @@ package serviceaccount
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
@@ -14,6 +16,7 @@ import (
 	"github.com/minio/madmin-go/v3"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -142,7 +145,15 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 		serviceAccount.SetConditions(miniov1beta1.Disabled())
 	}
 
-	// Validate connection credentials if the service account is not being deleted
+	// Validate connection credentials if the service account is not being deleted.
+	//
+	// The MinIO admin API never returns a service account's secret key, so the
+	// copy written to the connection secret when the account was created is the
+	// only one that will ever exist. Neither Observe nor Update can republish it.
+	// A missing connection secret for an account that already exists in MinIO is
+	// therefore an unrecoverable condition, and previously it was only logged at
+	// debug level, which left the resource reporting Ready/Available while its
+	// credentials were gone. Surface it instead.
 	if mg.GetDeletionTimestamp() == nil && mg.(resource.ModernManaged).GetWriteConnectionSecretToReference() != nil {
 		secret := corev1.Secret{}
 
@@ -150,11 +161,26 @@ func (s *serviceAccountClient) Observe(ctx context.Context, mg resource.Managed)
 			Namespace: mg.GetNamespace(),
 			Name:      mg.(resource.ModernManaged).GetWriteConnectionSecretToReference().Name,
 		}, &secret)
-		if err != nil {
-			log.V(1).Info("connection secret not found or not accessible", "error", err)
-			// This is not necessarily an error condition during initial creation
-		} else {
+		switch {
+		case err == nil:
 			log.V(1).Info("service account credentials validated", "accessKey", accessKey)
+		case accessKey == "":
+			// Not created in MinIO yet, so the secret is not expected to exist
+			// until Create has run and published the credentials.
+			log.V(1).Info("awaiting initial creation, connection secret not present yet")
+		case !kerrors.IsNotFound(err):
+			// A real API or RBAC problem reading the secret: surface that rather
+			// than reporting the credentials as lost.
+			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true},
+				fmt.Errorf("%w: %w", errGetConnectionSecret, err)
+		default:
+			s.recorder.Event(serviceAccount, event.Event{
+				Type:    event.TypeWarning,
+				Reason:  "ConnectionSecretMissing",
+				Message: errConnectionSecretUnrecoverable.Error(),
+			})
+			return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true},
+				fmt.Errorf("%w", errConnectionSecretUnrecoverable)
 		}
 	}
 

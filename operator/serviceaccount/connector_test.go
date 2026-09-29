@@ -209,6 +209,13 @@ func TestServiceAccountClientObserve(t *testing.T) {
 		ma.accounts["AKIA"] = madmin.InfoServiceAccountResp{AccountStatus: "on", ParentUser: "alice"}
 		sa := newTestSAClient(t, ma)
 
+		// The account exists and its connection secret is present, so Observe
+		// must not report the credentials as lost.
+		require.NoError(t, sa.kube.Create(context.Background(), &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "sa-conn", Namespace: "default"},
+			Data:       map[string][]byte{AccessKeyName: []byte("AKIA")},
+		}))
+
 		got, err := sa.Observe(context.Background(), testSA("AKIA"))
 		require.NoError(t, err)
 		assert.True(t, got.ResourceExists)
