@@ -29,6 +29,13 @@ GO111MODULE = on
 UP_VERSION = v0.40.3
 UP_CHANNEL = stable
 UPTEST_VERSION = v0.11.1
+# kuttl is the end to end test runner. The build submodule's k8s_tools.mk defaults
+# to 0.12.1, which is what test/e2e was originally written against, but 0.27.0 is
+# the current release and is the version the suite has been verified with. Set it
+# before k8s_tools.mk is included below, because that file uses `?=` and so only
+# sets its default if this is unset. The install target's asset naming
+# (kubectl-kuttl_<version>_linux_x86_64) is unchanged across these versions.
+KUTTL_VERSION ?= 0.27.0
 -include build/makelib/k8s_tools.mk
 
 # CROSSPLANE_CLI is now the crossplane CLI with xpkg support
@@ -72,13 +79,16 @@ xpkg.build.provider-minio: do.build.images
 
 # Setup Package Metadata
 #
-# The provider requires Crossplane >= v2.5.0 and that requirement is deliberate.
-# No v2.5.0 chart or image is published publicly yet: the latest upstream release is
-# v2.4.2, charts.crossplane.io/stable tops out at v2.4.2, and there is no v2.5.0 or
-# v2.5.0-rc.0 image on docker.io, ghcr.io or xpkg.crossplane.io. Override
-# CROSSPLANE_CHART_REPO and CROSSPLANE_VERSION to point the end to end control plane at
-# wherever v2.5.0 is actually served from, for example an internal mirror.
-CROSSPLANE_CHART_REPO ?= https://charts.crossplane.io/stable
+# The provider requires Crossplane >= v2.5.0, and that requirement is deliberate.
+# Upstream publishes no v2.5.0: the latest release is v2.4.2, charts.crossplane.io/stable
+# tops out at v2.4.2, and there is no v2.5.0 image on docker.io, ghcr.io or
+# xpkg.crossplane.io. This project therefore publishes a 2.5.0 control plane itself,
+# as a multi-arch image at ghcr.io/rossigee/crossplane and as an OCI chart at
+# oci://ghcr.io/rossigee/charts/crossplane. test/local.mk installs the control plane
+# from that OCI chart, because the build submodule's controlplane.up only supports
+# the classic `helm repo add` model and its 2.5.0 install would fail against the
+# stable repo. Override CROSSPLANE_CHART_REFERENCE and CROSSPLANE_VERSION in
+# test/local.mk to point at a different control plane, such as an internal mirror.
 CROSSPLANE_VERSION = 2.5.0
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk

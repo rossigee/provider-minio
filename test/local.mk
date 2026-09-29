@@ -3,6 +3,10 @@
 kind_dir ?= $(OUTPUT_DIR)/test
 go_bin    ?= $(OUTPUT_DIR)/bin
 
+# The build submodule invokes docker from PATH and does not define a DOCKER
+# variable, so one is defined here for the Crossplane image side-load below.
+DOCKER ?= docker
+
 # The e2e suite gets its own kubeconfig rather than relying on whatever context
 # the ambient KUBECONFIG happens to point at. A shared kubeconfig means a stray
 # current-context can make `make test-e2e` install a provider into a real
@@ -11,20 +15,22 @@ KIND_KUBECONFIG ?= $(kind_dir)/kubeconfig
 
 # Crossplane control plane for the end to end suite.
 #
-# The provider requires Crossplane >= v2.5.0 and no published v2.5.0 artifact
-# exists: the latest upstream release is v2.4.2, charts.crossplane.io/stable tops
-# out there, and neither docker.io, ghcr.io nor xpkg.crossplane.io carries a
-# v2.5.0 or v2.5.0-rc.0 image. The Go dependencies already come from the rossigee
-# forks (crossplane-runtime v2.5.0, crossplane/apis v2.5.0-rc.0), so the gap is
-# only a runnable control plane.
+# The provider requires Crossplane >= v2.5.0 and upstream publishes no v2.5.0: the
+# latest release is v2.4.2, charts.crossplane.io/stable tops out at v2.4.2, and
+# neither docker.io, ghcr.io nor xpkg.crossplane.io carries a v2.5.0 or v2.5.0-rc.0
+# image. This project publishes its own 2.5.0 control plane, so the suite installs
+# that rather than building one. See crossplane-up below for why controlplane.up
+# from the build submodule cannot be used.
 #
-# So the control plane is built from the rossigee/crossplane develop branch, whose
-# flake.nix stamps the version from `buildVersion` and otherwise emits
-# "v0.0.0-<lastModified>-<shortRev>". A build without buildVersion set would
-# self-report v0.0.0 and fail this provider's >= v2.5.0 constraint, which is why
-# CROSSPLANE_BUILD_VERSION has to be set explicitly.
+# The published image at ghcr.io/rossigee/crossplane:v2.5.0 is a multi-arch manifest
+# over linux/amd64, linux/arm64, linux/arm/v7 and linux/ppc64le, built from the
+# rossigee/crossplane develop branch at e33ad34 with `buildVersion` pinned to
+# v2.5.0 so the binary self-reports v2.5.0 and satisfies the provider's constraint.
 #
-# Override these to point at an already published 2.5.0 image and skip the build:
+# To build the control plane from source instead (requires Nix, which is not a
+# normal developer tool for this repo), run `make crossplane-image`; that target
+# clones the fork and produces a loadable image. CROSSPLANE_IMAGE_REPOSITORY and
+# CROSSPLANE_IMAGE_TAG override the deployed image, for example:
 #   make test-e2e CROSSPLANE_IMAGE_REPOSITORY=ghcr.io/rossigee/crossplane \
 #                   CROSSPLANE_IMAGE_TAG=v2.5.0
 CROSSPLANE_FORK_URL     ?= https://github.com/rossigee/crossplane.git
@@ -34,6 +40,11 @@ CROSSPLANE_IMAGE_REPOSITORY ?= ghcr.io/rossigee/crossplane
 CROSSPLANE_IMAGE_TAG        ?= $(CROSSPLANE_BUILD_VERSION)
 CROSSPLANE_LOCAL_IMAGE      ?= crossplane-controlplane:$(CROSSPLANE_BUILD_VERSION)
 CROSSPLANE_SRC_DIR          ?= $(kind_dir)/crossplane-src
+# How long to wait for the crossplane and rbac-manager deployments to become
+# available after the chart is installed. Generous because a cold node still
+# has to schedule the pods, pull any remaining images and run crossplane-init
+# before Core reports available.
+CROSSPLANE_WAIT_TIMEOUT ?= 10m
 
 # Build the control plane image from the fork's develop branch. Requires Nix,
 # which is not a normal developer tool for this repo, so this is a separate
@@ -126,13 +137,74 @@ kind-kubeconfig: $(KIND)
 	@chmod 600 $(KIND_KUBECONFIG)
 	@$(INFO) wrote $(KIND_KUBECONFIG)
 
+# Chart for the Crossplane control plane, as an OCI reference.
+#
+# The build submodule's controlplane.up installs Crossplane the classic way:
+# `helm repo add <repo>` then `helm install <repo>/crossplane --version <v>`. It
+# cannot consume an oci:// reference, and it cannot work here anyway: the
+# provider requires Crossplane >= v2.5.0, but the newest chart in
+# charts.crossplane.io/stable is 2.4.2, so its `helm install --version 2.5.0`
+# fails outright. Serving the chart over a file:// repo is not an option either,
+# as helm has no file protocol handler for `helm repo add`.
+#
+# So the chart is pulled from the OCI registry this project publishes and
+# installed directly, and controlplane.up is left out of the dependency graph.
+# The chart is the upstream one with image.repository already pointed at
+# ghcr.io/rossigee/crossplane, so no image override is needed for the default
+# path; the override below is kept for pointing the suite at another build.
+#
+# The image is also side-loaded into the kind node rather than pulled by the
+# node's container runtime. The node fails to pull the multi-arch image from
+# ghcr.io with "unable to fetch descriptor ... which reports content size of
+# zero", and both Core and rbac-manager then sit in ImagePullBackOff until the
+# 10 minute wait expires. A host `docker pull` of the same reference succeeds
+# and resolves the index to the amd64 manifest, and the pods become Ready as
+# soon as that image is loaded into the node, so the image itself is fine. The
+# root cause of the runtime's failure is not established here; loading the
+# image avoids it and is the same approach the provider image already uses.
+CROSSPLANE_CHART_REFERENCE ?= oci://ghcr.io/rossigee/charts/crossplane
+
+# Bring up the control plane: create the kind cluster if it is not already
+# there, materialise its kubeconfig, and install Crossplane from the OCI chart.
+# The cluster must exist before kind-kubeconfig can run, so the cluster is
+# created here rather than depending on kind-kubeconfig, which fails on a
+# cluster that does not exist yet.
+.PHONY: crossplane-up
+crossplane-up: export KUBECONFIG = $(KIND_KUBECONFIG)
+crossplane-up: $(HELM) $(KUBECTL) $(KIND)
+	@$(INFO) setting up controlplane
+	@$(KIND) get kubeconfig --name $(KIND_CLUSTER_NAME) >/dev/null 2>&1 || $(KIND) create cluster --name=$(KIND_CLUSTER_NAME)
+	@mkdir -p $(kind_dir)
+	@$(KIND) get kubeconfig --name $(KIND_CLUSTER_NAME) > $(KIND_KUBECONFIG)
+	@chmod 600 $(KIND_KUBECONFIG)
+	@$(INFO) loading Crossplane image into the kind node
+	@command -v $(DOCKER) >/dev/null 2>&1 || { \
+		echo "docker is required to side-load the Crossplane image into kind."; \
+		echo "The node's container runtime cannot pull the multi-arch image from ghcr,"; \
+		echo "so it is pulled with a host runtime and loaded instead."; \
+		exit 1; \
+	}
+	@$(DOCKER) pull $(CROSSPLANE_IMAGE_REPOSITORY):$(CROSSPLANE_IMAGE_TAG)
+	@$(KIND) load docker-image $(CROSSPLANE_IMAGE_REPOSITORY):$(CROSSPLANE_IMAGE_TAG) -n $(KIND_CLUSTER_NAME)
+	@$(INFO) installing Crossplane $(CROSSPLANE_VERSION) from $(CROSSPLANE_CHART_REFERENCE)
+	@$(HELM) upgrade --install crossplane $(CROSSPLANE_CHART_REFERENCE) \
+		--version $(CROSSPLANE_VERSION) \
+		--create-namespace --namespace crossplane-system \
+		$(if $(CROSSPLANE_ARGS),--set "args={$(CROSSPLANE_ARGS)}",) \
+		--wait --timeout $(CROSSPLANE_WAIT_TIMEOUT) || { \
+		$(INFO) Crossplane did not become ready, dumping state; \
+		$(KUBECTL) -n crossplane-system get pods -o wide || true; \
+		$(KUBECTL) -n crossplane-system describe pod -l pkg.crossplane.io/provider=crossplane || true; \
+		$(KUBECTL) -n crossplane-system get events --sort-by=.lastTimestamp | tail -25 || true; \
+		exit 1; \
+	}
+
 # Install Crossplane, optionally overriding the controller image so the suite can
-# run against a 2.5.0 control plane built from the fork. controlplane.up installs
-# the published chart, which pins the 2.4.2 image, so the image is overridden
-# afterwards and the deployment restarted. The chart itself is fine: it only
-# supplies manifests, and its image values are overridable.
+# run against a different 2.5.0 build. The default chart already points at
+# ghcr.io/rossigee/crossplane, so this is a no-op unless the image variables are
+# overridden; it is kept so CROSSPLANE_IMAGE_REPOSITORY still works.
 .PHONY: crossplane-setup
-crossplane-setup: controlplane.up
+crossplane-setup: crossplane-up
 	@if [ -n "$(CROSSPLANE_IMAGE_REPOSITORY)" ]; then \
 		$(INFO) overriding Crossplane image with $(CROSSPLANE_IMAGE_REPOSITORY):$(CROSSPLANE_IMAGE_TAG); \
 		$(KUBECTL) -n crossplane-system set image deployment/crossplane \
@@ -257,7 +329,7 @@ MINIO_LOCAL_PORT ?= 19000
 test-e2e: export KUBECONFIG = $(KIND_KUBECONFIG)
 test-e2e: export MINIO_ENDPOINT = 127.0.0.1:$(MINIO_LOCAL_PORT)
 test-e2e: kind-kubeconfig
-test-e2e: $(mc_bin) controlplane.up xpkg.build minio-setup local.xpkg.deploy.provider.$(PROJECT_NAME) provider-config
+test-e2e: $(mc_bin) $(KUTTL) crossplane-up xpkg.build minio-setup local.xpkg.deploy.provider.$(PROJECT_NAME) provider-config
 	@$(INFO) port forwarding MinIO on $(MINIO_ENDPOINT)
 	@$(KUBECTL) -n $(MINIO_NAMESPACE) port-forward service/$(MINIO_SERVICE) $(MINIO_LOCAL_PORT):9000 >/dev/null 2>&1 & \
 		echo $$! > $(kind_dir)/port-forward.pid

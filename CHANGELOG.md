@@ -139,6 +139,33 @@ below is therefore released for the first time in v0.21.4.
   it set would self-report `v0.0.0` and be rejected by this package's `>= v2.5.0`
   constraint. The target therefore sets it explicitly, the same way the fork's own CI
   does. Building it requires nix, which is not a dependency of this repository.
+- The end to end suite now installs its control plane from the published OCI chart,
+  `oci://ghcr.io/rossigee/charts/crossplane`, rather than through the build submodule's
+  `controlplane.up`. That target only supports the classic `helm repo add` model, so it
+  cannot consume an `oci://` reference, and it could not have worked here regardless: the
+  provider requires Crossplane >= v2.5.0 and the newest chart in
+  `charts.crossplane.io/stable` is 2.4.2, so its `helm install --version 2.5.0` fails
+  outright. Serving the chart over a `file://` repo is not an alternative either, as helm
+  has no `file` protocol handler for `helm repo add`. A new `crossplane-up` target creates
+  the cluster, writes the suite's kubeconfig and installs the chart directly, and
+  `test-e2e` depends on it in place of `controlplane.up`. This target also has to create
+  the cluster itself rather than depending on `kind-kubeconfig`, which fails on a cluster
+  that does not exist yet.
+- The Crossplane image is side-loaded into the kind node rather than pulled by the node's
+  own container runtime. The node fails to pull the multi-arch `v2.5.0` image from ghcr.io
+  with `unable to fetch descriptor (sha256:d9ac45e64eb41...) which reports content size of
+  zero: invalid argument`, leaving both `crossplane` and `crossplane-rbac-manager` in
+  `ImagePullBackOff` until the wait expires. The image itself is sound: its index, per-arch
+  manifests, config and layers were all checked, a host `docker pull` of the same reference
+  succeeds and resolves the index to the amd64 manifest, and both pods become `Ready` as
+  soon as that image is loaded into the node. The cause of the runtime's failure is not
+  established, so the suite loads the image instead, which is how it already installs the
+  provider image. This means `make test-e2e` now requires `docker` on `PATH`.
+- Pinned kuttl to 0.27.0. The build submodule's `k8s_tools.mk` defaults to 0.12.1, which is
+  what `test/e2e` was originally written against, and `test-e2e` did not depend on the
+  kuttl target at all, so the suite would have run against whatever kuttl happened to be on
+  `PATH`. The pin is set before that file is included, because it uses `?=` and so only
+  applies its default when the version is unset.
 
 ## [v0.21.5] - 2026-09-27
 
