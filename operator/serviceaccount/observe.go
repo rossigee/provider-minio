@@ -222,20 +222,19 @@ func (s *serviceAccountClient) isUpToDate(serviceAccount *miniov1beta1.ServiceAc
 	return true
 }
 
-<<<<<<< HEAD
 // policiesEqual reports whether two MinIO policy documents are equivalent.
 //
-/// MinIO re-serialises the policy it stores, so a raw string compare never matches.
-/// It also normalises array order: a spec declaring
-/// Action: ["s3:GetObject", "s3:PutObject", "s3:ListBucket"] comes back as
-/// ["s3:GetObject", "s3:ListBucket", "s3:PutObject"]. Action, Resource and
-/// Condition are sets in an IAM policy, so order carries no meaning and is
-/// canonicalised away here.
-///
-/// Comparing raw strings made the controller report a difference on every
-/// reconcile, so it called UpdateServiceAccount each time and the resource never
-/// converged to UpToDate - it sat at Updating forever, hammering MinIO once per
-/// poll interval.
+// MinIO re-serialises the policy it stores, so a raw string compare never matches.
+// It also normalises array order: a spec declaring
+// Action: ["s3:GetObject", "s3:PutObject", "s3:ListBucket"] comes back as
+// ["s3:GetObject", "s3:ListBucket", "s3:PutObject"]. Action, Resource and
+// Condition are sets in an IAM policy, so order carries no meaning and is
+// canonicalised away here.
+//
+// Comparing raw strings made the controller report a difference on every
+// reconcile, so it called UpdateServiceAccount each time and the resource never
+// converged to UpToDate - it sat at Updating forever, hammering MinIO once per
+// poll interval.
 func policiesEqual(a, b string) bool {
 	if a == b {
 		return true
