@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
@@ -90,13 +91,72 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	return &external{client: client}, nil
+	return &external{client: client, kube: c.kube, newServiceFn: c.newServiceFn}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
 type external struct {
-	client *madmin.AdminClient
+	client       *madmin.AdminClient
+	kube         client.Client
+	newServiceFn func(cfg clients.Config) (*madmin.AdminClient, error)
+
+	// listUsersFn overrides the MinIO ListUsers call. It is nil in production
+	// and set by unit tests, because the admin API requires SigV4-signed
+	// requests with encrypted responses that cannot be faked with httptest.
+	listUsersFn func(ctx context.Context) (map[string]madmin.UserInfo, error)
+}
+
+// Compile-time check that external implements the discovery interface
+// consumed by Crossplane's resource-discovery controller (DiscoveryReport).
+var _ resource.ExternalLister = (*external)(nil)
+
+// List enumerates external users for discovery (crossplane.io
+// ExternalLister). External names are MinIO usernames. The admin ListUsers
+// API returns all users in a single response, so pagination tokens are never
+// emitted; a non-empty pageToken yields an empty result.
+func (c *external) List(ctx context.Context, pc resource.ProviderConfig, pageToken string) (resource.ExternalListResult, error) {
+	cfg, ok := pc.(*providerv1beta1.ProviderConfig)
+	if !ok {
+		return resource.ExternalListResult{}, errors.New("provider config is not a MinIO ProviderConfig")
+	}
+
+	if pageToken != "" {
+		return resource.ExternalListResult{}, nil
+	}
+
+	list := c.listUsersFn
+	if list == nil {
+		conf, err := clients.GetConfig(ctx, c.kube, cfg)
+		if err != nil {
+			return resource.ExternalListResult{}, errors.Wrap(err, errGetCreds)
+		}
+
+		admin, err := c.newServiceFn(*conf)
+		if err != nil {
+			return resource.ExternalListResult{}, errors.Wrap(err, errNewClient)
+		}
+
+		list = admin.ListUsers
+	}
+
+	users, err := list(ctx)
+	if err != nil {
+		return resource.ExternalListResult{}, errors.Wrap(err, "failed to list users")
+	}
+
+	names := make([]string, 0, len(users))
+	for name := range users {
+		if name == "" {
+			continue
+		}
+
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	return resource.ExternalListResult{ExternalNames: names}, nil
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {

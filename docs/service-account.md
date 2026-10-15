@@ -34,7 +34,6 @@ spec:
     description: "Service account for my application"
   writeConnectionSecretToRef:
     name: my-app-credentials
-    namespace: production
 ```
 
 ### ServiceAccount with Custom Policy
@@ -71,7 +70,6 @@ spec:
       }
   writeConnectionSecretToRef:
     name: restricted-credentials
-    namespace: production
 ```
 
 ### ServiceAccount with Expiration
@@ -107,7 +105,6 @@ spec:
       }
   writeConnectionSecretToRef:
     name: temp-credentials
-    namespace: production
 ```
 
 ### ServiceAccount with Custom Credentials
@@ -129,7 +126,6 @@ spec:
     targetUser: "specific-parent-user"
   writeConnectionSecretToRef:
     name: custom-credentials
-    namespace: production
 ```
 
 ## Field Reference
@@ -147,9 +143,15 @@ spec:
 | `targetUser` | string | No | Parent user for the service account. Defaults to ProviderConfig user |
 | `policy` | string | No | JSON IAM policy document. If not specified, inherits parent user policies |
 | `expiration` | string (`metav1.Time`) | No | RFC 3339 timestamp when the service account expires |
-| `writeConnectionSecretToRef` | `SecretReference` | No | Secret where connection details are written |
+| `writeConnectionSecretToRef` | `LocalSecretReference` | No | Name of the Secret where connection details are written. The Secret is always created in the ServiceAccount's own namespace. |
 
-> Use `spec.writeConnectionSecretToRef` (singular) as defined in `serviceaccount_types.go:97`. Older docs used `writeConnectionSecretsToRef` (plural) — prefer singular.
+> Use `spec.writeConnectionSecretToRef` (singular). Older docs used `writeConnectionSecretsToRef` (plural) — prefer singular.
+>
+> The reference takes **only `name`**. It is inherited from the embedded `ManagedResourceSpec`
+> as a `LocalSecretReference`, and the Secret is always written to the ServiceAccount's own
+> namespace. A `namespace` field is not part of the schema and is silently pruned, so it will
+> disappear from the applied object; it is only ever correct because the ServiceAccount and
+> its Secret share a namespace. Specifying one across namespaces is not supported.
 
 ### ServiceAccountProviderStatus
 

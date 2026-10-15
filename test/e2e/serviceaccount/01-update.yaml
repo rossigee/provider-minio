@@ -31,4 +31,3 @@ spec:
       }
   writeConnectionSecretToRef:
     name: test-serviceaccount-secret
-    namespace: default

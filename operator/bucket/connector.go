@@ -7,7 +7,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	"github.com/minio/minio-go/v7"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
 	"github.com/rossigee/provider-minio/operator/minioutil"
@@ -28,10 +27,20 @@ type connector struct {
 	kube     client.Client
 	recorder event.Recorder
 	usage    resource.ModernTracker
+
+	// newS3 is a seam so tests can substitute a fake. When nil the real MinIO
+	// S3 client is used.
+	newS3 s3Factory
+}
+
+type s3Factory func(context.Context, client.Client, *providerv1beta1.ProviderConfig) (minioutil.BucketS3, error)
+
+func newRealS3(ctx context.Context, kube client.Client, config *providerv1beta1.ProviderConfig) (minioutil.BucketS3, error) {
+	return minioutil.NewMinioClient(ctx, kube, config)
 }
 
 type bucketClient struct {
-	mc       *minio.Client
+	mc       minioutil.BucketS3
 	recorder event.Recorder
 }
 
@@ -58,7 +67,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	mc, err := minioutil.NewMinioClient(ctx, c.kube, config)
+	maker := c.newS3
+	if maker == nil {
+		maker = newRealS3
+	}
+
+	mc, err := maker(ctx, c.kube, config)
 	if err != nil {
 		return nil, err
 	}

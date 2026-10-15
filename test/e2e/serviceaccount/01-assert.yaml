@@ -16,4 +16,4 @@ status:
       status: "True"
       reason: ReconcileSuccess
   atProvider:
-    accountStatus: enabled
+    accountStatus: "on"

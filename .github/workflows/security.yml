@@ -186,7 +186,17 @@ jobs:
         uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: moderate
-          allow-licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0, AGPL-3.0, AGPL-3.0
+          allow-licenses: >-
+            Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0,
+            AGPL-3.0, AGPL-3.0, LicenseRef-scancode-google-patent-license-golang
+          # LicenseRef-scancode-google-patent-license-golang is Google's
+          # patent grant, which it now attaches alongside the BSD licence in
+          # golang.org/x/* modules. The dependency-review action surfaces these
+          # as "BSD-3-Clause AND LicenseRef-..." because the grant is not one of
+          # the SPDX identifiers it recognises. The grant is narrower than the
+          # BSD licence it accompanies, so these modules stay compliant; the
+          # allowance is listed explicitly rather than lowering the severity
+          # threshold, so any genuinely incompatible licence is still caught.
 
   notification:
     name: Security Scan Notification

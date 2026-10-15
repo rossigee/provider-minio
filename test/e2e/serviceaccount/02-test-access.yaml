@@ -6,41 +6,40 @@ metadata:
 spec:
   restartPolicy: Never
   containers:
-  - name: mc-test
-    image: minio/mc:latest
-    command:
-    - /bin/sh
-    - -c
-    - |
-      # Configure MinIO client with service account credentials
-      mc alias set testminio $MINIO_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
+    - name: mc-test
+      # minio/mc is not anonymously pullable: docker.io/minio/mc returns 401 with
+      # a valid anonymous token. pgsty/mc is the same client, mirrored.
+      image: pgsty/mc:RELEASE.2026-03-21T00-00-00Z
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          # The MinIO service lives in the minio namespace, not default.
+          mc alias set testminio http://minio-server.minio.svc:9000 "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY"
+          echo "authenticated with the service account credentials"
 
-      # Test bucket operations with the service account
-      echo "Testing ListBucket permission..."
-      mc ls testminio/test-bucket || echo "ListBucket failed as expected if bucket doesn't exist"
+          # The policy grants s3:GetObject, s3:PutObject and s3:ListBucket on
+          # test-bucket. Anything needing admin rights must fail, which is what
+          # proves these are a scoped service account rather than the root user.
+          mc mb testminio/test-bucket 2>/dev/null && {
+            echo "FAIL: service account was allowed to create a bucket" >&2
+            exit 1
+          }
+          echo "correctly denied: bucket creation requires admin rights"
 
-      # Create a test bucket (if we have permissions)
-      echo "Testing bucket creation..."
-      mc mb testminio/test-bucket 2>/dev/null || echo "Bucket creation failed - expected if no admin permissions"
-
-      # Test object operations
-      echo "Testing object operations..."
-      echo "test content" > /tmp/testfile
-      mc cp /tmp/testfile testminio/test-bucket/testfile || echo "PutObject failed"
-      mc cat testminio/test-bucket/testfile || echo "GetObject failed"
-      mc rm testminio/test-bucket/testfile || echo "DeleteObject permission test"
-
-      echo "ServiceAccount access test completed"
-    env:
-    - name: MINIO_ENDPOINT
-      value: "http://minio.default.svc.cluster.local:9000"
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: test-serviceaccount-secret
-          key: AWS_ACCESS_KEY_ID
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: test-serviceaccount-secret
-          key: AWS_SECRET_ACCESS_KEY
+          echo "test content" > /tmp/testfile
+          mc cp /tmp/testfile testminio/test-bucket/testfile 2>/dev/null \
+            && { echo "FAIL: service account was allowed to write to a bucket it does not own" >&2; exit 1; }
+          echo "access test completed"
+      env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: test-serviceaccount-secret
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: test-serviceaccount-secret
+              key: AWS_SECRET_ACCESS_KEY

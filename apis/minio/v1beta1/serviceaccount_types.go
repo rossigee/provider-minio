@@ -26,27 +26,21 @@ type ServiceAccount struct {
 	Status ServiceAccountStatus `json:"status,omitempty"`
 }
 
-// ServiceAccountSpec defines the desired state of a ServiceAccount
+// ServiceAccountSpec defines the desired state of a ServiceAccount.
+//
+// The connection secret reference is inherited from the embedded
+// ManagedResourceSpec as a LocalSecretReference (name only); ServiceAccount is a
+// namespaced resource, so the secret is written to the ServiceAccount's own
+// namespace. Do not re-declare a writeConnectionSecretToRef field here: a
+// second Go field with the same JSON tag shadows the embedded one, and the
+// angryjet-generated GetWriteConnectionSecretToReference accessor keeps reading
+// the embedded field, which is then always nil. That silently stops the
+// managed reconciler from ever writing the connection secret.
+//
 // +kubebuilder:object:generate=true
 type ServiceAccountSpec struct {
 	xpv1.ManagedResourceSpec `json:",inline"`
 	ForProvider              ServiceAccountParameters `json:"forProvider,omitempty"`
-	// WriteConnectionSecretToRef specifies the namespace and name of a Secret to which
-	// any connection details for this managed resource should be written.
-	// Connection details frequently include the endpoint, username, and password required
-	// to connect to the managed resource.
-	// +kubebuilder:validation:Optional
-	WriteConnectionSecretToRef *SecretReferenceWithNamespace `json:"writeConnectionSecretToRef,omitempty"`
-}
-
-// SecretReferenceWithNamespace is a reference to a secret with both name and namespace
-// +kubebuilder:object:generate=true
-type SecretReferenceWithNamespace struct {
-	// Name of the secret.
-	Name string `json:"name"`
-
-	// Namespace of the secret.
-	Namespace string `json:"namespace"`
 }
 
 // ServiceAccountStatus defines the observed state of a ServiceAccount

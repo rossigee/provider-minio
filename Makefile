@@ -9,14 +9,19 @@ PLATFORMS ?= linux_amd64 linux_arm64
 -include build/makelib/output.mk
 
 # Setup Go
-GO_REQUIRED_VERSION ?= 1.27.1
-# Override golangci-lint version for Go 1.25 compatibility
-GOLANGCILINT_VERSION ?= 2.13.2
+GO_REQUIRED_VERSION ?= 1.27.2
+# Override golangci-lint version for Go 1.27 compatibility
+GOLANGCILINT_VERSION ?= 2.14.0
 NPROCS ?= 1
 GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
-GO_SUBDIRS += operator apis
+# Must list every subdirectory containing Go packages that we want built,
+# tested and generated. This uses `=` rather than `+=` deliberately: golang.mk
+# declares `GO_SUBDIRS ?= cmd pkg`, but that default is only applied when the
+# variable is still undefined. An `+=` here runs first and would therefore
+# suppress the default, silently excluding cmd/ and internal/ from `make test`.
+GO_SUBDIRS = operator apis cmd internal pkg
 GO111MODULE = on
 -include build/makelib/golang.mk
 
@@ -24,6 +29,13 @@ GO111MODULE = on
 UP_VERSION = v0.40.3
 UP_CHANNEL = stable
 UPTEST_VERSION = v0.11.1
+# kuttl is the end to end test runner. The build submodule's k8s_tools.mk defaults
+# to 0.12.1, which is what test/e2e was originally written against, but 0.27.0 is
+# the current release and is the version the suite has been verified with. Set it
+# before k8s_tools.mk is included below, because that file uses `?=` and so only
+# sets its default if this is unset. The install target's asset naming
+# (kubectl-kuttl_<version>_linux_x86_64) is unchanged across these versions.
+KUTTL_VERSION ?= 0.27.0
 -include build/makelib/k8s_tools.mk
 
 # CROSSPLANE_CLI is now the crossplane CLI with xpkg support
@@ -66,9 +78,28 @@ XPKGS = provider-minio
 xpkg.build.provider-minio: do.build.images
 
 # Setup Package Metadata
+#
+# The provider requires Crossplane >= v2.5.0, and that requirement is deliberate.
+# Upstream publishes no v2.5.0: the latest release is v2.4.2, charts.crossplane.io/stable
+# tops out at v2.4.2, and there is no v2.5.0 image on docker.io, ghcr.io or
+# xpkg.crossplane.io. This project therefore publishes a 2.5.0 control plane itself,
+# as a multi-arch image at ghcr.io/rossigee/crossplane and as an OCI chart at
+# oci://ghcr.io/rossigee/charts/crossplane. test/local.mk installs the control plane
+# from that OCI chart, because the build submodule's controlplane.up only supports
+# the classic `helm repo add` model and its 2.5.0 install would fail against the
+# stable repo. Override CROSSPLANE_CHART_REFERENCE and CROSSPLANE_VERSION in
+# test/local.mk to point at a different control plane, such as an internal mirror.
 CROSSPLANE_VERSION = 2.5.0
 -include build/makelib/local.xpkg.mk
 -include build/makelib/controlplane.mk
+
+# Local development, integration and end to end test targets. The kind based
+# local-install/mirror-setup/package-push-local flow this file used to rely on
+# is gone: the provider is now side-loaded with local.xpkg.deploy.provider, so
+# no in-cluster registry is needed. `test/local.mk` had no includer at all
+# between 1554ce1 and now, which is why `make test-e2e` reported
+# "No rule to make target".
+-include test/local.mk
 
 # Targets
 

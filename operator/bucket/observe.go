@@ -14,12 +14,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var bucketExistsFn = func(ctx context.Context, mc *minio.Client, bucketName string) (bool, error) {
-	return mc.BucketExists(ctx, bucketName)
+// bucketExists reports whether the bucket exists in MinIO.
+func (d *bucketClient) bucketExists(ctx context.Context, bucketName string) (bool, error) {
+	return d.mc.BucketExists(ctx, bucketName)
 }
 
-var bucketPolicyLatestFn = func(ctx context.Context, mc *minio.Client, bucketName string, policy string) (bool, error) {
-	current, err := mc.GetBucketPolicy(ctx, bucketName)
+// bucketPolicyLatest reports whether the bucket's current policy matches the
+// desired policy exactly.
+func (d *bucketClient) bucketPolicyLatest(ctx context.Context, bucketName, policy string) (bool, error) {
+	current, err := d.mc.GetBucketPolicy(ctx, bucketName)
 	if err != nil {
 		return false, err
 	}
@@ -27,8 +30,10 @@ var bucketPolicyLatestFn = func(ctx context.Context, mc *minio.Client, bucketNam
 	return current == policy, nil
 }
 
-var bucketTagsLatestFn = func(ctx context.Context, mc *minio.Client, bucketName string, desiredTags map[string]string) (bool, error) {
-	current, err := mc.GetBucketTagging(ctx, bucketName)
+// bucketTagsLatest reports whether the bucket's current tags match the desired
+// tags exactly.
+func (d *bucketClient) bucketTagsLatest(ctx context.Context, bucketName string, desiredTags map[string]string) (bool, error) {
+	current, err := d.mc.GetBucketTagging(ctx, bucketName)
 	if err != nil {
 		// MinIO returns NoSuchTagSet when no tags are set
 		if minio.ToErrorResponse(err).Code == "NoSuchTagSet" {
@@ -53,7 +58,7 @@ func (d *bucketClient) Observe(ctx context.Context, mg resource.Managed) (manage
 
 	log.V(1).Info("Observing bucket", "name", bucket.Name)
 	bucketName := bucket.GetBucketName()
-	exists, err := bucketExistsFn(ctx, d.mc, bucketName)
+	exists, err := d.bucketExists(ctx, bucketName)
 
 	if err != nil {
 		errResp := minio.ToErrorResponse(err)
@@ -78,7 +83,7 @@ func (d *bucketClient) observeBucket(ctx context.Context, bucket *miniov1beta1.B
 
 		isLatest := true
 		if bucket.Spec.ForProvider.Policy != nil {
-			u, err := bucketPolicyLatestFn(ctx, d.mc, bucketName, *bucket.Spec.ForProvider.Policy)
+			u, err := d.bucketPolicyLatest(ctx, bucketName, *bucket.Spec.ForProvider.Policy)
 			if err != nil {
 				return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether a bucket policy exists")
 			}
@@ -86,7 +91,7 @@ func (d *bucketClient) observeBucket(ctx context.Context, bucket *miniov1beta1.B
 		}
 
 		if isLatest && bucket.Spec.ForProvider.Tags != nil {
-			u, err := bucketTagsLatestFn(ctx, d.mc, bucketName, bucket.Spec.ForProvider.Tags)
+			u, err := d.bucketTagsLatest(ctx, bucketName, bucket.Spec.ForProvider.Tags)
 			if err != nil {
 				return managed.ExternalObservation{}, errors.Wrap(err, "cannot determine whether bucket tags are up to date")
 			}

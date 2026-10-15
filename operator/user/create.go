@@ -75,6 +75,9 @@ func (u *userClient) Create(ctx context.Context, mg resource.Managed) (managed.E
 	u.emitCreationEvent(user)
 
 	annotations := user.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
 	annotations[UserCreatedAnnotationKey] = "true"
 	user.SetAnnotations(annotations)
 

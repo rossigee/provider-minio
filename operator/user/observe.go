@@ -9,8 +9,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/minio/madmin-go/v3"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -82,10 +80,7 @@ func (u *userClient) Observe(ctx context.Context, mg resource.Managed) (managed.
 			log.V(1).Info("connection secret not found or not accessible", "error", err)
 			// This is not necessarily an error condition during initial creation
 		} else {
-			mclient, err := minio.New(u.url.Host, &minio.Options{
-				Creds:  credentials.NewStaticV4(string(secret.Data[AccessKeyName]), string(secret.Data[SecretKeyName]), ""),
-				Secure: u.tlsSettings,
-			})
+			mclient, err := u.credentialClient(string(secret.Data[AccessKeyName]), string(secret.Data[SecretKeyName]))
 			if err != nil {
 				return managed.ExternalObservation{ResourceUpToDate: false, ResourceExists: true}, nil
 			}

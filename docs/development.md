@@ -30,7 +30,7 @@ All make targets: `make help`.
 | `make test` | `go test` |
 | `make xpkg.build` | Build xpkg (`_output/xpkg/.../*.xpkg`) |
 | `make local-install` | Install provider in current kube context |
-| `make install-samples` | Apply `samples/_secret.yaml` + `samples/minio.crossplane.io_*.yaml` |
+| `make install-samples` | Apply `samples/_secret.yaml` + `samples/minio.m.crossplane.io_*.yaml` |
 | `make install-crds` / `make uninstall-crds` | Apply/delete `package/crds/` |
 | `make run` | Run provider locally out-of-cluster (`go run ./cmd/provider --debug`) |
 
