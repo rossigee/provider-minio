@@ -12,7 +12,7 @@ Crossplane provider for managing MinIO object storage resources including bucket
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-minio:v0.21.6`
+- **Primary**: `ghcr.io/rossigee/provider-minio:v0.21.8`
 
 ## Getting Started
 
@@ -32,7 +32,7 @@ older Crossplane will reject it. See [docs/installation.md](docs/installation.md
 Install the provider:
 
 ```bash
-kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.6
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.8
 ```
 
 Create a secret with your MinIO credentials:

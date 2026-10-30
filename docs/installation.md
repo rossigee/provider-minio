@@ -43,7 +43,7 @@ Choose the released version (`VERSION` file is `v0.21.6`):
 
 ```bash
 # Using Crossplane CLI (v2)
-kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.6
+kubectl crossplane install provider ghcr.io/rossigee/provider-minio:v0.21.8
 
 # Or via Provider manifest
 kubectl apply -f - <<EOF
@@ -52,7 +52,7 @@ kind: Provider
 metadata:
   name: provider-minio
 spec:
-  package: ghcr.io/rossigee/provider-minio:v0.21.6
+  package: ghcr.io/rossigee/provider-minio:v0.21.8
 EOF
 ```
 
