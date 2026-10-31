@@ -12,7 +12,7 @@ spec:
   tls:
     # Reference CA certificate from a Secret or ConfigMap
     caSecretRef:
-      name: golder-ca-configmap
+      name: example-ca-configmap
       key: ca.crt
 
     # Optional: Skip certificate verification (for testing only)
