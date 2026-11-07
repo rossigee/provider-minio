@@ -4,9 +4,9 @@ go 1.27.3
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
-	github.com/crossplane/crossplane-runtime/v2 v2.5.1
+	github.com/crossplane/crossplane-runtime/v2 v2.5.0-dev
 	github.com/crossplane/crossplane-tools v0.0.0-20260719180100-659f1dc036c5
-	github.com/crossplane/crossplane/apis/v2 v2.5.0-rc.0
+	github.com/crossplane/crossplane/apis/v2 v2.5.0-rc.0.0.20261029180807-76a72bee8a19
 	github.com/go-logr/logr v1.4.4
 	github.com/minio/madmin-go/v3 v3.0.110
 	github.com/minio/minio-go/v7 v7.4.1
@@ -148,6 +148,6 @@ exclude google.golang.org/genproto v0.0.0-20230303212802-e74f57abe488
 
 replace github.com/go-ini/ini => gopkg.in/ini.v1 v1.67.0
 
-replace github.com/crossplane/crossplane-runtime/v2 => github.com/rossigee/crossplane-runtime/v2 v2.5.1
+replace github.com/crossplane/crossplane-runtime/v2 => github.com/rossigee/crossplane-runtime/v2 v2.5.0-dev
 
 replace github.com/crossplane/crossplane/apis/v2 => github.com/rossigee/crossplane/apis/v2 v2.5.0-rc.0.0.20260925100241-e33ad34be6a2

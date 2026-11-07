@@ -179,8 +179,8 @@ github.com/prometheus/prom2json v1.5.0 h1:WIcAOjLE1x476W3dUlmTL6E/e98CgVGuwwYusl
 github.com/prometheus/prom2json v1.5.0/go.mod h1:xPp6KDhCA30btxmqEfg/K3DAwgTIkp7TJKi4+7jaYd8=
 github.com/prometheus/prometheus v0.316.0 h1:f1GRFerhTMKQma+awCoC9T820ecWeGSdF+xAlMHzZzM=
 github.com/prometheus/prometheus v0.316.0/go.mod h1:nd2m0IehYLgxV4yAmoQDsvV45I9Xerh+uTUeCioEMis=
-github.com/rossigee/crossplane-runtime/v2 v2.5.1 h1:SgFnC2+kDB21QwDiKMpi+fnBnn7m286UzBKjXfytzyE=
-github.com/rossigee/crossplane-runtime/v2 v2.5.1/go.mod h1:HydCb6kEfcRF2VtlVdWA8tCNghY7Ug+fVOmoQ+0ryzI=
+github.com/rossigee/crossplane-runtime/v2 v2.5.0-dev h1:pvU8kvzrJ4Xvu76TWN8YDriyb3pHvihnz/e/ZjU4zCo=
+github.com/rossigee/crossplane-runtime/v2 v2.5.0-dev/go.mod h1:dxpQGHFShkxBZLdog5hHhonqgA+HPg/yOC6OtUayc8s=
 github.com/rossigee/crossplane/apis/v2 v2.5.0-rc.0.0.20260925100241-e33ad34be6a2 h1:Hk0QbHcybdd6Qx6NJkspLnG1ogq38YcpD2mbcnJG9/Y=
 github.com/rossigee/crossplane/apis/v2 v2.5.0-rc.0.0.20260925100241-e33ad34be6a2/go.mod h1:OBNx+tl5RQh31Hqo2Q1KZ5tlwZXUIetAvpKKozP8HhU=
 github.com/rs/xid v1.6.0 h1:fV591PaemRlL6JfRxGDEPl69wICngIQ3shQtzfy2gxU=
