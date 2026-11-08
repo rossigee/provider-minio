@@ -35,7 +35,7 @@ func TestList(t *testing.T) {
 
 		var pc resource.ProviderConfig
 
-		_, err := e.List(ctx, pc, "")
+		_, err := e.List(ctx, pc, nil, "")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not a MinIO ProviderConfig")
 	})
@@ -43,9 +43,9 @@ func TestList(t *testing.T) {
 	t.Run("empty result on non-empty page token", func(t *testing.T) {
 		e := &external{}
 
-		result, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, "2")
+		result, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, nil, "2")
 		require.NoError(t, err)
-		assert.Empty(t, result.ExternalNames)
+		assert.Empty(t, itemNames(result.Items))
 		assert.Empty(t, result.NextPageToken)
 	})
 
@@ -61,9 +61,9 @@ func TestList(t *testing.T) {
 			},
 		}
 
-		result, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, "")
+		result, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, nil, "")
 		require.NoError(t, err)
-		assert.Equal(t, []string{"alpha", "mid", "zeta"}, result.ExternalNames)
+		assert.Equal(t, []string{"alpha", "mid", "zeta"}, itemNames(result.Items))
 		assert.Empty(t, result.NextPageToken)
 	})
 
@@ -74,7 +74,7 @@ func TestList(t *testing.T) {
 			},
 		}
 
-		_, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, "")
+		_, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, nil, "")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to list users")
 	})
@@ -82,8 +82,18 @@ func TestList(t *testing.T) {
 	t.Run("returns credential errors", func(t *testing.T) {
 		e := &external{}
 
-		_, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, "")
+		_, err := e.List(ctx, &providerv1beta1.ProviderConfig{}, nil, "")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), errGetCreds)
 	})
+}
+
+// itemNames returns the external names of items, in order.
+func itemNames(items []resource.ExternalListItem) []string {
+	names := make([]string, 0, len(items))
+	for _, item := range items {
+		names = append(names, item.ExternalName)
+	}
+
+	return names
 }
