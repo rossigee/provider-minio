@@ -115,7 +115,7 @@ var _ resource.ExternalLister = (*external)(nil)
 // ExternalLister). External names are MinIO usernames. The admin ListUsers
 // API returns all users in a single response, so pagination tokens are never
 // emitted; a non-empty pageToken yields an empty result.
-func (c *external) List(ctx context.Context, pc resource.ProviderConfig, pageToken string) (resource.ExternalListResult, error) {
+func (c *external) List(ctx context.Context, pc resource.ProviderConfig, _ resource.ExternalListScope, pageToken string) (resource.ExternalListResult, error) {
 	cfg, ok := pc.(*providerv1beta1.ProviderConfig)
 	if !ok {
 		return resource.ExternalListResult{}, errors.New("provider config is not a MinIO ProviderConfig")
@@ -156,7 +156,12 @@ func (c *external) List(ctx context.Context, pc resource.ProviderConfig, pageTok
 
 	sort.Strings(names)
 
-	return resource.ExternalListResult{ExternalNames: names}, nil
+	items := make([]resource.ExternalListItem, 0, len(names))
+	for _, name := range names {
+		items = append(items, resource.ExternalListItem{ExternalName: name})
+	}
+
+	return resource.ExternalListResult{Items: items}, nil
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
