@@ -15,6 +15,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/statemetrics"
 	"github.com/rossigee/provider-minio/apis"
 	miniov1beta1 "github.com/rossigee/provider-minio/apis/minio/v1beta1"
+	providerv1beta1 "github.com/rossigee/provider-minio/apis/provider/v1beta1"
+	"github.com/rossigee/provider-minio/internal/controller/user"
+	"github.com/rossigee/provider-minio/internal/inventory"
 	"github.com/rossigee/provider-minio/internal/tracing"
 	"github.com/rossigee/provider-minio/internal/version"
 	"github.com/rossigee/provider-minio/operator"
@@ -46,6 +49,8 @@ func main() {
 		enableManagementPolicies = app.Flag("enable-management-policies", "Enable support for Management Policies.").Default("true").Bool()
 		pollStateMetricInterval  = app.Flag("poll-state-metric", "State metric recording interval").Default("5s").Duration()
 		metricsBindAddress       = app.Flag("metrics-bind-address", "The address the metrics endpoint binds to.").Default(":8080").String()
+		inventoryPC              = app.Flag("inventory-provider-config", "ProviderConfig used to list resources for ExternalInventory. Empty disables publishing.").Default("default").String()
+		inventoryInterval        = app.Flag("inventory-interval", "How often ExternalInventory is republished.").Default("1h").Duration()
 	)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
@@ -134,6 +139,22 @@ func main() {
 	kingpin.FatalIfError(mgr.Add(statemetrics.NewMRStateRecorder(mgr.GetClient(), o.Logger, o.MetricOptions.MRStateMetrics, &miniov1beta1.ServiceAccountList{}, o.MetricOptions.PollStateMetricInterval)), "Cannot register state metrics for ServiceAccount")
 	kingpin.FatalIfError(mgr.Add(statemetrics.NewMRStateRecorder(mgr.GetClient(), o.Logger, o.MetricOptions.MRStateMetrics, &miniov1beta1.NotificationConfigurationList{}, o.MetricOptions.PollStateMetricInterval)), "Cannot register state metrics for NotificationConfiguration")
 
+	if *inventoryPC != "" {
+		userGVK := miniov1beta1.SchemeGroupVersion.WithKind("User")
+		mrdName := func(context.Context) (string, error) {
+			m, err := mgr.GetRESTMapper().RESTMapping(userGVK.GroupKind(), userGVK.Version)
+			if err != nil {
+				return "", err
+			}
+			return m.Resource.Resource + "." + userGVK.Group, nil
+		}
+		list := func(ctx context.Context, pc *providerv1beta1.ProviderConfig) ([]string, error) {
+			return user.ListUsernames(ctx, mgr.GetClient(), pc)
+		}
+		pub := inventory.NewPublisher(mgr.GetClient(), *inventoryPC, *inventoryInterval, list, mrdName, o.Logger.WithValues("runnable", "inventory"))
+		kingpin.FatalIfError(mgr.Add(pub), "Cannot add ExternalInventory publisher")
+	}
+
 	kingpin.FatalIfError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Cannot add health check")
 	kingpin.FatalIfError(mgr.AddReadyzCheck("readyz", healthz.Ping), "Cannot add ready check")
 
@@ -148,6 +169,7 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 		{APIGroups: []string{"bucket.minio.m.crossplane.io"}, Resources: []string{"buckets", "buckets/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
 		{APIGroups: []string{"user.minio.m.crossplane.io"}, Resources: []string{"users", "users/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
 		{APIGroups: []string{"policy.minio.m.crossplane.io"}, Resources: []string{"policies", "policies/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
+		{APIGroups: []string{"apiextensions.crossplane.io"}, Resources: []string{"externalinventories", "externalinventories/status"}, Verbs: []string{"get", "list", "watch", "create", "update", "patch"}},
 		{APIGroups: []string{"serviceaccount.minio.m.crossplane.io"}, Resources: []string{"serviceaccounts", "serviceaccounts/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
 		{APIGroups: []string{"notificationconfiguration.minio.m.crossplane.io"}, Resources: []string{"notificationconfigurations", "notificationconfigurations/status"}, Verbs: []string{"get", "list", "watch", "update", "patch", "create"}},
 		{
