@@ -9,6 +9,12 @@ This file begins at v0.21.4. The published v0.21.3 tag was built from a commit
 predating the v0.21.3 release preparation, so none of that work shipped; everything
 below is therefore released for the first time in v0.21.4.
 
+## [v0.21.9] - 2026-11-12
+
+### Changed in v0.21.9
+
+- Built with Go 1.27.4 (previously 1.27.3).
+
 ## [v0.21.6] - 2026-09-27
 
 ### Fixed in v0.21.6
